@@ -9,7 +9,7 @@ export async function GET(request: Request) {
     const status = searchParams.get('status');
     const search = searchParams.get('search');
 
-    const where: any = {};
+    const where: Record<string, unknown> = {};
 
     if (kelas && kelas !== 'all') {
       where.kelas = kelas;
@@ -32,7 +32,7 @@ export async function GET(request: Request) {
     });
 
     return NextResponse.json(students);
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: 'Failed to fetch students' }, { status: 500 });
   }
 }
@@ -54,7 +54,7 @@ export async function POST(request: Request) {
     });
 
     return NextResponse.json(student, { status: 201 });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: 'Failed to create student' }, { status: 500 });
   }
 }

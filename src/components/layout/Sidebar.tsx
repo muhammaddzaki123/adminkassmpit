@@ -9,22 +9,19 @@ import {
   CreditCard,
   Receipt,
   FileText, 
-  Settings,
   LogOut,
   Database,
   RefreshCw,
   MessageCircle,
-  History,
-  Menu
+  History
 } from 'lucide-react';
 import { clsx } from 'clsx';
 
 interface SidebarProps {
   userRole?: string;
-  onNavigate?: (page: string) => void;
 }
 
-export function Sidebar({ userRole = 'treasurer', onNavigate }: SidebarProps) {
+export function Sidebar({ userRole = 'treasurer' }: SidebarProps) {
   const router = useRouter();
   const pathname = usePathname();
 
@@ -73,18 +70,22 @@ export function Sidebar({ userRole = 'treasurer', onNavigate }: SidebarProps) {
   const menuItems = getMenuItems(userRole);
 
   return (
-    <div className="w-64 bg-white h-screen flex flex-col border-r border-[#e5e7eb]">
-      <div className="p-6 flex items-center gap-3">
-        <div className="w-8 h-8 bg-[#7ec242] rounded-lg flex items-center justify-center">
-          <CreditCard className="w-5 h-5 text-white" />
-        </div>
-        <div>
-          <h1 className="font-bold text-[#1c1c1c] text-lg leading-none">T-SMART</h1>
-          <p className="text-xs text-[#4b5563] mt-1">Treasury System</p>
+    <div className="w-64 bg-white h-screen flex flex-col border-r border-neutral-200 shadow-soft">
+      {/* Logo & Brand */}
+      <div className="p-6 border-b border-neutral-100">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-linear-to-br from-primary to-primary-700 rounded-xl flex items-center justify-center shadow-md">
+            <CreditCard className="w-6 h-6 text-white" />
+          </div>
+          <div>
+            <h1 className="font-bold text-neutral-900 text-xl leading-none tracking-tight">T-SMART</h1>
+            <p className="text-xs text-neutral-600 mt-1 font-medium">Treasury System</p>
+          </div>
         </div>
       </div>
 
-      <nav className="flex-1 px-4 space-y-1 overflow-y-auto">
+      {/* Navigation */}
+      <nav className="flex-1 px-4 py-4 space-y-1 overflow-y-auto">
         {menuItems.map((item) => {
           const isActive = pathname === item.path;
           return (
@@ -92,26 +93,33 @@ export function Sidebar({ userRole = 'treasurer', onNavigate }: SidebarProps) {
               key={item.id}
               href={item.path}
               className={clsx(
-                "flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group",
+                "flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group relative",
                 isActive
-                  ? "bg-[#7ec242] text-white shadow-md shadow-[#7ec242]/20"
-                  : "text-[#4b5563] hover:bg-[#f3f4f6] hover:text-[#1c1c1c]"
+                  ? "bg-linear-to-r from-primary to-primary-600 text-white shadow-medium"
+                  : "text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900"
               )}
             >
-              <item.icon className={clsx("w-5 h-5", isActive ? "text-white" : "text-[#9ca3af] group-hover:text-[#1c1c1c]")} />
-              <span className="font-medium">{item.label}</span>
+              <item.icon className={clsx(
+                "w-5 h-5 transition-transform group-hover:scale-110",
+                isActive ? "text-white" : "text-neutral-400 group-hover:text-primary"
+              )} />
+              <span className="font-semibold text-sm">{item.label}</span>
+              {isActive && (
+                <div className="absolute right-3 w-1.5 h-1.5 bg-white rounded-full animate-pulse" />
+              )}
             </Link>
           );
         })}
       </nav>
 
-      <div className="p-4 border-t border-[#e5e7eb]">
+      {/* Logout */}
+      <div className="p-4 border-t border-neutral-200 bg-neutral-50">
         <button
           onClick={handleLogout}
-          className="flex items-center gap-3 px-4 py-3 w-full rounded-xl text-[#ef4444] hover:bg-[#fee2e2] transition-colors"
+          className="flex items-center gap-3 px-4 py-3 w-full rounded-xl text-red-600 hover:bg-red-50 transition-all duration-200 hover:shadow-soft font-semibold text-sm"
         >
           <LogOut className="w-5 h-5" />
-          <span className="font-medium">Keluar</span>
+          <span>Keluar</span>
         </button>
       </div>
     </div>

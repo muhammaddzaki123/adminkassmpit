@@ -16,17 +16,17 @@ export function Input({ className, label, error, icon, ...props }: InputProps) {
   return (
     <div className="w-full">
       {label && (
-        <label className="block text-sm font-medium text-[#374151] mb-1.5">
+        <label className="block text-sm font-semibold text-neutral-700 mb-2">
           {label}
         </label>
       )}
       <div className="relative">
         <input
           className={cn(
-            "w-full rounded-xl border border-[#d1d5db] bg-white px-4 py-2.5 text-sm text-[#1c1c1c] placeholder:text-[#9ca3af]",
-            "focus:border-[#7ec242] focus:outline-none focus:ring-1 focus:ring-[#7ec242]",
-            "disabled:cursor-not-allowed disabled:bg-[#f3f4f6] disabled:text-[#6b7280]",
-            error && "border-[#ef4444] focus:border-[#ef4444] focus:ring-[#ef4444]",
+            "w-full rounded-xl border-2 border-neutral-200 bg-white px-4 py-2.5 text-sm text-neutral-900 placeholder:text-neutral-400",
+            "focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all duration-200 shadow-soft hover:shadow-medium",
+            "disabled:cursor-not-allowed disabled:bg-neutral-50 disabled:text-neutral-500",
+            error && "border-red-500 focus:border-red-500 focus:ring-red-500",
             icon && "pl-10",
             className
           )}
@@ -53,7 +53,7 @@ export function Select({ className, label, options, error, ...props }: SelectPro
   return (
     <div className="w-full">
       {label && (
-        <label className="block text-sm font-medium text-[#374151] mb-1.5">
+        <label className="block text-sm font-medium text-neutral-600 mb-1.5">
           {label}
         </label>
       )}
@@ -87,7 +87,7 @@ export function TextArea({ className, label, error, ...props }: TextAreaProps) {
   return (
     <div className="w-full">
       {label && (
-        <label className="block text-sm font-medium text-[#374151] mb-1.5">
+        <label className="block text-sm font-medium text-neutral-600 mb-1.5">
           {label}
         </label>
       )}

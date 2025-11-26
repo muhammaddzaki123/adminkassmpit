@@ -8,9 +8,19 @@ import { Input, Select } from '@/components/ui/Input';
 import { Table } from '@/components/ui/Table';
 import { Badge } from '@/components/ui/Badge';
 
+interface Student {
+  id: string;
+  nama: string;
+  nisn: string;
+  kelas: string;
+  status: string;
+  sppStatus: string;
+  daftarUlangStatus: string;
+}
+
 export function StudentData() {
   const [showImportModal, setShowImportModal] = useState(false);
-  const [students, setStudents] = useState<any[]>([]);
+  const [students, setStudents] = useState<Student[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -39,7 +49,7 @@ export function StudentData() {
       key: 'status',
       label: 'Status',
       width: '12%',
-      render: (item: any) => (
+      render: (item: Student) => (
         <Badge variant={item.status === 'ACTIVE' ? 'success' : 'default'}>
           {item.status}
         </Badge>
@@ -49,7 +59,7 @@ export function StudentData() {
       key: 'sppStatus',
       label: 'SPP',
       width: '12%',
-      render: (item: any) => (
+      render: (item: Student) => (
         <Badge variant={item.sppStatus === 'PAID' ? 'success' : 'error'}>
           {item.sppStatus === 'PAID' ? 'Lunas' : 'Tunggakan'}
         </Badge>
@@ -59,7 +69,7 @@ export function StudentData() {
       key: 'daftarUlangStatus',
       label: 'Daftar Ulang',
       width: '12%',
-      render: (item: any) => (
+      render: (item: Student) => (
         <Badge variant={item.daftarUlangStatus === 'PAID' ? 'success' : item.daftarUlangStatus === 'PENDING' ? 'warning' : 'error'}>
           {item.daftarUlangStatus === 'PAID' ? 'Lunas' : item.daftarUlangStatus === 'PENDING' ? 'Cicilan' : 'Belum'}
         </Badge>
@@ -92,7 +102,7 @@ export function StudentData() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <Card padding="md">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-[#7ec242] to-[#4c7924] rounded-xl flex items-center justify-center text-white">
+            <div className="w-12 h-12 bg-linear-to-br from-[#7ec242] to-[#4c7924] rounded-xl flex items-center justify-center text-white">
               <Users className="w-6 h-6" />
             </div>
             <div>
@@ -157,7 +167,7 @@ export function StudentData() {
           columns={columns}
           data={students}
           isLoading={isLoading}
-          actions={(row) => (
+          actions={() => (
             <div className="flex gap-2 justify-end">
               <Button variant="ghost" size="sm">Detail</Button>
               <Button variant="ghost" size="sm">Edit</Button>
@@ -193,7 +203,7 @@ export function StudentData() {
 
               {/* Upload Area */}
               <div>
-                <label className="block text-sm mb-2 text-[#374151]">Upload File Excel</label>
+                <label className="block text-sm mb-2 text-neutral-600">Upload File Excel</label>
                 <div className="border-2 border-dashed border-[#d1d5db] rounded-xl p-12 text-center hover:border-[#7ec242] transition-colors cursor-pointer">
                   <Upload className="w-16 h-16 text-[#4b5563] mx-auto mb-4" />
                   <h4 className="text-[#1c1c1c] mb-2 font-medium">Klik untuk upload atau drag & drop</h4>

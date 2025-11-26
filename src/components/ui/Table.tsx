@@ -1,10 +1,4 @@
 import React from 'react';
-import { clsx, type ClassValue } from 'clsx';
-import { twMerge } from 'tailwind-merge';
-
-function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
-}
 
 interface Column<T> {
   key: string;
@@ -59,7 +53,7 @@ export function Table<T extends { id?: string | number }>({ columns, data, actio
             <tr key={row.id || i} className="hover:bg-[#f9fafb] transition-colors">
               {columns.map((col) => (
                 <td key={col.key} className="px-6 py-4 text-[#1c1c1c]">
-                  {col.render ? col.render(row) : (row as any)[col.key]}
+                  {col.render ? col.render(row) : String((row as Record<string, unknown>)[col.key] ?? '')}
                 </td>
               ))}
               {actions && (

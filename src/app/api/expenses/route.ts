@@ -9,7 +9,7 @@ export async function GET(request: Request) {
     // Simplified date filtering for this example
     // In production, would handle date ranges properly
 
-    const where: any = {};
+    const where: Record<string, unknown> = {};
 
     if (category && category !== 'all') {
       where.category = category as ExpenseCategory;
@@ -21,7 +21,7 @@ export async function GET(request: Request) {
     });
 
     return NextResponse.json(expenses);
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: 'Failed to fetch expenses' }, { status: 500 });
   }
 }
@@ -43,7 +43,7 @@ export async function POST(request: Request) {
     });
 
     return NextResponse.json(expense, { status: 201 });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: 'Failed to create expense' }, { status: 500 });
   }
 }

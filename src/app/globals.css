@@ -1,26 +1,182 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/* T-SMART Design System - Theme Configuration */
+@theme {
+  /* T-SMART Brand Colors */
+  --color-primary-50: #F0F8E8;
+  --color-primary-100: #E1F1D1;
+  --color-primary-200: #CDE28C;
+  --color-primary-300: #A8D56B;
+  --color-primary-400: #93CD55;
+  --color-primary-500: #7EC242;
+  --color-primary-600: #659B35;
+  --color-primary-700: #4C7924;
+  --color-primary-800: #3D611D;
+  --color-primary-900: #2E4916;
+  --color-primary: #7EC242;
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  --color-accent-50: #FEF5E8;
+  --color-accent-100: #FDEBD1;
+  --color-accent-200: #FBD7A3;
+  --color-accent-300: #F9C375;
+  --color-accent-400: #F7AF47;
+  --color-accent-500: #F29A2E;
+  --color-accent-600: #D8841A;
+  --color-accent-700: #A86515;
+  --color-accent-800: #784810;
+  --color-accent-900: #482B0A;
+  --color-accent: #F29A2E;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  --color-neutral-50: #F5F6F7;
+  --color-neutral-100: #E8EAEC;
+  --color-neutral-200: #D1D5D9;
+  --color-neutral-300: #9CA3AB;
+  --color-neutral-400: #6B7280;
+  --color-neutral-500: #4B5563;
+  --color-neutral-600: #374151;
+  --color-neutral-700: #1F2937;
+  --color-neutral-800: #1C1C1C;
+  --color-neutral-900: #111827;
+
+  --color-success-500: #10B981;
+  --color-success-600: #059669;
+  --color-warning-500: #F59E0B;
+  --color-warning-600: #D97706;
+  --color-error-500: #EF4444;
+  --color-error-600: #DC2626;
+  --color-red-500: #EF4444;
+  --color-red-600: #DC2626;
+
+  /* Shadows */
+  --shadow-soft: 0 2px 8px rgba(126, 194, 66, 0.08);
+  --shadow-medium: 0 4px 16px rgba(126, 194, 66, 0.12);
+  --shadow-strong: 0 8px 32px rgba(126, 194, 66, 0.16);
+
+  /* Animations */
+  --animate-fade-in: fade-in 0.3s ease-in;
+  --animate-slide-up: slide-up 0.4s ease-out;
+  --animate-slide-down: slide-down 0.4s ease-out;
+
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes slide-up {
+    from { 
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to { 
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes slide-down {
+    from { 
+      opacity: 0;
+      transform: translateY(-20px);
+    }
+    to { 
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+:root {
+  --background: #ffffff;
+  --foreground: #1c1c1c;
+  --primary: #7EC242;
+  --primary-dark: #4C7924;
+  --secondary: #CDE28C;
+  --accent: #F29A2E;
+  --neutral-bg: #F5F6F7;
+}
+
+@layer base {
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  body {
+    background: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Scrollbar Styling */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: #f1f1f1;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #7EC242;
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #4C7924;
+  }
+}
+
+@layer utilities {
+  /* Custom utility classes */
+  .text-gradient {
+    background: linear-gradient(135deg, #7EC242 0%, #4C7924 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .card-hover {
+    transition: all 0.3s ease;
+  }
+
+  .card-hover:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(126, 194, 66, 0.15);
+  }
+
+  .btn-shimmer {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn-shimmer::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    transition: left 0.5s;
+  }
+
+  .btn-shimmer:hover::before {
+    left: 100%;
+  }
+}
+
+/* Print styles */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  
+  body {
+    background: white;
+  }
 }

@@ -1,16 +1,26 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Plus, Upload, Calendar, TrendingDown, Loader2 } from 'lucide-react';
+import { Plus, Upload, Calendar, TrendingDown } from 'lucide-react';
 import { Card, StatCard } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input, Select, TextArea } from '@/components/ui/Input';
 import { Table } from '@/components/ui/Table';
 import { Badge } from '@/components/ui/Badge';
 
+interface Expense {
+  id: string;
+  date: string;
+  category: string;
+  description: string;
+  amount: number;
+  status: string;
+  receipt?: string;
+}
+
 export function Expenses() {
   const [showModal, setShowModal] = useState(false);
-  const [expenses, setExpenses] = useState<any[]>([]);
+  const [expenses, setExpenses] = useState<Expense[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -36,7 +46,7 @@ export function Expenses() {
       key: 'date',
       label: 'Tanggal',
       width: '12%',
-      render: (item: any) => new Date(item.date).toLocaleDateString()
+      render: (item: Expense) => new Date(item.date).toLocaleDateString()
     },
     { key: 'category', label: 'Kategori', width: '12%' },
     { key: 'description', label: 'Keterangan', width: '35%' },
@@ -44,13 +54,13 @@ export function Expenses() {
       key: 'amount',
       label: 'Nominal',
       width: '15%',
-      render: (item: any) => `Rp ${item.amount.toLocaleString('id-ID')}`
+      render: (item: Expense) => `Rp ${item.amount.toLocaleString('id-ID')}`
     },
     {
       key: 'status',
       label: 'Status',
       width: '12%',
-      render: (item: any) => (
+      render: (item: Expense) => (
         <Badge variant={item.status === 'APPROVED' ? 'success' : 'warning'}>
           {item.status}
         </Badge>
@@ -60,7 +70,7 @@ export function Expenses() {
       key: 'receipt',
       label: 'Nota',
       width: '8%',
-      render: (item: any) => item.receipt ? '✓' : '-'
+      render: (item: Expense) => item.receipt ? '✓' : '-'
     },
   ];
 
@@ -134,7 +144,7 @@ export function Expenses() {
           columns={columns}
           data={expenses}
           isLoading={isLoading}
-          actions={(row) => (
+          actions={() => (
             <div className="flex gap-2 justify-end">
               <Button variant="ghost" size="sm">Edit</Button>
               <Button variant="ghost" size="sm">Nota</Button>
@@ -183,7 +193,7 @@ export function Expenses() {
               />
 
               <div>
-                <label className="block text-sm mb-2 text-[#374151]">Upload Nota/Bukti</label>
+                <label className="block text-sm mb-2 text-neutral-600">Upload Nota/Bukti</label>
                 <div className="border-2 border-dashed border-[#d1d5db] rounded-xl p-8 text-center hover:border-[#7ec242] transition-colors cursor-pointer">
                   <Upload className="w-12 h-12 text-[#4b5563] mx-auto mb-3" />
                   <p className="text-sm text-[#4b5563]">Klik untuk upload atau drag & drop</p>

@@ -24,9 +24,9 @@ export function Card({ children, className, padding = 'lg', onClick }: CardProps
   return (
     <div
       className={cn(
-        "bg-white rounded-2xl shadow-sm border border-[#e5e7eb] transition-all duration-200 hover:shadow-md",
+        "bg-white rounded-2xl shadow-soft border border-neutral-200 transition-all duration-300 hover:shadow-medium card-hover",
         paddings[padding],
-        onClick && "cursor-pointer hover:border-[#7ec242]",
+        onClick && "cursor-pointer hover:border-primary",
         className
       )}
       onClick={onClick}
@@ -42,34 +42,35 @@ interface StatCardProps {
   icon: React.ReactNode;
   trend?: string;
   trendUp?: boolean;
-  color?: 'primary' | 'warning' | 'danger' | 'info';
+  color?: 'primary' | 'warning' | 'danger' | 'info' | 'accent';
 }
 
 export function StatCard({ title, value, icon, trend, trendUp, color = 'primary' }: StatCardProps) {
   const colors = {
-    primary: "bg-[#7ec242]/10 text-[#7ec242]",
-    warning: "bg-[#f59e0b]/10 text-[#f59e0b]",
-    danger: "bg-[#ef4444]/10 text-[#ef4444]",
-    info: "bg-[#3b82f6]/10 text-[#3b82f6]",
+    primary: "bg-primary-100 text-primary-700",
+    accent: "bg-accent-100 text-accent-700",
+    warning: "bg-yellow-100 text-yellow-700",
+    danger: "bg-red-100 text-red-700",
+    info: "bg-blue-100 text-blue-700",
   };
 
   return (
-    <Card padding="md">
+    <Card padding="md" className="hover:shadow-lg">
       <div className="flex items-start justify-between">
-        <div>
-          <p className="text-sm font-medium text-[#6b7280] mb-1">{title}</p>
-          <h3 className="text-2xl font-bold text-[#1c1c1c]">{value}</h3>
+        <div className="flex-1">
+          <p className="text-sm font-medium text-neutral-600 mb-2">{title}</p>
+          <h3 className="text-3xl font-bold text-neutral-900 mb-2">{value}</h3>
           {trend && (
             <p className={cn(
-              "text-xs mt-2 flex items-center gap-1",
-              trendUp ? "text-[#10b981]" : "text-[#ef4444]"
+              "text-xs font-semibold flex items-center gap-1",
+              trendUp ? "text-green-600" : "text-red-600"
             )}>
-              <span>{trendUp ? '↑' : '↓'}</span>
+              <span className="text-base">{trendUp ? '↑' : '↓'}</span>
               {trend}
             </p>
           )}
         </div>
-        <div className={cn("p-3 rounded-xl", colors[color])}>
+        <div className={cn("p-4 rounded-xl shadow-soft", colors[color])}>
           {icon}
         </div>
       </div>

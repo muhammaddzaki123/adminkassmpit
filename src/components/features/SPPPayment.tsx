@@ -1,25 +1,34 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { Upload, CheckCircle, X, Filter, Loader2 } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Upload, CheckCircle, X, Filter } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input, Select } from '@/components/ui/Input';
 import { Table } from '@/components/ui/Table';
 import { Badge } from '@/components/ui/Badge';
 
+interface Payment {
+  id: string;
+  student: {
+    nama: string;
+    nisn: string;
+    kelas: string;
+  };
+  bulan: string;
+  nominal: number;
+  status: string;
+  tanggalBayar?: string;
+}
+
 export function SPPPayment() {
   const [showModal, setShowModal] = useState(false);
   const [selectedClass, setSelectedClass] = useState('all');
   const [selectedStatus, setSelectedStatus] = useState('all');
-  const [payments, setPayments] = useState<any[]>([]);
+  const [payments, setPayments] = useState<Payment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    fetchPayments();
-  }, [selectedClass, selectedStatus]);
-
-  const fetchPayments = async () => {
+  const fetchPayments = useCallback(async () => {
     setIsLoading(true);
     try {
       const params = new URLSearchParams();
@@ -36,39 +45,43 @@ export function SPPPayment() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [selectedClass, selectedStatus]);
+
+  useEffect(() => {
+    fetchPayments();
+  }, [fetchPayments]);
 
   const columns = [
     {
       key: 'student',
       label: 'Nama Siswa',
       width: '25%',
-      render: (item: any) => item.student?.nama || '-'
+      render: (item: Payment) => item.student?.nama || '-'
     },
     {
       key: 'kelas',
       label: 'Kelas',
       width: '10%',
-      render: (item: any) => item.student?.kelas || '-'
+      render: (item: Payment) => item.student?.kelas || '-'
     },
     {
       key: 'nisn',
       label: 'NISN',
       width: '15%',
-      render: (item: any) => item.student?.nisn || '-'
+      render: (item: Payment) => item.student?.nisn || '-'
     },
     { key: 'bulan', label: 'Bulan', width: '15%' },
     {
       key: 'nominal',
       label: 'Nominal',
       width: '15%',
-      render: (item: any) => `Rp ${item.nominal.toLocaleString('id-ID')}`
+      render: (item: Payment) => `Rp ${item.nominal.toLocaleString('id-ID')}`
     },
     {
       key: 'status',
       label: 'Status',
       width: '10%',
-      render: (item: any) => (
+      render: (item: Payment) => (
         <Badge variant={item.status === 'PAID' ? 'success' : item.status === 'PENDING' ? 'warning' : 'error'}>
           {item.status === 'PAID' ? 'Lunas' : item.status === 'PENDING' ? 'Pending' : 'Belum'}
         </Badge>
@@ -78,7 +91,7 @@ export function SPPPayment() {
       key: 'tanggalBayar',
       label: 'Tanggal Bayar',
       width: '10%',
-      render: (item: any) => item.tanggalBayar ? new Date(item.tanggalBayar).toLocaleDateString() : '-'
+      render: (item: Payment) => item.tanggalBayar ? new Date(item.tanggalBayar).toLocaleDateString() : '-'
     },
   ];
 
@@ -230,7 +243,7 @@ export function SPPPayment() {
               />
 
               <div>
-                <label className="block text-sm mb-2 text-[#374151]">Upload Bukti Transfer</label>
+                <label className="block text-sm mb-2 text-neutral-600">Upload Bukti Transfer</label>
                 <div className="border-2 border-dashed border-[#d1d5db] rounded-xl p-8 text-center hover:border-[#7ec242] transition-colors cursor-pointer">
                   <Upload className="w-12 h-12 text-[#4b5563] mx-auto mb-3" />
                   <p className="text-sm text-[#4b5563]">Klik untuk upload atau drag & drop</p>

@@ -10,7 +10,7 @@ export default function Dashboard() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   return (
-    <div className="flex min-h-screen bg-[#f5f6f7]">
+    <div className="flex min-h-screen bg-neutral-50">
       <div className="hidden lg:block">
         <Sidebar userRole="treasurer" />
       </div>
@@ -18,7 +18,7 @@ export default function Dashboard() {
       {isMobileMenuOpen && (
         <>
           <div
-            className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+            className="fixed inset-0 bg-black/50 z-40 lg:hidden backdrop-blur-sm"
             onClick={() => setIsMobileMenuOpen(false)}
           />
           <div className="fixed left-0 top-0 bottom-0 z-50 lg:hidden">
@@ -31,30 +31,35 @@ export default function Dashboard() {
         <Header onMenuClick={() => setIsMobileMenuOpen(true)} />
 
         <main className="flex-1 p-4 md:p-6 lg:p-8 overflow-auto">
-          <div className="max-w-7xl mx-auto space-y-6">
-            <h1 className="text-2xl font-bold text-[#1c1c1c]">Dashboard Bendahara</h1>
+          <div className="max-w-7xl mx-auto space-y-8">
+            {/* Page Title */}
+            <div className="animate-fade-in">
+              <h1 className="text-3xl font-bold text-neutral-900 mb-2">Dashboard Bendahara</h1>
+              <p className="text-neutral-600">Ringkasan keuangan sekolah secara real-time</p>
+            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {/* Stats Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 animate-slide-up">
               <StatCard
                 title="Total Pemasukan"
-                value="Rp 150.000.000"
-                icon={<CreditCard className="w-6 h-6" />}
+                value="Rp 150 Juta"
+                icon={<CreditCard className="w-7 h-7" />}
                 trend="12% dari bulan lalu"
                 trendUp={true}
                 color="primary"
               />
               <StatCard
                 title="Total Pengeluaran"
-                value="Rp 45.000.000"
-                icon={<TrendingDown className="w-6 h-6" />}
+                value="Rp 45 Juta"
+                icon={<TrendingDown className="w-7 h-7" />}
                 trend="5% dari bulan lalu"
                 trendUp={false}
-                color="warning"
+                color="accent"
               />
               <StatCard
                 title="Siswa Belum Bayar"
                 value="45 Siswa"
-                icon={<Users className="w-6 h-6" />}
+                icon={<Users className="w-7 h-7" />}
                 color="danger"
               />
               <StatCard

@@ -8,7 +8,7 @@ export async function GET(request: Request) {
     const status = searchParams.get('status');
     const search = searchParams.get('search');
 
-    const where: any = {};
+    const where: Record<string, unknown> = {};
 
     if (kelas && kelas !== 'all') {
       where.student = { kelas: kelas };
@@ -37,7 +37,7 @@ export async function GET(request: Request) {
     });
 
     return NextResponse.json(payments);
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: 'Failed to fetch SPP payments' }, { status: 500 });
   }
 }
@@ -59,7 +59,7 @@ export async function POST(request: Request) {
     });
 
     return NextResponse.json(payment, { status: 201 });
-  } catch (error) {
-    return NextResponse.json({ error: 'Failed to create payment' }, { status: 500 });
+  } catch {
+    return NextResponse.json({ error: 'Failed to create SPP payment' }, { status: 500 });
   }
 }
