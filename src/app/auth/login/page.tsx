@@ -81,8 +81,18 @@ export default function LoginPage() {
       // Simpan user data ke localStorage
       localStorage.setItem('user', JSON.stringify(data.user));
       
-      // Redirect ke dashboard
-      router.push('/dashboard');
+      // Redirect berdasarkan role
+      if (data.user.role === 'ADMIN') {
+        router.push('/admin');
+      } else if (data.user.role === 'TREASURER') {
+        router.push('/dashboard');
+      } else if (data.user.role === 'HEADMASTER') {
+        router.push('/headmaster');
+      } else if (data.user.role === 'PARENT') {
+        router.push('/parent');
+      } else {
+        router.push('/dashboard');
+      }
     } catch (err) {
       console.error('Login error:', err);
       setError('Terjadi kesalahan. Silakan coba lagi.');

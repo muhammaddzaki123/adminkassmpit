@@ -26,45 +26,49 @@ export function Sidebar({ userRole = 'treasurer' }: SidebarProps) {
   const pathname = usePathname();
 
   const getMenuItems = (role: string) => {
-    const common = [
-      { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
+    const adminMenu = [
+      { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, path: '/admin' },
+      { id: 'users', label: 'Kelola User', icon: Users, path: '/admin/users' },
+      { id: 'backup', label: 'Backup Data', icon: Database, path: '/admin/backup' },
     ];
 
-    const treasurer = [
-      { id: 'students', label: 'Data Siswa', icon: Users, path: '/students' },
-      { id: 'spp', label: 'Pembayaran SPP', icon: CreditCard, path: '/spp' },
-      { id: 'expenses', label: 'Pengeluaran', icon: Receipt, path: '/expenses' },
-      { id: 'reports', label: 'Laporan', icon: FileText, path: '/reports' },
-      { id: 'wa-reminder', label: 'WA Reminder', icon: MessageCircle, path: '/wa-reminder' },
-      { id: 'backup', label: 'Backup Data', icon: Database, path: '/backup' },
+    const treasurerMenu = [
+      { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, path: '/treasurer' },
+      { id: 'students', label: 'Data Siswa', icon: Users, path: '/treasurer/students' },
+      { id: 'spp', label: 'Pembayaran SPP', icon: CreditCard, path: '/treasurer/spp' },
+      { id: 'expenses', label: 'Pengeluaran', icon: Receipt, path: '/treasurer/expenses' },
+      { id: 're-registration', label: 'Daftar Ulang', icon: RefreshCw, path: '/treasurer/re-registration' },
+      { id: 'reports', label: 'Laporan', icon: FileText, path: '/treasurer/reports' },
+      { id: 'wa-reminder', label: 'WA Reminder', icon: MessageCircle, path: '/treasurer/wa-reminder' },
+      { id: 'backup', label: 'Backup Data', icon: Database, path: '/treasurer/backup' },
     ];
 
-    const admin = [
-      ...treasurer,
-      { id: 're-registration', label: 'Daftar Ulang', icon: RefreshCw, path: '/re-registration' },
+    const parentMenu = [
+      { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, path: '/parent' },
+      { id: 'payment', label: 'Pembayaran', icon: CreditCard, path: '/parent/payment' },
+      { id: 'history', label: 'Riwayat', icon: History, path: '/parent/history' },
     ];
 
-    const parent = [
-      { id: 'payment', label: 'Pembayaran', icon: CreditCard, path: '/payment' },
-      { id: 'history', label: 'Riwayat', icon: History, path: '/history' },
+    const headmasterMenu = [
+      { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, path: '/headmaster' },
+      { id: 'reports', label: 'Laporan', icon: FileText, path: '/headmaster/reports' },
+      { id: 'students', label: 'Data Siswa', icon: Users, path: '/headmaster/students' },
     ];
 
-    const headmaster = [
-      { id: 'reports', label: 'Laporan', icon: FileText, path: '/reports' },
-      { id: 'students', label: 'Data Siswa', icon: Users, path: '/students' },
-    ];
-
-    switch (role) {
-      case 'admin': return [...common, ...admin];
-      case 'parent': return [...common, ...parent];
-      case 'headmaster': return [...common, ...headmaster];
-      default: return [...common, ...treasurer];
+    switch (role.toLowerCase()) {
+      case 'admin': return adminMenu;
+      case 'parent': return parentMenu;
+      case 'headmaster': return headmasterMenu;
+      case 'treasurer': return treasurerMenu;
+      default: return treasurerMenu;
     }
   };
 
   const handleLogout = () => {
-    // Implement logout logic here
-    router.push('/login');
+    // Clear user data from localStorage
+    localStorage.removeItem('user');
+    // Redirect to login
+    router.push('/auth/login');
   };
 
   const menuItems = getMenuItems(userRole);

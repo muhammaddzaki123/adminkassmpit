@@ -1,0 +1,119 @@
+'use client';
+
+import { useState } from 'react';
+import { Sidebar } from '@/components/layout/Sidebar';
+import { Header } from '@/components/layout/Header';
+import { StatCard, Card } from '@/components/ui/Card';
+import { Users, CreditCard, TrendingDown, AlertCircle } from 'lucide-react';
+
+export default function TreasurerDashboard() {
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  return (
+    <div className="flex min-h-screen bg-neutral-50">
+      <div className="hidden lg:block">
+        <Sidebar userRole="treasurer" />
+      </div>
+
+      {isMobileMenuOpen && (
+        <>
+          <div
+            className="fixed inset-0 bg-black/50 z-40 lg:hidden backdrop-blur-sm"
+            onClick={() => setIsMobileMenuOpen(false)}
+          />
+          <div className="fixed left-0 top-0 bottom-0 z-50 lg:hidden">
+            <Sidebar userRole="treasurer" />
+          </div>
+        </>
+      )}
+
+      <div className="flex-1 flex flex-col min-w-0">
+        <Header onMenuClick={() => setIsMobileMenuOpen(true)} />
+
+        <main className="flex-1 p-4 md:p-6 lg:p-8 overflow-auto">
+          <div className="max-w-7xl mx-auto space-y-8">
+            {/* Page Title */}
+            <div className="animate-fade-in">
+              <h1 className="text-3xl font-bold text-neutral-900 mb-2">Dashboard Bendahara</h1>
+              <p className="text-neutral-600">Ringkasan keuangan sekolah secara real-time</p>
+            </div>
+
+            {/* Stats Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 animate-slide-up">
+              <StatCard
+                title="Total Pemasukan"
+                value="Rp 150 Juta"
+                icon={<CreditCard className="w-7 h-7" />}
+                trend="12% dari bulan lalu"
+                trendUp={true}
+                color="primary"
+              />
+              <StatCard
+                title="Total Pengeluaran"
+                value="Rp 45 Juta"
+                icon={<TrendingDown className="w-7 h-7" />}
+                trend="5% dari bulan lalu"
+                trendUp={false}
+                color="accent"
+              />
+              <StatCard
+                title="Siswa Belum Bayar"
+                value="45 Siswa"
+                icon={<Users className="w-7 h-7" />}
+                color="danger"
+              />
+              <StatCard
+                title="Perlu Verifikasi"
+                value="12 Item"
+                icon={<AlertCircle className="w-6 h-6" />}
+                color="info"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card>
+                <h3 className="text-lg font-semibold mb-4 text-neutral-900">Pembayaran Terbaru</h3>
+                <div className="space-y-4">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="flex items-center justify-between p-4 bg-neutral-50 rounded-xl">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center text-primary">
+                          <CreditCard className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-neutral-900">Ahmad Zaki</p>
+                          <p className="text-xs text-neutral-600">SPP November 2024</p>
+                        </div>
+                      </div>
+                      <span className="text-success-500 font-medium">+ Rp 500.000</span>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+
+              <Card>
+                <h3 className="text-lg font-semibold mb-4 text-neutral-900">Pengeluaran Terbaru</h3>
+                <div className="space-y-4">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="flex items-center justify-between p-4 bg-neutral-50 rounded-xl">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-accent/10 rounded-full flex items-center justify-center text-accent">
+                          <TrendingDown className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-neutral-900">Pembelian ATK</p>
+                          <p className="text-xs text-neutral-600">24 Nov 2024</p>
+                        </div>
+                      </div>
+                      <span className="text-error-500 font-medium">- Rp 1.250.000</span>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+  );
+}
