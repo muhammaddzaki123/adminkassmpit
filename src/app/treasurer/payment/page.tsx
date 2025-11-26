@@ -1,39 +1,141 @@
 'use client';
 
-import { useState } from 'react';
-import { Sidebar } from '@/components/layout/Sidebar';
-import { Header } from '@/components/layout/Header';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { TreasurerSidebar } from '@/components/layout/TreasurerSidebar';
+import { TreasurerHeader } from '@/components/layout/TreasurerHeader';
 import { Card } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
+import { Input, Select } from '@/components/ui/Input';
+import { Badge } from '@/components/ui/Badge';
+import { Plus, Search, Calendar, Download } from 'lucide-react';
 
-export default function PlaceholderPage() {
+export default function PaymentPage() {
+  const router = useRouter();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
+  useEffect(() => {
+    const userData = localStorage.getItem('user');
+    if (!userData) {
+      router.push('/auth/login');
+      return;
+    }
+
+    const user = JSON.parse(userData);
+    if (user.role !== 'TREASURER') {
+      router.push('/auth/login');
+      return;
+    }
+  }, [router]);
+
   return (
-    <div className="flex min-h-screen bg-[#f5f6f7]">
+    <div className="flex min-h-screen bg-neutral-50">
       <div className="hidden lg:block">
-        <Sidebar />
+        <TreasurerSidebar />
       </div>
 
       {isMobileMenuOpen && (
         <>
           <div
-            className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+            className="fixed inset-0 bg-black/50 z-40 lg:hidden backdrop-blur-sm"
             onClick={() => setIsMobileMenuOpen(false)}
           />
           <div className="fixed left-0 top-0 bottom-0 z-50 lg:hidden">
-            <Sidebar />
+            <TreasurerSidebar />
           </div>
         </>
       )}
 
-      <div className="flex-1 flex flex-col min-w-0">
-        <Header onMenuClick={() => setIsMobileMenuOpen(true)} />
-        <main className="flex-1 p-4 md:p-6 lg:p-8 overflow-auto">
-          <div className="max-w-7xl mx-auto">
+      <div className="flex-1 flex flex-col min-w-0 lg:ml-64">
+        <TreasurerHeader onMenuClick={() => setIsMobileMenuOpen(true)} />
+        <main className="flex-1 p-4 md:p-6 lg:p-8 overflow-auto mt-16">
+          <div className="max-w-7xl mx-auto space-y-6">
+            <div className="flex justify-between items-center">
+              <div>
+                <h1 className="text-3xl font-bold text-neutral-900">Input Pembayaran</h1>
+                <p className="text-neutral-600 mt-1">Input pembayaran SPP siswa</p>
+              </div>
+              <Button icon={<Download className="w-4 h-4" />} variant="outline">
+                Export
+              </Button>
+            </div>
+
             <Card>
-              <div className="text-center py-12">
-                <h2 className="text-xl font-semibold text-[#1c1c1c] mb-2">Halaman Ini Sedang Dalam Pengembangan</h2>
-                <p className="text-[#4b5563]">Fitur ini akan segera tersedia.</p>
+              <h2 className="text-xl font-semibold text-neutral-900 mb-4">Form Pembayaran</h2>
+              <form className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 mb-2">NISN / Nama Siswa</label>
+                    <Input placeholder="Cari siswa..." icon={<Search className="w-4 h-4" />} />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 mb-2">Jenis Pembayaran</label>
+                    <Select
+                      options={[
+                        { value: 'spp', label: 'SPP' },
+                        { value: 'daftar-ulang', label: 'Daftar Ulang' },
+                        { value: 'lainnya', label: 'Lainnya' },
+                      ]}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 mb-2">Bulan</label>
+                    <Select
+                      options={[
+                        { value: '1', label: 'Januari' },
+                        { value: '2', label: 'Februari' },
+                        { value: '3', label: 'Maret' },
+                      ]}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 mb-2">Tahun</label>
+                    <Select
+                      options={[
+                        { value: '2024', label: '2024' },
+                        { value: '2025', label: '2025' },
+                      ]}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 mb-2">Jumlah</label>
+                    <Input type="number" placeholder="500000" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 mb-2">Tanggal Bayar</label>
+                    <Input type="date" icon={<Calendar className="w-4 h-4" />} />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-2">Keterangan</label>
+                  <Input placeholder="Catatan pembayaran (opsional)" />
+                </div>
+                <div className="flex gap-2">
+                  <Button type="submit" icon={<Plus className="w-4 h-4" />}>
+                    Simpan Pembayaran
+                  </Button>
+                  <Button type="button" variant="outline">
+                    Reset
+                  </Button>
+                </div>
+              </form>
+            </Card>
+
+            <Card>
+              <h2 className="text-xl font-semibold text-neutral-900 mb-4">Pembayaran Terakhir</h2>
+              <div className="space-y-3">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="flex items-center justify-between p-4 bg-neutral-50 rounded-lg hover:bg-neutral-100 transition">
+                    <div>
+                      <p className="font-medium text-neutral-900">Ahmad Zaki - 7A</p>
+                      <p className="text-sm text-neutral-600">SPP Januari 2025</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-semibold text-green-600">Rp 500.000</p>
+                      <Badge variant="success">Lunas</Badge>
+                    </div>
+                  </div>
+                ))}
               </div>
             </Card>
           </div>

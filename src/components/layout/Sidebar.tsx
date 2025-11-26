@@ -33,7 +33,7 @@ export function Sidebar({ userRole = 'treasurer' }: SidebarProps) {
     ];
 
     const treasurerMenu = [
-      { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, path: '/treasurer' },
+      { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, path: '/treasurer/dashboard' },
       { id: 'students', label: 'Data Siswa', icon: Users, path: '/treasurer/students' },
       { id: 'spp', label: 'Pembayaran SPP', icon: CreditCard, path: '/treasurer/spp' },
       { id: 'expenses', label: 'Pengeluaran', icon: Receipt, path: '/treasurer/expenses' },
