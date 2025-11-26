@@ -104,17 +104,18 @@ export default function SPPPaymentPage() {
 
       if (result.success) {
         setTransaction(result.data);
+        setIsProcessing(false);
         
-        // Simulate payment processing
-        setTimeout(() => {
-          setIsProcessing(false);
-          if (paymentMethod === 'VIRTUAL_ACCOUNT') {
-            // Show VA number and waiting for payment
-          } else {
-            // Simulate instant payment success
-            setStep('success');
-          }
-        }, 2000);
+        if (paymentMethod === 'VIRTUAL_ACCOUNT') {
+          // Show VA number and wait for webhook callback
+          setStep('payment');
+        } else {
+          // For other methods, redirect to payment URL or show instructions
+          // In real implementation, payment gateway would handle this
+          setStep('payment');
+        }
+      } else {
+        throw new Error(result.message || 'Payment creation failed');
       }
     } catch (error) {
       console.error('Payment error:', error);

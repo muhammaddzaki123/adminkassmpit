@@ -18,9 +18,11 @@ enum UserRole {
 }
 
 enum StudentStatus {
-  ACTIVE
-  GRADUATED
-  ARCHIVED
+  PENDING_REGISTRATION // Calon siswa baru (belum disetujui)
+  ACTIVE               // Siswa aktif
+  AWAITING_REREG       // Menunggu daftar ulang tahun ajaran baru
+  GRADUATED            // Lulus
+  ARCHIVED             // Non-aktif/pindah
 }
 
 enum PaymentStatus {
@@ -84,10 +86,21 @@ model Student {
   email             String?
   alamat            String?
   namaOrangTua      String?       @map("nama_orang_tua")
-  status            StudentStatus @default(ACTIVE)
+  status            StudentStatus @default(PENDING_REGISTRATION)
   sppStatus         PaymentStatus @default(UNPAID) @map("spp_status")
   daftarUlangStatus PaymentStatus @default(UNPAID) @map("daftar_ulang_status")
   virtualAccount    String?       @unique @map("virtual_account") // VA number for payments
+  
+  // Registration fields
+  registrationDate  DateTime?     @map("registration_date")
+  enrollmentType    String?       @map("enrollment_type") // NEW, CONTINUING, TRANSFER
+  academicYear      String?       @map("academic_year") // e.g., "2024/2025"
+  approvalStatus    String?       @default("PENDING") @map("approval_status") // PENDING, APPROVED, REJECTED
+  approvedBy        String?       @map("approved_by") // User ID who approved
+  approvedAt        DateTime?     @map("approved_at")
+  registrationFee   Float?        @default(0) @map("registration_fee")
+  registrationPaid  Boolean       @default(false) @map("registration_paid")
+  
   createdAt         DateTime      @default(now()) @map("created_at")
   updatedAt         DateTime      @updatedAt @map("updated_at")
 
@@ -103,11 +116,19 @@ model SPPPayment {
   studentId        String        @map("student_id")
   student          Student       @relation(fields: [studentId], references: [id])
   bulan            String // e.g., "November 2024" or date
+  tahunAjaran      String?       @map("tahun_ajaran") // e.g., "2024/2025"
   nominal          Float
   status           PaymentStatus @default(PENDING)
   tanggalBayar     DateTime?     @map("tanggal_bayar")
   metodePembayaran String?       @map("metode_pembayaran") // transfer, tunai, ewallet
   buktiTransfer    String?       @map("bukti_transfer")
+  
+  // Auto-tracking fields
+  transactionId    String?       @map("transaction_id") // Link to Transaction
+  autoRecorded     Boolean       @default(false) @map("auto_recorded") // True if auto from webhook
+  recordedAt       DateTime?     @map("recorded_at")
+  paymentMethod    PaymentMethod? @map("payment_method")
+  
   createdAt        DateTime      @default(now()) @map("created_at")
   updatedAt        DateTime      @updatedAt @map("updated_at")
 
@@ -150,4 +171,34 @@ model Transaction {
   updatedAt         DateTime      @updatedAt @map("updated_at")
 
   @@map("transactions")
+}
+
+model SystemSettings {
+  id          String   @id @default(uuid())
+  key         String   @unique // e.g., "REGISTRATION_FEE", "SPP_MONTHLY"
+  value       String   // Store as string, parse based on type
+  type        String   // NUMBER, TEXT, BOOLEAN
+  category    String   // FEES, NOTIFICATION, SYSTEM
+  description String?
+  updatedBy   String?  @map("updated_by") // User ID
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("system_settings")
+}
+
+model NotificationLog {
+  id        String   @id @default(uuid())
+  userId    String?  @map("user_id") // User who received notification
+  type      String   // EMAIL, WHATSAPP, SMS
+  status    String   // SENT, FAILED, PENDING
+  recipient String   // Email or phone number
+  subject   String?
+  content   String   @db.Text
+  template  String?  // Template name used
+  metadata  String?  @db.Text // JSON string for additional data
+  sentAt    DateTime? @map("sent_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("notification_logs")
 }

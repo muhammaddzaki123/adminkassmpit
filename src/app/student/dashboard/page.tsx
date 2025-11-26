@@ -15,21 +15,38 @@ interface DashboardStats {
   tunggakan: number;
 }
 
+interface StudentData {
+  id: string;
+  nama: string;
+  nisn: string;
+  kelas: string;
+  virtualAccount: string | null;
+  email: string | null;
+  noTelp: string | null;
+}
+
+interface Transaction {
+  id: string;
+  paymentType: string;
+  amount: number;
+  status: string;
+  paidAt: string | null;
+  createdAt: string;
+  description: string | null;
+}
+
 export default function StudentDashboard() {
   const router = useRouter();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [stats] = useState<DashboardStats>({
-    sppBelumBayar: 3,
-    sppTerbayar: 9,
-    totalTagihan: 1500000,
-    tunggakan: 1500000,
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState<DashboardStats>({
+    sppBelumBayar: 0,
+    sppTerbayar: 0,
+    totalTagihan: 0,
+    tunggakan: 0,
   });
-  const [studentInfo, setStudentInfo] = useState({
-    nama: '',
-    nisn: '',
-    kelas: '',
-    virtualAccount: '',
-  });
+  const [studentInfo, setStudentInfo] = useState<StudentData | null>(null);
+  const [recentTransactions, setRecentTransactions] = useState<Transaction[]>([]);
 
   useEffect(() => {
     const userData = localStorage.getItem('user');
@@ -44,14 +61,53 @@ export default function StudentDashboard() {
       return;
     }
 
-    // Mock student data
-    setStudentInfo({
-      nama: user.nama,
-      nisn: '001234567',
-      kelas: '8A',
-      virtualAccount: '8888812345678901',
-    });
+    // Fetch real student data
+    fetchStudentData(user.studentId);
   }, [router]);
+
+  const fetchStudentData = async (studentId: string) => {
+    try {
+      // Fetch student info
+      const studentResponse = await fetch(`/api/students?id=${studentId}`);
+      const studentResult = await studentResponse.json();
+      
+      if (studentResult.success && studentResult.data.length > 0) {
+        setStudentInfo(studentResult.data[0]);
+      }
+
+      // Fetch transactions
+      const transactionsResponse = await fetch(`/api/student/transactions?studentId=${studentId}&limit=5`);
+      const transactionsResult = await transactionsResponse.json();
+      
+      if (transactionsResult.success) {
+        setRecentTransactions(transactionsResult.data);
+        
+        // Calculate stats from real data
+        const paidSPP = transactionsResult.data.filter(
+          (t: Transaction) => t.paymentType === 'SPP' && t.status === 'PAID'
+        ).length;
+        
+        const unpaidSPP = transactionsResult.data.filter(
+          (t: Transaction) => t.paymentType === 'SPP' && t.status !== 'PAID'
+        ).length;
+        
+        const totalUnpaid = transactionsResult.data
+          .filter((t: Transaction) => t.status !== 'PAID')
+          .reduce((sum: number, t: Transaction) => sum + t.amount, 0);
+
+        setStats({
+          sppBelumBayar: unpaidSPP,
+          sppTerbayar: paidSPP,
+          totalTagihan: totalUnpaid,
+          tunggakan: totalUnpaid
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching student data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('id-ID', {
@@ -61,11 +117,28 @@ export default function StudentDashboard() {
     }).format(amount);
   };
 
-  const recentTransactions = [
-    { id: 1, type: 'SPP Januari 2025', amount: 500000, status: 'PAID', date: '15 Jan 2025' },
-    { id: 2, type: 'SPP Februari 2025', amount: 500000, status: 'PENDING', date: '28 Jan 2025' },
-    { id: 3, type: 'Daftar Ulang', amount: 2000000, status: 'PAID', date: '20 Des 2024' },
-  ];
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-neutral-50">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+          <p className="mt-4 text-neutral-600">Memuat data...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!studentInfo) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-neutral-50">
+        <div className="text-center">
+          <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
+          <p className="text-lg text-neutral-900 font-semibold">Data siswa tidak ditemukan</p>
+          <p className="text-neutral-600 mt-2">Silakan hubungi administrator</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen bg-neutral-50">
@@ -174,31 +247,39 @@ export default function StudentDashboard() {
                 </button>
               </div>
               <div className="space-y-3">
-                {recentTransactions.map((transaction) => (
-                  <div
-                    key={transaction.id}
-                    className="flex items-center justify-between p-4 bg-neutral-50 rounded-lg hover:bg-neutral-100 transition"
-                  >
-                    <div>
-                      <p className="font-medium text-neutral-900">{transaction.type}</p>
-                      <p className="text-sm text-neutral-600">{transaction.date}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-semibold text-neutral-900">{formatCurrency(transaction.amount)}</p>
-                      <Badge
-                        variant={
-                          transaction.status === 'PAID'
-                            ? 'success'
-                            : transaction.status === 'PENDING'
-                            ? 'warning'
-                            : 'error'
-                        }
-                      >
-                        {transaction.status === 'PAID' ? 'Lunas' : 'Pending'}
-                      </Badge>
-                    </div>
+                {recentTransactions.length === 0 ? (
+                  <div className="text-center py-8 text-neutral-500">
+                    <p>Belum ada transaksi</p>
                   </div>
-                ))}
+                ) : (
+                  recentTransactions.map((transaction) => (
+                    <div
+                      key={transaction.id}
+                      className="flex items-center justify-between p-4 bg-neutral-50 rounded-lg hover:bg-neutral-100 transition"
+                    >
+                      <div>
+                        <p className="font-medium text-neutral-900">{transaction.paymentType}</p>
+                        <p className="text-sm text-neutral-600">
+                          {new Date(transaction.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-semibold text-neutral-900">{formatCurrency(transaction.amount)}</p>
+                        <Badge
+                          variant={
+                            transaction.status === 'PAID'
+                              ? 'success'
+                              : transaction.status === 'PENDING'
+                              ? 'warning'
+                              : 'error'
+                          }
+                        >
+                          {transaction.status === 'PAID' ? 'Lunas' : transaction.status === 'PENDING' ? 'Pending' : 'Gagal'}
+                        </Badge>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             </Card>
 

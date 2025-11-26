@@ -1,27 +1,40 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { AdminHeader } from '@/components/layout/AdminHeader';
-import { AdminSidebar } from '@/components/layout/AdminSidebar';
+import { Sidebar } from '@/components/layout/Sidebar';
+import { Header } from '@/components/layout/Header';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { Settings, Save, Database, Mail, Bell, Shield } from 'lucide-react';
+import { Settings, DollarSign, Bell, Save, RefreshCw } from 'lucide-react';
 
-export default function AdminSettings() {
+interface Setting {
+  id: string;
+  key: string;
+  value: string;
+  type: string;
+  category: string;
+  description: string | null;
+}
+
+interface GroupedSettings {
+  FEES: Setting[];
+  NOTIFICATION: Setting[];
+  SYSTEM: Setting[];
+}
+
+export default function SettingsPage() {
   const router = useRouter();
-  const [settings, setSettings] = useState({
-    siteName: 'T-SMART',
-    siteDescription: 'Treasury System for Schools',
-    adminEmail: 'admin@tsmart.com',
-    allowRegistration: false,
-    emailNotifications: true,
-    systemMaintenance: false,
-    maxLoginAttempts: 5,
-    sessionTimeout: 60,
-    backupFrequency: 'daily',
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [settings, setSettings] = useState<GroupedSettings>({
+    FEES: [],
+    NOTIFICATION: [],
+    SYSTEM: []
   });
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [seeding, setSeeding] = useState(false);
 
   useEffect(() => {
     const userData = localStorage.getItem('user');
@@ -35,200 +48,343 @@ export default function AdminSettings() {
       router.push('/auth/login');
       return;
     }
+
+    fetchSettings();
   }, [router]);
 
-  const handleSave = () => {
-    alert('Pengaturan berhasil disimpan!');
+  const fetchSettings = async () => {
+    try {
+      const response = await fetch('/api/admin/settings');
+      const result = await response.json();
+
+      if (result.success) {
+        setSettings(result.data.grouped || {
+          FEES: [],
+          NOTIFICATION: [],
+          SYSTEM: []
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching settings:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  return (
-    <div className="min-h-screen bg-neutral-50">
-      <AdminSidebar />
-      <div className="ml-64">
-        <AdminHeader />
+  const handleSeedDefaults = async () => {
+    if (!confirm('Apakah Anda yakin ingin menginisialisasi pengaturan default? Ini akan menambahkan pengaturan baru tanpa menghapus yang sudah ada.')) {
+      return;
+    }
 
-        <main className="pt-16 p-8">
-          <div className="max-w-4xl mx-auto space-y-6">
-            {/* Header */}
-            <div className="flex justify-between items-center">
+    setSeeding(true);
+    try {
+      const response = await fetch('/api/admin/settings', {
+        method: 'POST'
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        alert('Pengaturan default berhasil diinisialisasi!');
+        fetchSettings();
+      } else {
+        alert('Gagal menginisialisasi pengaturan: ' + result.error);
+      }
+    } catch (error) {
+      console.error('Error seeding settings:', error);
+      alert('Terjadi kesalahan saat menginisialisasi pengaturan');
+    } finally {
+      setSeeding(false);
+    }
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const userData = localStorage.getItem('user');
+      const user = JSON.parse(userData || '{}');
+
+      const allSettings = [
+        ...settings.FEES,
+        ...settings.NOTIFICATION,
+        ...settings.SYSTEM
+      ];
+
+      const response = await fetch('/api/admin/settings', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          settings: allSettings.map(s => ({ key: s.key, value: s.value })),
+          updatedBy: user.id
+        })
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        alert('Pengaturan berhasil disimpan!');
+      } else {
+        alert('Gagal menyimpan pengaturan: ' + result.error);
+      }
+    } catch (error) {
+      console.error('Error saving settings:', error);
+      alert('Terjadi kesalahan saat menyimpan pengaturan');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const updateSettingValue = (category: keyof GroupedSettings, key: string, value: string) => {
+    setSettings(prev => ({
+      ...prev,
+      [category]: prev[category].map(s =>
+        s.key === key ? { ...s, value } : s
+      )
+    }));
+  };
+
+  const formatCurrency = (value: string) => {
+    const number = parseInt(value.replace(/\D/g, ''));
+    return isNaN(number) ? '' : number.toLocaleString('id-ID');
+  };
+
+  const parseCurrency = (formatted: string) => {
+    return formatted.replace(/\D/g, '');
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-neutral-50">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+          <p className="mt-4 text-neutral-600">Memuat pengaturan...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex min-h-screen bg-neutral-50">
+      <div className="hidden lg:block">
+        <Sidebar userRole="admin" />
+      </div>
+
+      {isMobileMenuOpen && (
+        <>
+          <div
+            className="fixed inset-0 bg-black/50 z-40 lg:hidden backdrop-blur-sm"
+            onClick={() => setIsMobileMenuOpen(false)}
+          />
+          <div className="fixed left-0 top-0 bottom-0 z-50 lg:hidden">
+            <Sidebar userRole="admin" />
+          </div>
+        </>
+      )}
+
+      <div className="flex-1 flex flex-col min-w-0">
+        <Header onMenuClick={() => setIsMobileMenuOpen(true)} />
+
+        <main className="flex-1 p-4 md:p-6 lg:p-8 overflow-auto">
+          <div className="max-w-6xl mx-auto space-y-6">
+            {/* Page Header */}
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
               <div>
-                <h1 className="text-3xl font-bold text-neutral-900 mb-2">Pengaturan Sistem</h1>
-                <p className="text-neutral-600">Konfigurasi sistem dan preferensi aplikasi</p>
+                <h1 className="text-3xl font-bold text-neutral-900 flex items-center gap-3">
+                  <Settings className="w-8 h-8 text-primary-600" />
+                  Pengaturan Sistem
+                </h1>
+                <p className="text-neutral-600 mt-1">Kelola konfigurasi biaya, notifikasi, dan sistem</p>
               </div>
-              <Button icon={<Save className="w-4 h-4" />} onClick={handleSave}>
-                Simpan Perubahan
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  icon={<RefreshCw className="w-4 h-4" />}
+                  onClick={handleSeedDefaults}
+                  disabled={seeding}
+                >
+                  {seeding ? 'Menginisialisasi...' : 'Inisialisasi Default'}
+                </Button>
+                <Button
+                  icon={<Save className="w-4 h-4" />}
+                  onClick={handleSave}
+                  disabled={saving}
+                >
+                  {saving ? 'Menyimpan...' : 'Simpan Perubahan'}
+                </Button>
+              </div>
             </div>
 
-            {/* General Settings */}
+            {/* Fees Settings */}
             <Card>
               <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 bg-primary-100 rounded-lg flex items-center justify-center">
-                  <Settings className="w-5 h-5 text-primary" />
+                <div className="p-2 bg-green-100 rounded-lg">
+                  <DollarSign className="w-6 h-6 text-green-600" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-neutral-900">Pengaturan Umum</h3>
-                  <p className="text-sm text-neutral-600">Konfigurasi dasar aplikasi</p>
+                  <h2 className="text-xl font-semibold text-neutral-900">Pengaturan Biaya</h2>
+                  <p className="text-sm text-neutral-600">Konfigurasi biaya pendaftaran dan pembayaran</p>
                 </div>
               </div>
 
               <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-2">
-                    Nama Sistem
-                  </label>
-                  <Input
-                    value={settings.siteName}
-                    onChange={(e) => setSettings({ ...settings, siteName: e.target.value })}
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-2">
-                    Deskripsi Sistem
-                  </label>
-                  <Input
-                    value={settings.siteDescription}
-                    onChange={(e) => setSettings({ ...settings, siteDescription: e.target.value })}
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-2">
-                    Email Administrator
-                  </label>
-                  <Input
-                    type="email"
-                    value={settings.adminEmail}
-                    onChange={(e) => setSettings({ ...settings, adminEmail: e.target.value })}
-                    icon={<Mail className="w-4 h-4" />}
-                  />
-                </div>
-              </div>
-            </Card>
-
-            {/* Security Settings */}
-            <Card>
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
-                  <Shield className="w-5 h-5 text-red-600" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-bold text-neutral-900">Keamanan</h3>
-                  <p className="text-sm text-neutral-600">Pengaturan keamanan sistem</p>
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 bg-neutral-50 rounded-lg">
-                  <div>
-                    <p className="font-medium text-neutral-900">Izinkan Registrasi User Baru</p>
-                    <p className="text-sm text-neutral-600">Aktifkan pendaftaran user dari halaman publik</p>
+                {settings.FEES.length === 0 ? (
+                  <div className="text-center py-8 text-neutral-500">
+                    <p>Belum ada pengaturan biaya. Klik &ldquo;Inisialisasi Default&rdquo; untuk menambahkan.</p>
                   </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={settings.allowRegistration}
-                      onChange={(e) => setSettings({ ...settings, allowRegistration: e.target.checked })}
-                      className="sr-only peer"
-                    />
-                    <div className="w-11 h-6 bg-neutral-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-100 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:border-neutral-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
-                  </label>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-2">
-                    Maksimal Percobaan Login
-                  </label>
-                  <Input
-                    type="number"
-                    value={settings.maxLoginAttempts}
-                    onChange={(e) => setSettings({ ...settings, maxLoginAttempts: parseInt(e.target.value) })}
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-2">
-                    Timeout Session (menit)
-                  </label>
-                  <Input
-                    type="number"
-                    value={settings.sessionTimeout}
-                    onChange={(e) => setSettings({ ...settings, sessionTimeout: parseInt(e.target.value) })}
-                  />
-                </div>
+                ) : (
+                  settings.FEES.map((setting) => (
+                    <div key={setting.id} className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-neutral-50 rounded-lg">
+                      <div>
+                        <label className="block text-sm font-medium text-neutral-700 mb-1">
+                          {setting.key.replace(/_/g, ' ')}
+                        </label>
+                        {setting.description && (
+                          <p className="text-xs text-neutral-500">{setting.description}</p>
+                        )}
+                      </div>
+                      <div>
+                        <Input
+                          type="text"
+                          value={formatCurrency(setting.value)}
+                          onChange={(e) => {
+                            const rawValue = parseCurrency(e.target.value);
+                            updateSettingValue('FEES', setting.key, rawValue);
+                          }}
+                          placeholder="0"
+                          prefix="Rp"
+                        />
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             </Card>
 
             {/* Notification Settings */}
             <Card>
               <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 bg-accent-100 rounded-lg flex items-center justify-center">
-                  <Bell className="w-5 h-5 text-accent" />
+                <div className="p-2 bg-blue-100 rounded-lg">
+                  <Bell className="w-6 h-6 text-blue-600" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-neutral-900">Notifikasi</h3>
-                  <p className="text-sm text-neutral-600">Pengaturan notifikasi sistem</p>
+                  <h2 className="text-xl font-semibold text-neutral-900">Pengaturan Notifikasi</h2>
+                  <p className="text-sm text-neutral-600">Konfigurasi email dan WhatsApp notifikasi</p>
                 </div>
               </div>
 
               <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 bg-neutral-50 rounded-lg">
-                  <div>
-                    <p className="font-medium text-neutral-900">Email Notifikasi</p>
-                    <p className="text-sm text-neutral-600">Kirim notifikasi melalui email</p>
+                {settings.NOTIFICATION.length === 0 ? (
+                  <div className="text-center py-8 text-neutral-500">
+                    <p>Belum ada pengaturan notifikasi. Klik &ldquo;Inisialisasi Default&rdquo; untuk menambahkan.</p>
                   </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={settings.emailNotifications}
-                      onChange={(e) => setSettings({ ...settings, emailNotifications: e.target.checked })}
-                      className="sr-only peer"
-                    />
-                    <div className="w-11 h-6 bg-neutral-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-100 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:border-neutral-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
-                  </label>
-                </div>
+                ) : (
+                  settings.NOTIFICATION.map((setting) => (
+                    <div key={setting.id} className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-neutral-50 rounded-lg">
+                      <div>
+                        <label className="block text-sm font-medium text-neutral-700 mb-1">
+                          {setting.key.replace(/_/g, ' ')}
+                        </label>
+                        {setting.description && (
+                          <p className="text-xs text-neutral-500">{setting.description}</p>
+                        )}
+                      </div>
+                      <div>
+                        {setting.type === 'BOOLEAN' ? (
+                          <div className="flex items-center gap-3">
+                            <label className="relative inline-flex items-center cursor-pointer">
+                              <input
+                                type="checkbox"
+                                className="sr-only peer"
+                                checked={setting.value === 'true'}
+                                onChange={(e) =>
+                                  updateSettingValue('NOTIFICATION', setting.key, e.target.checked ? 'true' : 'false')
+                                }
+                              />
+                              <div className="w-11 h-6 bg-neutral-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-neutral-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600"></div>
+                              <span className="ml-3 text-sm font-medium text-neutral-700">
+                                {setting.value === 'true' ? 'Aktif' : 'Nonaktif'}
+                              </span>
+                            </label>
+                          </div>
+                        ) : (
+                          <Input
+                            type="text"
+                            value={setting.value}
+                            onChange={(e) =>
+                              updateSettingValue('NOTIFICATION', setting.key, e.target.value)
+                            }
+                            placeholder={setting.key.includes('KEY') ? 'Masukkan API key...' : 'Masukkan nilai...'}
+                          />
+                        )}
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             </Card>
 
-            {/* Database Settings */}
+            {/* System Settings */}
             <Card>
               <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                  <Database className="w-5 h-5 text-blue-600" />
+                <div className="p-2 bg-purple-100 rounded-lg">
+                  <Settings className="w-6 h-6 text-purple-600" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-neutral-900">Database & Backup</h3>
-                  <p className="text-sm text-neutral-600">Pengaturan database dan backup</p>
+                  <h2 className="text-xl font-semibold text-neutral-900">Pengaturan Sistem</h2>
+                  <p className="text-sm text-neutral-600">Konfigurasi umum sistem</p>
                 </div>
               </div>
 
               <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 bg-neutral-50 rounded-lg">
-                  <div>
-                    <p className="font-medium text-neutral-900">Mode Maintenance</p>
-                    <p className="text-sm text-neutral-600">Nonaktifkan akses sementara untuk maintenance</p>
+                {settings.SYSTEM.length === 0 ? (
+                  <div className="text-center py-8 text-neutral-500">
+                    <p>Belum ada pengaturan sistem. Klik &ldquo;Inisialisasi Default&rdquo; untuk menambahkan.</p>
                   </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={settings.systemMaintenance}
-                      onChange={(e) => setSettings({ ...settings, systemMaintenance: e.target.checked })}
-                      className="sr-only peer"
-                    />
-                    <div className="w-11 h-6 bg-neutral-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-100 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:border-neutral-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
-                  </label>
-                </div>
-
-                <div className="flex items-center justify-between p-4 bg-blue-50 rounded-lg border border-blue-200">
-                  <div className="flex-1">
-                    <p className="font-medium text-neutral-900 mb-1">Backup Database</p>
-                    <p className="text-sm text-neutral-600">Terakhir backup: 1 jam yang lalu</p>
-                  </div>
-                  <Button variant="outline">
-                    Backup Sekarang
-                  </Button>
-                </div>
+                ) : (
+                  settings.SYSTEM.map((setting) => (
+                    <div key={setting.id} className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-neutral-50 rounded-lg">
+                      <div>
+                        <label className="block text-sm font-medium text-neutral-700 mb-1">
+                          {setting.key.replace(/_/g, ' ')}
+                        </label>
+                        {setting.description && (
+                          <p className="text-xs text-neutral-500">{setting.description}</p>
+                        )}
+                      </div>
+                      <div>
+                        {setting.type === 'BOOLEAN' ? (
+                          <div className="flex items-center gap-3">
+                            <label className="relative inline-flex items-center cursor-pointer">
+                              <input
+                                type="checkbox"
+                                className="sr-only peer"
+                                checked={setting.value === 'true'}
+                                onChange={(e) =>
+                                  updateSettingValue('SYSTEM', setting.key, e.target.checked ? 'true' : 'false')
+                                }
+                              />
+                              <div className="w-11 h-6 bg-neutral-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-neutral-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600"></div>
+                              <span className="ml-3 text-sm font-medium text-neutral-700">
+                                {setting.value === 'true' ? 'Aktif' : 'Nonaktif'}
+                              </span>
+                            </label>
+                          </div>
+                        ) : (
+                          <Input
+                            type="text"
+                            value={setting.value}
+                            onChange={(e) =>
+                              updateSettingValue('SYSTEM', setting.key, e.target.value)
+                            }
+                            placeholder="Masukkan nilai..."
+                          />
+                        )}
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             </Card>
           </div>
