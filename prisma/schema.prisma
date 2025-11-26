@@ -1,0 +1,105 @@
+// src/database/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum UserRole {
+  TREASURER
+  ADMIN
+  PARENT
+  HEADMASTER
+}
+
+enum StudentStatus {
+  ACTIVE
+  GRADUATED
+  ARCHIVED
+}
+
+enum PaymentStatus {
+  PAID
+  PENDING
+  UNPAID
+}
+
+enum ExpenseStatus {
+  APPROVED
+  PENDING
+  REJECTED
+}
+
+enum ExpenseCategory {
+  GAJI
+  ATK
+  UTILITAS
+  PEMELIHARAAN
+  OPERASIONAL
+  LAINNYA
+}
+
+model User {
+  id        String   @id @default(uuid())
+  username  String   @unique
+  password  String
+  role      UserRole
+  studentId String?  @map("student_id")
+  student   Student? @relation(fields: [studentId], references: [id])
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("users")
+}
+
+model Student {
+  id                String        @id @default(uuid())
+  nama              String
+  nisn              String        @unique
+  kelas             String
+  status            StudentStatus @default(ACTIVE)
+  sppStatus         PaymentStatus @default(UNPAID) @map("spp_status") // Derived status often, but kept for cache/simplicity
+  daftarUlangStatus PaymentStatus @default(UNPAID) @map("daftar_ulang_status")
+  createdAt         DateTime      @default(now()) @map("created_at")
+  updatedAt         DateTime      @updatedAt @map("updated_at")
+
+  sppPayments SPPPayment[]
+  users       User[]
+
+  @@map("students")
+}
+
+model SPPPayment {
+  id               String        @id @default(uuid())
+  studentId        String        @map("student_id")
+  student          Student       @relation(fields: [studentId], references: [id])
+  bulan            String // e.g., "November 2024" or date
+  nominal          Float
+  status           PaymentStatus @default(PENDING)
+  tanggalBayar     DateTime?     @map("tanggal_bayar")
+  metodePembayaran String?       @map("metode_pembayaran") // transfer, tunai, ewallet
+  buktiTransfer    String?       @map("bukti_transfer")
+  createdAt        DateTime      @default(now()) @map("created_at")
+  updatedAt        DateTime      @updatedAt @map("updated_at")
+
+  @@map("spp_payments")
+}
+
+model Expense {
+  id          String          @id @default(uuid())
+  date        DateTime
+  category    ExpenseCategory
+  description String
+  amount      Float
+  status      ExpenseStatus   @default(PENDING)
+  receipt     String? // URL to receipt
+  createdAt   DateTime        @default(now()) @map("created_at")
+  updatedAt   DateTime        @updatedAt @map("updated_at")
+
+  @@map("expenses")
+}
