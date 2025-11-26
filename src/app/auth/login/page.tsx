@@ -44,7 +44,7 @@ export default function LoginPage() {
     },
     {
       id: 'PARENT' as UserRole,
-      name: 'Orang Tua',
+      name: 'Siswa',
       icon: Users,
       color: 'bg-blue-500',
       hoverColor: 'hover:bg-blue-600',
@@ -85,11 +85,11 @@ export default function LoginPage() {
       if (data.user.role === 'ADMIN') {
         router.push('/admin');
       } else if (data.user.role === 'TREASURER') {
-        router.push('/dashboard');
+        router.push('/treasurer/dashboard');
       } else if (data.user.role === 'HEADMASTER') {
         router.push('/headmaster');
       } else if (data.user.role === 'PARENT') {
-        router.push('/parent');
+        router.push('/student/dashboard');
       } else {
         router.push('/dashboard');
       }

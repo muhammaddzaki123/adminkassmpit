@@ -27,6 +27,21 @@ enum PaymentStatus {
   PAID
   PENDING
   UNPAID
+  FAILED
+  EXPIRED
+}
+
+enum PaymentType {
+  SPP
+  DAFTAR_ULANG
+  LAINNYA
+}
+
+enum PaymentMethod {
+  VIRTUAL_ACCOUNT
+  TRANSFER_BANK
+  EWALLET
+  TUNAI
 }
 
 enum ExpenseStatus {
@@ -65,14 +80,20 @@ model Student {
   nama              String
   nisn              String        @unique
   kelas             String
+  noTelp            String?       @map("no_telp")
+  email             String?
+  alamat            String?
+  namaOrangTua      String?       @map("nama_orang_tua")
   status            StudentStatus @default(ACTIVE)
-  sppStatus         PaymentStatus @default(UNPAID) @map("spp_status") // Derived status often, but kept for cache/simplicity
+  sppStatus         PaymentStatus @default(UNPAID) @map("spp_status")
   daftarUlangStatus PaymentStatus @default(UNPAID) @map("daftar_ulang_status")
+  virtualAccount    String?       @unique @map("virtual_account") // VA number for payments
   createdAt         DateTime      @default(now()) @map("created_at")
   updatedAt         DateTime      @updatedAt @map("updated_at")
 
-  sppPayments SPPPayment[]
-  users       User[]
+  sppPayments       SPPPayment[]
+  transactions      Transaction[]
+  users             User[]
 
   @@map("students")
 }
@@ -105,4 +126,28 @@ model Expense {
   updatedAt   DateTime        @updatedAt @map("updated_at")
 
   @@map("expenses")
+}
+
+model Transaction {
+  id                String        @id @default(uuid())
+  studentId         String        @map("student_id")
+  student           Student       @relation(fields: [studentId], references: [id])
+  paymentType       PaymentType   @map("payment_type")
+  paymentMethod     PaymentMethod @map("payment_method")
+  amount            Float
+  adminFee          Float         @default(0) @map("admin_fee")
+  totalAmount       Float         @map("total_amount")
+  status            PaymentStatus @default(PENDING)
+  externalId        String?       @unique @map("external_id") // ID from payment gateway
+  vaNumber          String?       @map("va_number") // Virtual Account number
+  expiredAt         DateTime?     @map("expired_at")
+  paidAt            DateTime?     @map("paid_at")
+  description       String?
+  bulan             String? // For SPP payments
+  tahunAjaran       String?       @map("tahun_ajaran")
+  buktiPembayaran   String?       @map("bukti_pembayaran") // Receipt URL
+  createdAt         DateTime      @default(now()) @map("created_at")
+  updatedAt         DateTime      @updatedAt @map("updated_at")
+
+  @@map("transactions")
 }
