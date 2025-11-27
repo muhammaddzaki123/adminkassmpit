@@ -24,6 +24,9 @@ interface Stats {
   totalExpense: number;
   unpaidStudents: number;
   pendingVerification: number;
+  monthlyIncome: number;
+  monthlyExpense: number;
+  balance: number;
 }
 
 export default function TreasurerDashboard() {
@@ -34,6 +37,9 @@ export default function TreasurerDashboard() {
     totalExpense: 0,
     unpaidStudents: 0,
     pendingVerification: 0,
+    monthlyIncome: 0,
+    monthlyExpense: 0,
+    balance: 0,
   });
   const [recentPayments, setRecentPayments] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
@@ -58,46 +64,91 @@ export default function TreasurerDashboard() {
     try {
       setLoading(true);
       
-      // Fetch transactions
-      const transactionsRes = await fetch('/api/expenses');
-      const transactionsData = await transactionsRes.json();
+      // Fetch SPP payments (income)
+      const paymentsRes = await fetch('/api/spp-payments?status=PAID&limit=100');
+      const paymentsData = await paymentsRes.json();
       
-      if (transactionsData.success) {
-        const transactions = transactionsData.data || [];
-        
-        // Calculate stats from real data
-        const paidTransactions = transactions.filter((t: Transaction) => t.status === 'PAID');
-        const pendingTransactions = transactions.filter((t: Transaction) => t.status === 'PENDING');
-        
-        const totalIncome = paidTransactions.reduce((sum: number, t: Transaction) => sum + t.amount, 0);
-        
-        setStats({
-          totalIncome,
-          totalExpense: 0, // Will be calculated from expense transactions
-          unpaidStudents: 0, // Will be fetched from students API
-          pendingVerification: pendingTransactions.length,
-        });
-        
-        // Get recent 5 paid transactions
-        setRecentPayments(paidTransactions.slice(0, 5));
-      }
+      // Fetch expenses
+      const expensesRes = await fetch('/api/expenses?status=APPROVED');
+      const expensesData = await expensesRes.json();
       
-      // Fetch students with unpaid SPP
+      // Fetch all students
       const studentsRes = await fetch('/api/students');
       const studentsData = await studentsRes.json();
       
+      let totalIncome = 0;
+      let totalExpense = 0;
+      let unpaidStudents = 0;
+      let pendingVerification = 0;
+      let monthlyIncome = 0;
+      let monthlyExpense = 0;
+      let recentTransactions: Transaction[] = [];
+      
+      const currentMonth = new Date().getMonth();
+      const currentYear = new Date().getFullYear();
+      
+      // Calculate total income from paid SPP
+      if (paymentsData.success) {
+        const payments = paymentsData.data || [];
+        totalIncome = payments.reduce((sum: number, p: Transaction) => sum + p.amount, 0);
+        
+        // Calculate monthly income
+        monthlyIncome = payments
+          .filter((p: Transaction) => {
+            const date = new Date(p.createdAt);
+            return date.getMonth() === currentMonth && date.getFullYear() === currentYear;
+          })
+          .reduce((sum: number, p: Transaction) => sum + p.amount, 0);
+        
+        // Get recent 5 payments for display
+        recentTransactions = payments
+          .sort((a: Transaction, b: Transaction) => 
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          )
+          .slice(0, 5);
+      }
+      
+      // Calculate total expenses
+      if (expensesData.success) {
+        const expenses = expensesData.data || [];
+        totalExpense = expenses.reduce((sum: number, e: { amount: number }) => sum + e.amount, 0);
+        
+        // Calculate monthly expenses
+        monthlyExpense = expenses
+          .filter((e: { date?: string }) => {
+            if (!e.date) return false;
+            const date = new Date(e.date);
+            return date.getMonth() === currentMonth && date.getFullYear() === currentYear;
+          })
+          .reduce((sum: number, e: { amount: number }) => sum + e.amount, 0);
+      }
+      
+      // Count active students
       if (studentsData.success) {
         const students = studentsData.data || [];
-        // Count students with UNPAID status or pending payments
-        const unpaidCount = students.filter((s: { status: string }) => 
-          s.status === 'ACTIVE' // Active students who should pay
+        unpaidStudents = students.filter((s: { status: string }) => 
+          s.status === 'ACTIVE'
         ).length;
-        
-        setStats(prev => ({
-          ...prev,
-          unpaidStudents: unpaidCount
-        }));
       }
+      
+      // Fetch pending payments for verification
+      const pendingRes = await fetch('/api/spp-payments?status=PENDING');
+      const pendingData = await pendingRes.json();
+      if (pendingData.success) {
+        pendingVerification = (pendingData.data || []).length;
+      }
+      
+      setStats({
+        totalIncome,
+        totalExpense,
+        unpaidStudents,
+        pendingVerification,
+        monthlyIncome,
+        monthlyExpense,
+        balance: totalIncome - totalExpense,
+      });
+      
+      setRecentPayments(recentTransactions);
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
     } finally {
@@ -157,7 +208,7 @@ export default function TreasurerDashboard() {
                 title="Total Pemasukan"
                 value={formatCurrency(stats.totalIncome)}
                 icon={<TrendingUp className="w-6 h-6" />}
-                trend="Dari pembayaran lunas"
+                trend="Dari pembayaran SPP"
                 trendUp={true}
                 color="primary"
               />
@@ -165,51 +216,112 @@ export default function TreasurerDashboard() {
                 title="Total Pengeluaran"
                 value={formatCurrency(stats.totalExpense)}
                 icon={<TrendingDown className="w-6 h-6" />}
-                trend="Pengeluaran operasional"
+                trend="Operasional sekolah"
                 trendUp={false}
                 color="accent"
               />
               <StatCard
                 title="Siswa Aktif"
-                value={`${stats.unpaidStudents} Siswa`}
+                value={`${stats.unpaidStudents}`}
                 icon={<Users className="w-6 h-6" />}
+                trend="Total siswa terdaftar"
                 color="danger"
               />
               <StatCard
                 title="Perlu Verifikasi"
-                value={`${stats.pendingVerification} Item`}
+                value={`${stats.pendingVerification}`}
                 icon={<AlertCircle className="w-6 h-6" />}
+                trend="Pembayaran pending"
                 color="info"
               />
+            </div>
+
+            {/* Ringkasan Bulan Ini */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <Card className="bg-linear-to-br from-green-500 to-green-600 text-white">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm opacity-90 mb-1">Pemasukan Bulan Ini</p>
+                    <p className="text-3xl font-bold">{formatCurrency(stats.monthlyIncome)}</p>
+                  </div>
+                  <div className="w-14 h-14 bg-white/20 rounded-xl flex items-center justify-center">
+                    <TrendingUp className="w-8 h-8" />
+                  </div>
+                </div>
+              </Card>
+              
+              <Card className="bg-linear-to-br from-red-500 to-red-600 text-white">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm opacity-90 mb-1">Pengeluaran Bulan Ini</p>
+                    <p className="text-3xl font-bold">{formatCurrency(stats.monthlyExpense)}</p>
+                  </div>
+                  <div className="w-14 h-14 bg-white/20 rounded-xl flex items-center justify-center">
+                    <TrendingDown className="w-8 h-8" />
+                  </div>
+                </div>
+              </Card>
+              
+              <Card className={`bg-linear-to-br ${stats.balance >= 0 ? 'from-blue-500 to-blue-600' : 'from-orange-500 to-orange-600'} text-white`}>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm opacity-90 mb-1">Saldo Total</p>
+                    <p className="text-3xl font-bold">{formatCurrency(stats.balance)}</p>
+                  </div>
+                  <div className="w-14 h-14 bg-white/20 rounded-xl flex items-center justify-center">
+                    <CheckCircle className="w-8 h-8" />
+                  </div>
+                </div>
+              </Card>
             </div>
 
             <Card>
               <h3 className="text-lg font-semibold mb-4 text-neutral-900 flex items-center gap-2">
                 <CheckCircle className="w-5 h-5 text-green-600" />
-                Pembayaran Terbaru
+                Transaksi Pembayaran Terbaru
               </h3>
               {recentPayments.length === 0 ? (
-                <div className="text-center py-8 text-neutral-500">
-                  <p>Belum ada pembayaran</p>
+                <div className="text-center py-12 text-neutral-500">
+                  <CreditCard className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                  <p className="font-medium">Belum ada transaksi pembayaran</p>
+                  <p className="text-sm mt-1">Transaksi yang telah diverifikasi akan muncul di sini</p>
                 </div>
               ) : (
-                <div className="space-y-4">
+                <div className="space-y-3">
                   {recentPayments.map((payment) => (
-                    <div key={payment.id} className="flex items-center justify-between p-4 bg-neutral-50 rounded-xl hover:bg-neutral-100 transition-colors">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center text-green-600">
-                          <CreditCard className="w-5 h-5" />
+                    <div key={payment.id} className="flex items-center justify-between p-4 bg-linear-to-r from-green-50 to-transparent rounded-xl hover:from-green-100 transition-all border border-green-100">
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 bg-linear-to-br from-green-500 to-green-600 rounded-xl flex items-center justify-center text-white shadow-lg">
+                          <CreditCard className="w-6 h-6" />
                         </div>
                         <div>
-                          <p className="text-sm font-medium text-neutral-900">
-                            {payment.student.nama} {payment.student.kelas && `- ${payment.student.kelas}`}
+                          <p className="text-sm font-semibold text-neutral-900">
+                            {payment.student.nama}
                           </p>
-                          <p className="text-xs text-neutral-600">
-                            {payment.paymentType} • {new Date(payment.createdAt).toLocaleDateString('id-ID')}
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className="text-xs text-neutral-600">
+                              {payment.student.kelas || 'Kelas tidak tersedia'}
+                            </span>
+                            <span className="text-xs text-neutral-400">•</span>
+                            <span className="text-xs text-neutral-600">
+                              {payment.paymentType}
+                            </span>
+                          </div>
+                          <p className="text-xs text-neutral-500 mt-1">
+                            {new Date(payment.createdAt).toLocaleDateString('id-ID', {
+                              day: 'numeric',
+                              month: 'long',
+                              year: 'numeric'
+                            })}
                           </p>
                         </div>
                       </div>
-                      <span className="text-green-600 font-semibold">+ {formatCurrency(payment.amount)}</span>
+                      <div className="text-right">
+                        <span className="text-green-600 font-bold text-lg">
+                          {formatCurrency(payment.amount)}
+                        </span>
+                        <p className="text-xs text-green-600 font-medium mt-1">+ Pemasukan</p>
+                      </div>
                     </div>
                   ))}
                 </div>

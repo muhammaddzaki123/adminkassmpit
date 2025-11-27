@@ -9,6 +9,9 @@ interface TreasurerHeaderProps {
 
 export function TreasurerHeader({ onMenuClick }: TreasurerHeaderProps) {
   const [userName, setUserName] = useState('Bendahara');
+  const [todayIncome, setTodayIncome] = useState(0);
+  const [todayExpense, setTodayExpense] = useState(0);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const userData = localStorage.getItem('user');
@@ -16,7 +19,64 @@ export function TreasurerHeader({ onMenuClick }: TreasurerHeaderProps) {
       const user = JSON.parse(userData);
       setUserName(user.nama || 'Bendahara');
     }
+    
+    fetchTodayStats();
   }, []);
+
+  const fetchTodayStats = async () => {
+    try {
+      const today = new Date();
+      const startOfDay = new Date(today.setHours(0, 0, 0, 0));
+      
+      // Fetch today's payments
+      const paymentsRes = await fetch('/api/spp-payments?status=PAID');
+      const paymentsData = await paymentsRes.json();
+      
+      // Fetch today's expenses
+      const expensesRes = await fetch('/api/expenses?status=APPROVED');
+      const expensesData = await expensesRes.json();
+      
+      let incomeToday = 0;
+      let expenseToday = 0;
+      
+      if (paymentsData.success) {
+        const payments = paymentsData.data || [];
+        incomeToday = payments
+          .filter((p: { paidAt?: string }) => {
+            if (!p.paidAt) return false;
+            const paidDate = new Date(p.paidAt);
+            return paidDate >= startOfDay;
+          })
+          .reduce((sum: number, p: { amount: number }) => sum + p.amount, 0);
+      }
+      
+      if (expensesData.success) {
+        const expenses = expensesData.data || [];
+        expenseToday = expenses
+          .filter((e: { date?: string }) => {
+            if (!e.date) return false;
+            const expenseDate = new Date(e.date);
+            return expenseDate >= startOfDay;
+          })
+          .reduce((sum: number, e: { amount: number }) => sum + e.amount, 0);
+      }
+      
+      setTodayIncome(incomeToday);
+      setTodayExpense(expenseToday);
+      setLoading(false);
+    } catch (error) {
+      console.error('Error fetching today stats:', error);
+      setLoading(false);
+    }
+  };
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('id-ID', {
+      style: 'currency',
+      currency: 'IDR',
+      minimumFractionDigits: 0,
+    }).format(amount);
+  };
 
   return (
     <header className="h-16 bg-white border-b border-neutral-200 fixed top-0 left-64 right-0 z-40 shadow-soft">
@@ -37,7 +97,11 @@ export function TreasurerHeader({ onMenuClick }: TreasurerHeaderProps) {
             </div>
             <div>
               <p className="text-xs text-neutral-600">Pemasukan Hari Ini</p>
-              <p className="text-sm font-bold text-neutral-900">Rp 2.500.000</p>
+              {loading ? (
+                <div className="h-5 w-24 bg-neutral-200 animate-pulse rounded"></div>
+              ) : (
+                <p className="text-sm font-bold text-neutral-900">{formatCurrency(todayIncome)}</p>
+              )}
             </div>
           </div>
           <div className="flex items-center gap-3 px-4 py-2 bg-red-50 rounded-lg">
@@ -46,7 +110,11 @@ export function TreasurerHeader({ onMenuClick }: TreasurerHeaderProps) {
             </div>
             <div>
               <p className="text-xs text-neutral-600">Pengeluaran Hari Ini</p>
-              <p className="text-sm font-bold text-neutral-900">Rp 750.000</p>
+              {loading ? (
+                <div className="h-5 w-24 bg-neutral-200 animate-pulse rounded"></div>
+              ) : (
+                <p className="text-sm font-bold text-neutral-900">{formatCurrency(todayExpense)}</p>
+              )}
             </div>
           </div>
         </div>

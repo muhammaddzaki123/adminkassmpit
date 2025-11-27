@@ -191,10 +191,20 @@ model SPPPayment {
   id               String        @id @default(uuid())
   studentId        String        @map("student_id")
   student          Student       @relation(fields: [studentId], references: [id])
-  bulan            String // e.g., "November 2024" or date
-  tahunAjaran      String?       @map("tahun_ajaran") // e.g., "2024/2025"
-  nominal          Float
+  
+  // Payment details
+  paymentType      String        @default("SPP") @map("payment_type") // SPP, DAFTAR_ULANG, LAINNYA
+  amount           Float
+  month            Int?          // 1-12 untuk SPP
+  year             Int?          // tahun pembayaran
   status           PaymentStatus @default(PENDING)
+  paidAt           DateTime?     @map("paid_at") // tanggal bayar
+  description      String?       // keterangan tambahan
+  
+  // Legacy fields (keep for backward compatibility)
+  bulan            String?       // e.g., "November 2024" or date
+  tahunAjaran      String?       @map("tahun_ajaran") // e.g., "2024/2025"
+  nominal          Float?
   tanggalBayar     DateTime?     @map("tanggal_bayar")
   metodePembayaran String?       @map("metode_pembayaran") // transfer, tunai, ewallet
   buktiTransfer    String?       @map("bukti_transfer")
