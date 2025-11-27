@@ -67,7 +67,7 @@ export default function AdminDashboard() {
             admin: users.filter((u: { role: string }) => u.role === 'ADMIN').length,
             treasurer: users.filter((u: { role: string }) => u.role === 'TREASURER').length,
             headmaster: users.filter((u: { role: string }) => u.role === 'HEADMASTER').length,
-            parent: users.filter((u: { role: string }) => u.role === 'PARENT').length,
+            parent: users.filter((u: { role: string }) => u.role === 'STUDENT').length,
           }
         };
         

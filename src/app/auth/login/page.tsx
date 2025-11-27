@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { CreditCard, Lock, User, GraduationCap, UserCog, Users, AlertCircle } from 'lucide-react';
 
-type UserRole = 'TREASURER' | 'HEADMASTER' | 'ADMIN' | 'PARENT';
+type UserRole = 'TREASURER' | 'HEADMASTER' | 'ADMIN' | 'STUDENT';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -43,7 +43,7 @@ export default function LoginPage() {
       description: 'Kelola sistem & data'
     },
     {
-      id: 'PARENT' as UserRole,
+      id: 'STUDENT' as UserRole,
       name: 'Siswa',
       icon: Users,
       color: 'bg-blue-500',
@@ -88,7 +88,7 @@ export default function LoginPage() {
         router.push('/treasurer/dashboard');
       } else if (data.user.role === 'HEADMASTER') {
         router.push('/headmaster');
-      } else if (data.user.role === 'PARENT') {
+      } else if (data.user.role === 'STUDENT') {
         router.push('/student/dashboard');
       } else {
         router.push('/dashboard');

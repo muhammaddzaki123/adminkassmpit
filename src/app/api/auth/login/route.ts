@@ -49,7 +49,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Validasi role jika dipilih saat login
-    if (role && user.role !== role) {
+    // Hanya validasi untuk role yang spesifik (ADMIN, TREASURER, HEADMASTER)
+    // STUDENT tidak perlu validasi ketat karena bisa login langsung
+    if (role && role !== 'STUDENT' && user.role !== role) {
       return NextResponse.json(
         { error: 'Role tidak sesuai dengan akun Anda' },
         { status: 403 }

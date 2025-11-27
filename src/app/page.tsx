@@ -28,8 +28,8 @@ export default function LandingPage() {
         router.push('/treasurer');
       } else if (user.role === 'HEADMASTER') {
         router.push('/headmaster');
-      } else if (user.role === 'PARENT') {
-        router.push('/parent');
+      } else if (user.role === 'STUDENT') {
+        router.push('/student/dashboard');
       } else {
         router.push('/auth/login');
       }

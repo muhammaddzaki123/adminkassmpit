@@ -41,7 +41,7 @@ export default function HistoryPage() {
     }
 
     const user = JSON.parse(userData);
-    if (user.role !== 'PARENT') {
+    if (user.role !== 'STUDENT') {
       router.push('/auth/login');
       return;
     }
