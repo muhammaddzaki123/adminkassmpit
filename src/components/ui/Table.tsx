@@ -4,6 +4,7 @@ interface Column<T> {
   key: string;
   label: string;
   width?: string;
+  align?: 'left' | 'center' | 'right';
   render?: (item: T) => React.ReactNode;
 }
 
@@ -39,7 +40,9 @@ export function Table<T extends { id?: string | number }>({ columns, data, actio
             {columns.map((col) => (
               <th
                 key={col.key}
-                className="px-6 py-4 font-medium text-[#4b5563]"
+                className={`px-6 py-4 font-medium text-[#4b5563] ${
+                  col.align === 'right' ? 'text-right' : col.align === 'center' ? 'text-center' : 'text-left'
+                }`}
                 style={{ width: col.width }}
               >
                 {col.label}
@@ -52,7 +55,9 @@ export function Table<T extends { id?: string | number }>({ columns, data, actio
           {data.map((row, i) => (
             <tr key={row.id || i} className="hover:bg-[#f9fafb] transition-colors">
               {columns.map((col) => (
-                <td key={col.key} className="px-6 py-4 text-[#1c1c1c]">
+                <td key={col.key} className={`px-6 py-4 text-[#1c1c1c] ${
+                  col.align === 'right' ? 'text-right' : col.align === 'center' ? 'text-center' : 'text-left'
+                }`}>
                   {col.render ? col.render(row) : String((row as Record<string, unknown>)[col.key] ?? '')}
                 </td>
               ))}

@@ -20,13 +20,14 @@ interface Expense {
 
 interface Stats {
   totalThisMonth: number;
+  totalExpense: number;
+  totalIncome: number;
+  balance: number;
   largestCategory: {
     name: string;
     amount: number;
   };
   pendingCount: number;
-  remainingBudget: number;
-  totalBudget: number;
 }
 
 interface FormData {
@@ -46,10 +47,11 @@ export function Expenses() {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [stats, setStats] = useState<Stats>({
     totalThisMonth: 0,
+    totalExpense: 0,
+    totalIncome: 0,
+    balance: 0,
     largestCategory: { name: 'Belum Ada', amount: 0 },
-    pendingCount: 0,
-    remainingBudget: 0,
-    totalBudget: 67000000
+    pendingCount: 0
   });
 
   const [formData, setFormData] = useState<FormData>({
@@ -66,12 +68,19 @@ export function Expenses() {
       if (selectedPeriod !== 'all') params.append('period', selectedPeriod);
       if (selectedCategory !== 'all') params.append('category', selectedCategory);
 
-      const res = await fetch(`/api/expenses?${params.toString()}`);
-      if (res.ok) {
-        const data = await res.json();
-        if (data.success) {
-          setExpenses(data.data);
-          calculateStats(data.data);
+      // Fetch expenses
+      const expensesRes = await fetch(`/api/expenses?${params.toString()}`);
+      
+      // Fetch income (SPP payments)
+      const incomeRes = await fetch('/api/spp-payments?status=PAID');
+      
+      if (expensesRes.ok && incomeRes.ok) {
+        const expensesData = await expensesRes.json();
+        const incomeData = await incomeRes.json();
+        
+        if (expensesData.success && incomeData.success) {
+          setExpenses(expensesData.data);
+          calculateStats(expensesData.data, incomeData.data);
         }
       }
     } catch (error) {
@@ -85,7 +94,7 @@ export function Expenses() {
     fetchExpenses();
   }, [fetchExpenses]);
 
-  const calculateStats = (expensesData: Expense[]) => {
+  const calculateStats = (expensesData: Expense[], incomeData: { amount: number }[]) => {
     // Total pengeluaran bulan ini
     const now = new Date();
     const thisMonth = expensesData.filter(e => {
@@ -95,6 +104,17 @@ export function Expenses() {
              e.status === 'APPROVED';
     });
     const totalThisMonth = thisMonth.reduce((sum, e) => sum + e.amount, 0);
+
+    // Total pengeluaran keseluruhan
+    const totalExpense = expensesData
+      .filter(e => e.status === 'APPROVED')
+      .reduce((sum, e) => sum + e.amount, 0);
+
+    // Total pemasukan dari SPP
+    const totalIncome = incomeData.reduce((sum, payment) => sum + payment.amount, 0);
+
+    // Saldo = Pemasukan - Pengeluaran
+    const balance = totalIncome - totalExpense;
 
     // Kategori terbesar
     const categoryTotals: Record<string, number> = {};
@@ -114,16 +134,13 @@ export function Expenses() {
     // Pending count
     const pendingCount = expensesData.filter(e => e.status === 'PENDING').length;
 
-    // Remaining budget
-    const totalBudget = 67000000;
-    const remainingBudget = totalBudget - totalThisMonth;
-
     setStats({
       totalThisMonth,
+      totalExpense,
+      totalIncome,
+      balance,
       largestCategory,
-      pendingCount,
-      remainingBudget,
-      totalBudget
+      pendingCount
     });
   };
 
@@ -277,11 +294,9 @@ export function Expenses() {
       label: 'Nominal',
       width: '18%',
       render: (item: Expense) => (
-        <div className="text-right">
-          <p className="font-semibold text-red-600">
-            {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(item.amount)}
-          </p>
-        </div>
+        <p className="font-semibold text-red-600">
+          {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(item.amount)}
+        </p>
       )
     },
     {
@@ -363,15 +378,18 @@ export function Expenses() {
           </div>
         </Card>
         
-        <Card className="bg-linear-to-br from-green-500 to-green-600 text-white">
+        <Card className={`bg-linear-to-br ${stats.balance >= 0 ? 'from-green-500 to-green-600' : 'from-red-500 to-red-600'} text-white`}>
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm opacity-90 mb-1">Sisa Anggaran</p>
+              <p className="text-sm opacity-90 mb-1">Saldo Kas</p>
               <p className="text-3xl font-bold">
-                {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0, maximumFractionDigits: 0, notation: 'compact' }).format(stats.remainingBudget)}
+                {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(stats.balance)}
               </p>
               <p className="text-xs opacity-80 mt-1">
-                Total: {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0, maximumFractionDigits: 0, notation: 'compact' }).format(stats.totalBudget)}
+                Pemasukan: {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0, notation: 'compact' }).format(stats.totalIncome)}
+              </p>
+              <p className="text-xs opacity-80">
+                Pengeluaran: {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0, notation: 'compact' }).format(stats.totalExpense)}
               </p>
             </div>
             <div className="w-14 h-14 bg-white/20 rounded-xl flex items-center justify-center">
