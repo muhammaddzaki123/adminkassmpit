@@ -31,16 +31,23 @@ export async function GET(request: Request) {
       orderBy: { nama: 'asc' },
     });
 
-    return NextResponse.json(students);
-  } catch {
-    return NextResponse.json({ error: 'Failed to fetch students' }, { status: 500 });
+    return NextResponse.json({
+      success: true,
+      data: students,
+    });
+  } catch (error) {
+    console.error('Error fetching students:', error);
+    return NextResponse.json({ 
+      success: false,
+      error: 'Failed to fetch students' 
+    }, { status: 500 });
   }
 }
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { nama, nisn, kelas, status } = body;
+    const { nama, nisn, kelas, status, academicYear } = body;
 
     const student = await prisma.student.create({
       data: {
@@ -50,11 +57,20 @@ export async function POST(request: Request) {
         status: status || StudentStatus.ACTIVE,
         sppStatus: PaymentStatus.UNPAID,
         daftarUlangStatus: PaymentStatus.UNPAID,
+        academicYear: academicYear || '2024/2025',
+        enrollmentType: 'CONTINUING',
       },
     });
 
-    return NextResponse.json(student, { status: 201 });
-  } catch {
-    return NextResponse.json({ error: 'Failed to create student' }, { status: 500 });
+    return NextResponse.json({
+      success: true,
+      data: student,
+    }, { status: 201 });
+  } catch (error) {
+    console.error('Error creating student:', error);
+    return NextResponse.json({ 
+      success: false,
+      error: 'Failed to create student' 
+    }, { status: 500 });
   }
 }

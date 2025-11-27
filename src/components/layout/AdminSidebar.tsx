@@ -1,7 +1,7 @@
 'use client';
 
 import { usePathname, useRouter } from 'next/navigation';
-import { Users, Shield, Activity, Settings, LogOut, LayoutDashboard, UserCog } from 'lucide-react';
+import { Users, Shield, Activity, Settings, LogOut, LayoutDashboard, UserCog, UserPlus, GraduationCap } from 'lucide-react';
 
 export function AdminSidebar() {
   const pathname = usePathname();
@@ -12,6 +12,16 @@ export function AdminSidebar() {
       icon: LayoutDashboard,
       label: 'Dashboard',
       path: '/admin',
+    },
+    {
+      icon: UserPlus,
+      label: 'Calon Siswa',
+      path: '/admin/new-students',
+    },
+    {
+      icon: GraduationCap,
+      label: 'Data Siswa',
+      path: '/admin/students',
     },
     {
       icon: Users,

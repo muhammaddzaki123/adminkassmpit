@@ -7,7 +7,6 @@ import { TreasurerHeader } from '@/components/layout/TreasurerHeader';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input, Select } from '@/components/ui/Input';
-import { Badge } from '@/components/ui/Badge';
 import { Plus, Search, Calendar, Download } from 'lucide-react';
 
 export default function PaymentPage() {
@@ -123,19 +122,9 @@ export default function PaymentPage() {
 
             <Card>
               <h2 className="text-xl font-semibold text-neutral-900 mb-4">Pembayaran Terakhir</h2>
-              <div className="space-y-3">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="flex items-center justify-between p-4 bg-neutral-50 rounded-lg hover:bg-neutral-100 transition">
-                    <div>
-                      <p className="font-medium text-neutral-900">Ahmad Zaki - 7A</p>
-                      <p className="text-sm text-neutral-600">SPP Januari 2025</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-semibold text-green-600">Rp 500.000</p>
-                      <Badge variant="success">Lunas</Badge>
-                    </div>
-                  </div>
-                ))}
+              <div className="text-center py-8 text-neutral-500">
+                <p>Pembayaran yang ditambahkan akan muncul di sini</p>
+                <p className="text-sm mt-2">Data akan diambil dari database secara real-time</p>
               </div>
             </Card>
           </div>

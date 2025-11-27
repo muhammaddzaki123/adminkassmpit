@@ -8,13 +8,29 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input, Select } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
-import { Search, Filter, Calendar } from 'lucide-react';
+import { Search, Filter, AlertCircle } from 'lucide-react';
+
+interface Transaction {
+  id: string;
+  createdAt: string;
+  paymentType: string;
+  amount: number;
+  status: string;
+  paymentMethod: string;
+  description: string;
+  student: {
+    nama: string;
+    kelas?: string;
+  };
+}
 
 export default function HistoryPage() {
   const router = useRouter();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const userData = localStorage.getItem('user');
@@ -28,7 +44,26 @@ export default function HistoryPage() {
       router.push('/auth/login');
       return;
     }
+
+    fetchTransactions();
   }, [router]);
+
+  const fetchTransactions = async () => {
+    try {
+      setLoading(true);
+      // Fetch all transactions from API
+      const response = await fetch('/api/expenses');
+      const data = await response.json();
+      
+      if (data.success) {
+        setTransactions(data.data || []);
+      }
+    } catch (error) {
+      console.error('Error fetching transactions:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('id-ID', {
@@ -38,13 +73,28 @@ export default function HistoryPage() {
     }).format(amount);
   };
 
-  const transactions = [
-    { id: '1', date: '2025-01-15', type: 'income', category: 'SPP', description: 'Ahmad Zaki - SPP Januari 2025', amount: 500000 },
-    { id: '2', date: '2025-01-14', type: 'expense', category: 'Operasional', description: 'Pembelian ATK', amount: 1250000 },
-    { id: '3', date: '2025-01-13', type: 'income', category: 'SPP', description: 'Siti Aisyah - SPP Januari 2025', amount: 500000 },
-    { id: '4', date: '2025-01-12', type: 'expense', category: 'Utilitas', description: 'Tagihan Listrik', amount: 850000 },
-    { id: '5', date: '2025-01-11', type: 'income', category: 'Daftar Ulang', description: 'Muhammad Rizki - Daftar Ulang', amount: 2000000 },
-  ];
+  const filteredTransactions = transactions.filter(t => {
+    const matchesSearch = searchQuery === '' || 
+      t.student.nama.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (t.description && t.description.toLowerCase().includes(searchQuery.toLowerCase()));
+    
+    const matchesType = typeFilter === 'all' || 
+      (typeFilter === 'income' && t.status === 'PAID') ||
+      (typeFilter === 'expense' && t.paymentType === 'EXPENSE');
+    
+    return matchesSearch && matchesType;
+  });
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-neutral-50">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+          <p className="mt-4 text-neutral-600">Memuat data...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen bg-neutral-50">
@@ -100,37 +150,58 @@ export default function HistoryPage() {
               </div>
             </Card>
 
-            <div className="space-y-3">
-              {transactions.map((transaction) => (
-                <Card key={transaction.id} padding="md" className="hover:shadow-md transition">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <div className={`p-3 rounded-lg ${
-                        transaction.type === 'income' ? 'bg-green-100' : 'bg-red-100'
-                      }`}>
-                        <Calendar className={`w-5 h-5 ${
-                          transaction.type === 'income' ? 'text-green-600' : 'text-red-600'
-                        }`} />
-                      </div>
-                      <div>
-                        <p className="font-medium text-neutral-900">{transaction.description}</p>
-                        <div className="flex items-center gap-2 mt-1">
-                          <p className="text-sm text-neutral-600">{transaction.date}</p>
-                          <Badge variant={transaction.type === 'income' ? 'success' : 'error'}>
-                            {transaction.category}
-                          </Badge>
-                        </div>
-                      </div>
-                    </div>
-                    <p className={`text-xl font-bold ${
-                      transaction.type === 'income' ? 'text-green-600' : 'text-red-600'
-                    }`}>
-                      {transaction.type === 'income' ? '+' : '-'} {formatCurrency(transaction.amount)}
-                    </p>
-                  </div>
-                </Card>
-              ))}
-            </div>
+            <Card>
+              {filteredTransactions.length === 0 ? (
+                <div className="text-center py-12">
+                  <AlertCircle className="w-12 h-12 text-neutral-400 mx-auto mb-4" />
+                  <p className="text-neutral-600">Tidak ada transaksi ditemukan</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-neutral-200">
+                        <th className="text-left p-4 text-sm font-semibold text-neutral-700">Tanggal</th>
+                        <th className="text-left p-4 text-sm font-semibold text-neutral-700">Siswa</th>
+                        <th className="text-left p-4 text-sm font-semibold text-neutral-700">Jenis</th>
+                        <th className="text-left p-4 text-sm font-semibold text-neutral-700">Metode</th>
+                        <th className="text-right p-4 text-sm font-semibold text-neutral-700">Jumlah</th>
+                        <th className="text-center p-4 text-sm font-semibold text-neutral-700">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredTransactions.map((transaction) => (
+                        <tr key={transaction.id} className="border-b border-neutral-100 hover:bg-neutral-50">
+                          <td className="p-4 text-sm text-neutral-900">
+                            {new Date(transaction.createdAt).toLocaleDateString('id-ID')}
+                          </td>
+                          <td className="p-4 text-sm text-neutral-900">
+                            <p className="font-medium">{transaction.student.nama}</p>
+                            {transaction.student.kelas && (
+                              <p className="text-xs text-neutral-500">{transaction.student.kelas}</p>
+                            )}
+                          </td>
+                          <td className="p-4 text-sm text-neutral-900">{transaction.paymentType}</td>
+                          <td className="p-4 text-sm text-neutral-600">{transaction.paymentMethod}</td>
+                          <td className="p-4 text-sm text-right font-medium text-neutral-900">
+                            {formatCurrency(transaction.amount)}
+                          </td>
+                          <td className="p-4 text-center">
+                            <Badge variant={
+                              transaction.status === 'PAID' ? 'success' : 
+                              transaction.status === 'PENDING' ? 'warning' : 'error'
+                            }>
+                              {transaction.status === 'PAID' ? 'Lunas' : 
+                               transaction.status === 'PENDING' ? 'Pending' : 'Gagal'}
+                            </Badge>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </Card>
           </div>
         </main>
       </div>

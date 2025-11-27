@@ -171,7 +171,8 @@ export default function UsersManagement() {
           ADMIN: { label: 'Admin', color: 'primary' as const },
           TREASURER: { label: 'Bendahara', color: 'success' as const },
           HEADMASTER: { label: 'Kepsek', color: 'accent' as const },
-          PARENT: { label: 'Orang Tua', color: 'default' as const },
+          STUDENT: { label: 'Siswa', color: 'default' as const },
+          NEW_STUDENT: { label: 'Calon Siswa', color: 'warning' as const },
         };
         const role = roleMap[item.role as keyof typeof roleMap];
         return <Badge variant={role.color}>{role.label}</Badge>;
@@ -250,7 +251,8 @@ export default function UsersManagement() {
                     { value: 'ADMIN', label: 'Admin' },
                     { value: 'TREASURER', label: 'Bendahara' },
                     { value: 'HEADMASTER', label: 'Kepala Sekolah' },
-                    { value: 'PARENT', label: 'Orang Tua' },
+                    { value: 'STUDENT', label: 'Siswa' },
+                    { value: 'NEW_STUDENT', label: 'Calon Siswa' },
                   ]}
                 />
               </div>
@@ -346,7 +348,8 @@ export default function UsersManagement() {
                   { value: 'ADMIN', label: 'Admin' },
                   { value: 'TREASURER', label: 'Bendahara' },
                   { value: 'HEADMASTER', label: 'Kepala Sekolah' },
-                  { value: 'PARENT', label: 'Orang Tua' },
+                  { value: 'STUDENT', label: 'Siswa' },
+                  { value: 'NEW_STUDENT', label: 'Calon Siswa' },
                 ]}
               />
 

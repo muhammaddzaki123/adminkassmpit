@@ -6,10 +6,19 @@ import { TreasurerSidebar } from '@/components/layout/TreasurerSidebar';
 import { TreasurerHeader } from '@/components/layout/TreasurerHeader';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { Input, Select } from '@/components/ui/Input';
-import { Badge } from '@/components/ui/Badge';
 import { Table } from '@/components/ui/Table';
-import { Search, CheckCircle } from 'lucide-react';
+import { Badge } from '@/components/ui/Badge';
+import { Download, AlertCircle } from 'lucide-react';
+
+interface Student {
+  id: string;
+  nisn: string;
+  nama: string;
+  kelas?: string;
+  kelasNaik?: string;
+  reregPaidAt?: string;
+  reregFee?: number;
+}
 
 interface ReRegistration {
   id: string;
@@ -25,14 +34,8 @@ interface ReRegistration {
 export default function ReRegistrationPage() {
   const router = useRouter();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
-
-  const [students] = useState<ReRegistration[]>([
-    { id: '1', nisn: '001234567', nama: 'Ahmad Zaki', kelasSekarang: '7A', kelasNaik: '8A', status: 'LUNAS', totalTagihan: 2000000, terbayar: 2000000 },
-    { id: '2', nisn: '001234568', nama: 'Siti Aisyah', kelasSekarang: '8B', kelasNaik: '9B', status: 'BELUM', totalTagihan: 2000000, terbayar: 0 },
-    { id: '3', nisn: '001234569', nama: 'Muhammad Rizki', kelasSekarang: '9C', kelasNaik: 'Lulus', status: 'CICILAN', totalTagihan: 2000000, terbayar: 1000000 },
-  ]);
+  const [students, setStudents] = useState<ReRegistration[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const userData = localStorage.getItem('user');
@@ -46,7 +49,37 @@ export default function ReRegistrationPage() {
       router.push('/auth/login');
       return;
     }
+
+    fetchReRegistrations();
   }, [router]);
+
+  const fetchReRegistrations = async () => {
+    try {
+      setLoading(true);
+      // Fetch students with re-registration status
+      const response = await fetch('/api/students?status=AWAITING_REREG');
+      const data = await response.json();
+      
+      if (data.success) {
+        // Map students to re-registration format
+        const reregStudents = (data.data || []).map((s: Student) => ({
+          id: s.id,
+          nisn: s.nisn,
+          nama: s.nama,
+          kelasSekarang: s.kelas || '-',
+          kelasNaik: s.kelasNaik || '-',
+          status: s.reregPaidAt ? 'LUNAS' : 'BELUM',
+          totalTagihan: s.reregFee || 0,
+          terbayar: s.reregPaidAt ? (s.reregFee || 0) : 0,
+        }));
+        setStudents(reregStudents);
+      }
+    } catch (error) {
+      console.error('Error fetching re-registrations:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('id-ID', {
@@ -88,6 +121,17 @@ export default function ReRegistrationPage() {
     },
   ];
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-neutral-50">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+          <p className="mt-4 text-neutral-600">Memuat data...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex min-h-screen bg-neutral-50">
       <div className="hidden lg:block">
@@ -118,59 +162,36 @@ export default function ReRegistrationPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <Card padding="md" className="text-center">
                 <p className="text-2xl font-bold text-green-600">{students.filter(s => s.status === 'LUNAS').length}</p>
-                <p className="text-sm text-neutral-600">Sudah Lunas</p>
+                <p className="text-sm text-neutral-600 mt-1">Sudah Lunas</p>
               </Card>
               <Card padding="md" className="text-center">
                 <p className="text-2xl font-bold text-yellow-600">{students.filter(s => s.status === 'CICILAN').length}</p>
-                <p className="text-sm text-neutral-600">Cicilan</p>
+                <p className="text-sm text-neutral-600 mt-1">Sedang Cicilan</p>
               </Card>
               <Card padding="md" className="text-center">
                 <p className="text-2xl font-bold text-red-600">{students.filter(s => s.status === 'BELUM').length}</p>
-                <p className="text-sm text-neutral-600">Belum Bayar</p>
+                <p className="text-sm text-neutral-600 mt-1">Belum Bayar</p>
               </Card>
             </div>
 
             <Card>
-              <div className="flex gap-4">
-                <div className="flex-1">
-                  <Input
-                    placeholder="Cari nama atau NISN..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    icon={<Search className="w-4 h-4" />}
-                  />
-                </div>
-                <div className="w-40">
-                  <Select
-                    value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value)}
-                    options={[
-                      { value: 'all', label: 'Semua Status' },
-                      { value: 'LUNAS', label: 'Lunas' },
-                      { value: 'BELUM', label: 'Belum Bayar' },
-                      { value: 'CICILAN', label: 'Cicilan' },
-                    ]}
-                  />
-                </div>
+              <div className="flex justify-end mb-4">
+                <Button variant="outline" icon={<Download className="w-4 h-4" />}>
+                  Export Data
+                </Button>
               </div>
-            </Card>
 
-            <Card padding="none">
-              <Table
-                columns={columns}
-                data={students}
-                actions={(item) => (
-                  <div className="flex gap-2 justify-end">
-                    <Button
-                      size="sm"
-                      icon={<CheckCircle className="w-4 h-4" />}
-                      onClick={() => alert(`Input pembayaran untuk ${item.nama}`)}
-                    >
-                      Bayar
-                    </Button>
-                  </div>
-                )}
-              />
+              {students.length === 0 ? (
+                <div className="text-center py-12">
+                  <AlertCircle className="w-12 h-12 text-neutral-400 mx-auto mb-4" />
+                  <p className="text-neutral-600">Belum ada siswa yang perlu daftar ulang</p>
+                </div>
+              ) : (
+                <Table
+                  columns={columns}
+                  data={students}
+                />
+              )}
             </Card>
           </div>
         </main>

@@ -13,7 +13,8 @@ datasource db {
 enum UserRole {
   TREASURER
   ADMIN
-  PARENT
+  NEW_STUDENT  // Siswa baru, belum diapprove (tidak bisa login penuh)
+  STUDENT      // Siswa resmi, sudah diapprove (bisa login dan bayar)
   HEADMASTER
 }
 
@@ -62,21 +63,24 @@ enum ExpenseCategory {
 }
 
 model User {
-  id        String   @id @default(uuid())
-  username  String   @unique
-  email     String?  @unique
-  password  String
-  nama      String
-  role      UserRole
-  studentId String?  @map("student_id")
-  student   Student? @relation(fields: [studentId], references: [id])
-  isActive  Boolean  @default(true) @map("is_active")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  id           String      @id @default(uuid())
+  username     String      @unique
+  email        String?     @unique
+  password     String
+  nama         String
+  role         UserRole
+  studentId    String?     @unique @map("student_id") // One-to-one untuk STUDENT role
+  student      Student?    @relation(fields: [studentId], references: [id])
+  newStudentId String?     @unique @map("new_student_id") // One-to-one untuk NEW_STUDENT role
+  newStudent   NewStudent? @relation(fields: [newStudentId], references: [id])
+  isActive     Boolean     @default(true) @map("is_active")
+  createdAt    DateTime    @default(now()) @map("created_at")
+  updatedAt    DateTime    @updatedAt @map("updated_at")
 
   @@map("users")
 }
 
+// Siswa resmi yang sudah terdaftar di sekolah
 model Student {
   id                String        @id @default(uuid())
   nama              String
@@ -86,29 +90,101 @@ model Student {
   email             String?
   alamat            String?
   namaOrangTua      String?       @map("nama_orang_tua")
-  status            StudentStatus @default(PENDING_REGISTRATION)
+  status            StudentStatus @default(ACTIVE)
   sppStatus         PaymentStatus @default(UNPAID) @map("spp_status")
   daftarUlangStatus PaymentStatus @default(UNPAID) @map("daftar_ulang_status")
   virtualAccount    String?       @unique @map("virtual_account") // VA number for payments
   
-  // Registration fields
-  registrationDate  DateTime?     @map("registration_date")
+  // Academic info
   enrollmentType    String?       @map("enrollment_type") // NEW, CONTINUING, TRANSFER
-  academicYear      String?       @map("academic_year") // e.g., "2024/2025"
-  approvalStatus    String?       @default("PENDING") @map("approval_status") // PENDING, APPROVED, REJECTED
-  approvedBy        String?       @map("approved_by") // User ID who approved
-  approvedAt        DateTime?     @map("approved_at")
-  registrationFee   Float?        @default(0) @map("registration_fee")
-  registrationPaid  Boolean       @default(false) @map("registration_paid")
+  academicYear      String        @map("academic_year") // e.g., "2024/2025"
+  admissionDate     DateTime      @default(now()) @map("admission_date") // Tanggal diterima
   
   createdAt         DateTime      @default(now()) @map("created_at")
   updatedAt         DateTime      @updatedAt @map("updated_at")
 
   sppPayments       SPPPayment[]
   transactions      Transaction[]
-  users             User[]
+  user              User? // One-to-one relation
 
   @@map("students")
+}
+
+// Calon siswa baru (pendaftaran/admission)
+model NewStudent {
+  id                String        @id @default(uuid())
+  nama              String
+  nisn              String        @unique
+  tempatLahir       String?       @map("tempat_lahir")
+  tanggalLahir      DateTime?     @map("tanggal_lahir")
+  jenisKelamin      String?       @map("jenis_kelamin") // L/P
+  agama             String?
+  alamat            String?
+  noTelp            String?       @map("no_telp")
+  email             String?
+  
+  // Data Orang Tua
+  namaAyah          String?       @map("nama_ayah")
+  namaIbu           String?       @map("nama_ibu")
+  noTelpOrtu        String?       @map("no_telp_ortu")
+  pekerjaanAyah     String?       @map("pekerjaan_ayah")
+  pekerjaanIbu      String?       @map("pekerjaan_ibu")
+  
+  // Pendaftaran
+  enrollmentType    String        @map("enrollment_type") // NEW, TRANSFER
+  academicYear      String        @map("academic_year") // e.g., "2024/2025"
+  kelasYangDituju   String        @map("kelas_yang_dituju") // Kelas yang didaftar
+  asalSekolah       String?       @map("asal_sekolah") // For transfer students
+  
+  // Dokumen
+  fotoSiswa         String?       @map("foto_siswa") // URL
+  aktaKelahiran     String?       @map("akta_kelahiran") // URL
+  kartuKeluarga     String?       @map("kartu_keluarga") // URL
+  ijazahSebelumnya  String?       @map("ijazah_sebelumnya") // URL
+  
+  // Status & Pembayaran
+  registrationDate  DateTime      @default(now()) @map("registration_date")
+  registrationFee   Float         @default(0) @map("registration_fee")
+  registrationPaid  Boolean       @default(false) @map("registration_paid")
+  paidAt            DateTime?     @map("paid_at")
+  virtualAccount    String?       @unique @map("virtual_account")
+  
+  // Approval
+  approvalStatus    String        @default("PENDING") @map("approval_status") // PENDING, APPROVED, REJECTED
+  approvedBy        String?       @map("approved_by") // User ID admin
+  approvedAt        DateTime?     @map("approved_at")
+  rejectionReason   String?       @map("rejection_reason")
+  notes             String?       @db.Text // Catatan admin
+  
+  createdAt         DateTime      @default(now()) @map("created_at")
+  updatedAt         DateTime      @updatedAt @map("updated_at")
+
+  user              User? // One-to-one relation
+  transactions      NewStudentTransaction[]
+
+  @@map("new_students")
+}
+
+// Transaction khusus untuk calon siswa (biaya pendaftaran)
+model NewStudentTransaction {
+  id                String        @id @default(uuid())
+  newStudentId      String        @map("new_student_id")
+  newStudent        NewStudent    @relation(fields: [newStudentId], references: [id])
+  paymentMethod     PaymentMethod @map("payment_method")
+  amount            Float
+  adminFee          Float         @default(0) @map("admin_fee")
+  totalAmount       Float         @map("total_amount")
+  status            PaymentStatus @default(PENDING)
+  externalId        String?       @unique @map("external_id")
+  vaNumber          String?       @map("va_number")
+  expiredAt         DateTime?     @map("expired_at")
+  paidAt            DateTime?     @map("paid_at")
+  description       String?
+  buktiPembayaran   String?       @map("bukti_pembayaran")
+  createdAt         DateTime      @default(now()) @map("created_at")
+  updatedAt         DateTime      @updatedAt @map("updated_at")
+
+  @@map("new_student_transactions")
 }
 
 model SPPPayment {

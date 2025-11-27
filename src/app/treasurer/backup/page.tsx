@@ -7,11 +7,22 @@ import { TreasurerHeader } from '@/components/layout/TreasurerHeader';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
-import { Database, Download, Upload, Archive, Clock, CheckCircle } from 'lucide-react';
+import { Database, Download, Upload, Archive, Clock, CheckCircle, AlertCircle } from 'lucide-react';
+
+interface BackupRecord {
+  id: string;
+  date: string;
+  type: string;
+  size: string;
+  status: string;
+}
 
 export default function BackupPage() {
   const router = useRouter();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [backupHistory, setBackupHistory] = useState<BackupRecord[]>([]);
+  const [isCreatingBackup, setIsCreatingBackup] = useState(false);
+  const [lastBackup, setLastBackup] = useState<string>('Belum ada backup');
 
   useEffect(() => {
     const userData = localStorage.getItem('user');
@@ -25,13 +36,30 @@ export default function BackupPage() {
       router.push('/auth/login');
       return;
     }
+
+    // Initialize last backup date
+    const now = new Date();
+    setLastBackup(now.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }));
   }, [router]);
 
-  const backupHistory = [
-    { id: '1', date: '2025-01-15 10:30', type: 'Auto', size: '24.5 MB', status: 'success' },
-    { id: '2', date: '2025-01-14 10:30', type: 'Auto', size: '24.2 MB', status: 'success' },
-    { id: '3', date: '2025-01-13 15:20', type: 'Manual', size: '24.1 MB', status: 'success' },
-  ];
+  const handleBackup = () => {
+    setIsCreatingBackup(true);
+    // Simulate backup creation
+    setTimeout(() => {
+      const now = new Date();
+      const newBackup: BackupRecord = {
+        id: Date.now().toString(),
+        date: now.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
+        type: 'Manual',
+        size: `${(Math.random() * 10 + 20).toFixed(1)} MB`,
+        status: 'success'
+      };
+      setBackupHistory([newBackup, ...backupHistory]);
+      setLastBackup(newBackup.date);
+      setIsCreatingBackup(false);
+      alert('Backup berhasil dibuat!');
+    }, 2000);
+  };
 
   return (
     <div className="flex min-h-screen bg-neutral-50">
@@ -68,11 +96,17 @@ export default function BackupPage() {
                   </div>
                   <div>
                     <p className="text-sm opacity-90">Backup Terakhir</p>
-                    <p className="text-lg font-bold">15 Januari 2025, 10:30</p>
+                    <p className="text-lg font-bold">{lastBackup}</p>
                   </div>
                 </div>
                 <div className="flex gap-2">
-                  <Button variant="outline" size="sm" className="text-white border-white hover:bg-white/20" icon={<Download className="w-4 h-4" />}>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="text-white border-white hover:bg-white/20" 
+                    icon={<Download className="w-4 h-4" />}
+                    disabled={backupHistory.length === 0}
+                  >
                     Download
                   </Button>
                 </div>
@@ -81,108 +115,114 @@ export default function BackupPage() {
               <Card className="bg-linear-to-br from-green-500 to-green-600 text-white">
                 <div className="flex items-center gap-3 mb-4">
                   <div className="p-3 bg-white/20 rounded-lg">
-                    <Archive className="w-6 h-6" />
+                    <Clock className="w-6 h-6" />
                   </div>
                   <div>
-                    <p className="text-sm opacity-90">Total Backup</p>
-                    <p className="text-lg font-bold">{backupHistory.length} File</p>
+                    <p className="text-sm opacity-90">Backup Otomatis</p>
+                    <p className="text-lg font-bold">Setiap Hari 02:00 WIB</p>
                   </div>
                 </div>
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm" className="text-white border-white hover:bg-white/20" icon={<Archive className="w-4 h-4" />}>
-                    Lihat Semua
-                  </Button>
-                </div>
+                <Badge variant="success" className="bg-white/20 text-white border-white/30">
+                  Aktif
+                </Badge>
               </Card>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Card>
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="p-3 bg-blue-100 rounded-lg">
-                    <Download className="w-6 h-6 text-blue-600" />
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <Card 
+                className="text-center cursor-pointer hover:shadow-lg transition" 
+                onClick={isCreatingBackup ? undefined : handleBackup}
+              >
+                <div className="flex flex-col items-center gap-3">
+                  <div className="p-4 bg-blue-100 rounded-full">
+                    {isCreatingBackup ? (
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                    ) : (
+                      <Archive className="w-8 h-8 text-blue-600" />
+                    )}
                   </div>
                   <div>
-                    <h3 className="font-semibold text-neutral-900">Backup Manual</h3>
-                    <p className="text-sm text-neutral-600">Buat backup database sekarang</p>
+                    <p className="font-semibold text-neutral-900">
+                      {isCreatingBackup ? 'Membuat Backup...' : 'Backup Sekarang'}
+                    </p>
+                    <p className="text-sm text-neutral-600 mt-1">Buat backup manual</p>
                   </div>
                 </div>
-                <Button icon={<Download className="w-4 h-4" />} fullWidth>
-                  Buat Backup Sekarang
-                </Button>
               </Card>
 
-              <Card>
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="p-3 bg-green-100 rounded-lg">
-                    <Upload className="w-6 h-6 text-green-600" />
+              <Card className="text-center cursor-pointer hover:shadow-lg transition opacity-50">
+                <div className="flex flex-col items-center gap-3">
+                  <div className="p-4 bg-green-100 rounded-full">
+                    <Upload className="w-8 h-8 text-green-600" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-neutral-900">Restore Data</h3>
-                    <p className="text-sm text-neutral-600">Kembalikan data dari backup</p>
+                    <p className="font-semibold text-neutral-900">Restore Data</p>
+                    <p className="text-sm text-neutral-600 mt-1">Pulihkan dari backup</p>
                   </div>
                 </div>
-                <Button variant="outline" icon={<Upload className="w-4 h-4" />} fullWidth>
-                  Restore dari File
-                </Button>
+              </Card>
+
+              <Card className="text-center cursor-pointer hover:shadow-lg transition opacity-50">
+                <div className="flex flex-col items-center gap-3">
+                  <div className="p-4 bg-yellow-100 rounded-full">
+                    <Database className="w-8 h-8 text-yellow-600" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-neutral-900">Pengaturan</p>
+                    <p className="text-sm text-neutral-600 mt-1">Atur jadwal backup</p>
+                  </div>
+                </div>
               </Card>
             </div>
 
             <Card>
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-semibold text-neutral-900">Riwayat Backup</h2>
-                <Button variant="ghost" size="sm" icon={<Clock className="w-4 h-4" />}>
-                  Filter
-                </Button>
-              </div>
-              <div className="space-y-3">
-                {backupHistory.map((backup) => (
-                  <div key={backup.id} className="flex items-center justify-between p-4 bg-neutral-50 rounded-lg hover:bg-neutral-100 transition">
-                    <div className="flex items-center gap-4">
-                      <div className="p-2 bg-blue-100 rounded-lg">
-                        <Database className="w-5 h-5 text-blue-600" />
-                      </div>
-                      <div>
-                        <p className="font-medium text-neutral-900">{backup.date}</p>
-                        <div className="flex items-center gap-2 mt-1">
-                          <Badge variant={backup.type === 'Auto' ? 'primary' : 'warning'}>
-                            {backup.type}
-                          </Badge>
-                          <span className="text-sm text-neutral-600">{backup.size}</span>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <CheckCircle className="w-5 h-5 text-green-600" />
-                      <div className="flex gap-2">
-                        <Button size="sm" variant="ghost" icon={<Download className="w-4 h-4" />}>
-                          Download
-                        </Button>
-                        <Button size="sm" variant="ghost" icon={<Upload className="w-4 h-4" />}>
-                          Restore
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </Card>
-
-            <Card className="bg-yellow-50 border-yellow-200">
-              <div className="flex items-start gap-3">
-                <div className="p-2 bg-yellow-100 rounded-lg">
-                  <Archive className="w-5 h-5 text-yellow-600" />
+              <h3 className="text-lg font-semibold mb-4">Riwayat Backup</h3>
+              {backupHistory.length === 0 ? (
+                <div className="text-center py-12">
+                  <AlertCircle className="w-12 h-12 text-neutral-400 mx-auto mb-4" />
+                  <p className="text-neutral-600">Belum ada riwayat backup manual</p>
+                  <p className="text-sm text-neutral-500 mt-2">Klik &quot;Backup Sekarang&quot; untuk membuat backup</p>
                 </div>
-                <div>
-                  <h3 className="font-semibold text-neutral-900 mb-1">Backup Otomatis</h3>
-                  <p className="text-sm text-neutral-600 mb-3">
-                    Sistem akan membuat backup otomatis setiap hari pukul 10:30 WIB
-                  </p>
-                  <Button size="sm" variant="outline">
-                    Pengaturan Backup Otomatis
-                  </Button>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-neutral-200">
+                        <th className="text-left p-4 text-sm font-semibold text-neutral-700">Tanggal & Waktu</th>
+                        <th className="text-left p-4 text-sm font-semibold text-neutral-700">Tipe</th>
+                        <th className="text-left p-4 text-sm font-semibold text-neutral-700">Ukuran</th>
+                        <th className="text-center p-4 text-sm font-semibold text-neutral-700">Status</th>
+                        <th className="text-center p-4 text-sm font-semibold text-neutral-700">Aksi</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {backupHistory.map((backup) => (
+                        <tr key={backup.id} className="border-b border-neutral-100 hover:bg-neutral-50">
+                          <td className="p-4 text-sm text-neutral-900">{backup.date}</td>
+                          <td className="p-4">
+                            <Badge variant={backup.type === 'Auto' ? 'info' : 'warning'}>
+                              {backup.type}
+                            </Badge>
+                          </td>
+                          <td className="p-4 text-sm text-neutral-900">{backup.size}</td>
+                          <td className="p-4 text-center">
+                            {backup.status === 'success' ? (
+                              <CheckCircle className="w-5 h-5 text-green-600 mx-auto" />
+                            ) : (
+                              <AlertCircle className="w-5 h-5 text-red-600 mx-auto" />
+                            )}
+                          </td>
+                          <td className="p-4 text-center">
+                            <Button size="sm" variant="outline" icon={<Download className="w-4 h-4" />}>
+                              Download
+                            </Button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
-              </div>
+              )}
             </Card>
           </div>
         </main>

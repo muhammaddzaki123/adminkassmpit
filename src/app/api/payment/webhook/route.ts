@@ -6,7 +6,7 @@ import { sendNotification, getSettings } from '@/lib/notification';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { externalId, status, paidAt, paymentType, amount } = body;
+    const { externalId, status, paidAt, paymentType } = body;
 
     console.log('📥 Payment webhook received:', { externalId, status, paidAt, paymentType });
 
@@ -88,7 +88,7 @@ async function handleSuccessfulPayment(
   },
   updatedTransaction: { paidAt: Date | null }
 ) {
-  const { student, paymentType, amount, bulan, tahunAjaran } = transaction;
+  const { student, paymentType } = transaction;
 
   // Get auto-approval setting
   const autoApprovalEnabled = await getSettings('AUTO_APPROVAL');
