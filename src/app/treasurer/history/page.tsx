@@ -13,12 +13,14 @@ import { Search, Filter, AlertCircle } from 'lucide-react';
 interface Transaction {
   id: string;
   createdAt: string;
-  paymentType: string;
+  type: 'income' | 'expense';
+  paymentType?: string;
+  category?: string;
   amount: number;
   status: string;
-  paymentMethod: string;
+  paymentMethod?: string;
   description: string;
-  student: {
+  student?: {
     nama: string;
     kelas?: string;
   };
@@ -51,13 +53,54 @@ export default function HistoryPage() {
   const fetchTransactions = async () => {
     try {
       setLoading(true);
-      // Fetch all transactions from API
-      const response = await fetch('/api/expenses');
-      const data = await response.json();
       
-      if (data.success) {
-        setTransactions(data.data || []);
+      // Fetch both expenses and payments
+      const [expensesRes, paymentsRes] = await Promise.all([
+        fetch('/api/expenses'),
+        fetch('/api/spp-payments?status=PAID')
+      ]);
+
+      const expensesData = await expensesRes.json();
+      const paymentsData = await paymentsRes.json();
+
+      const allTransactions: Transaction[] = [];
+
+      // Process expenses
+      if (expensesData.success && expensesData.data) {
+        const expenses = expensesData.data.map((expense: any) => ({
+          id: expense.id,
+          createdAt: expense.date || expense.createdAt,
+          type: 'expense' as const,
+          category: expense.category,
+          amount: expense.amount,
+          status: expense.status,
+          description: expense.description,
+        }));
+        allTransactions.push(...expenses);
       }
+
+      // Process payments (income)
+      if (paymentsData.success && paymentsData.data) {
+        const payments = paymentsData.data.map((payment: any) => ({
+          id: payment.id,
+          createdAt: payment.paidAt || payment.createdAt,
+          type: 'income' as const,
+          paymentType: payment.paymentType,
+          amount: payment.amount,
+          status: payment.status,
+          paymentMethod: payment.paymentMethod || 'CASH',
+          description: payment.description || `${payment.paymentType} - ${payment.month}/${payment.year}`,
+          student: payment.student,
+        }));
+        allTransactions.push(...payments);
+      }
+
+      // Sort by date (newest first)
+      allTransactions.sort((a, b) => 
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
+
+      setTransactions(allTransactions);
     } catch (error) {
       console.error('Error fetching transactions:', error);
     } finally {
@@ -74,13 +117,14 @@ export default function HistoryPage() {
   };
 
   const filteredTransactions = transactions.filter(t => {
+    const studentName = t.student?.nama || '';
     const matchesSearch = searchQuery === '' || 
-      t.student.nama.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      studentName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (t.description && t.description.toLowerCase().includes(searchQuery.toLowerCase()));
     
     const matchesType = typeFilter === 'all' || 
-      (typeFilter === 'income' && t.status === 'PAID') ||
-      (typeFilter === 'expense' && t.paymentType === 'EXPENSE');
+      (typeFilter === 'income' && t.type === 'income') ||
+      (typeFilter === 'expense' && t.type === 'expense');
     
     return matchesSearch && matchesType;
   });
@@ -176,22 +220,36 @@ export default function HistoryPage() {
                             {new Date(transaction.createdAt).toLocaleDateString('id-ID')}
                           </td>
                           <td className="p-4 text-sm text-neutral-900">
-                            <p className="font-medium">{transaction.student.nama}</p>
-                            {transaction.student.kelas && (
-                              <p className="text-xs text-neutral-500">{transaction.student.kelas}</p>
+                            {transaction.student ? (
+                              <>
+                                <p className="font-medium">{transaction.student.nama}</p>
+                                {transaction.student.kelas && (
+                                  <p className="text-xs text-neutral-500">{transaction.student.kelas}</p>
+                                )}
+                              </>
+                            ) : (
+                              <p className="text-neutral-500 italic">-</p>
                             )}
                           </td>
-                          <td className="p-4 text-sm text-neutral-900">{transaction.paymentType}</td>
-                          <td className="p-4 text-sm text-neutral-600">{transaction.paymentMethod}</td>
-                          <td className="p-4 text-sm text-right font-medium text-neutral-900">
-                            {formatCurrency(transaction.amount)}
+                          <td className="p-4 text-sm">
+                            <Badge variant={transaction.type === 'income' ? 'success' : 'error'}>
+                              {transaction.type === 'income' ? 'Pemasukan' : 'Pengeluaran'}
+                            </Badge>
+                          </td>
+                          <td className="p-4 text-sm text-neutral-600">
+                            {transaction.paymentMethod || transaction.category || '-'}
+                          </td>
+                          <td className="p-4 text-sm text-right font-medium">
+                            <span className={transaction.type === 'income' ? 'text-green-600' : 'text-red-600'}>
+                              {transaction.type === 'income' ? '+' : '-'} {formatCurrency(transaction.amount)}
+                            </span>
                           </td>
                           <td className="p-4 text-center">
                             <Badge variant={
-                              transaction.status === 'PAID' ? 'success' : 
+                              transaction.status === 'PAID' || transaction.status === 'APPROVED' ? 'success' : 
                               transaction.status === 'PENDING' ? 'warning' : 'error'
                             }>
-                              {transaction.status === 'PAID' ? 'Lunas' : 
+                              {transaction.status === 'PAID' || transaction.status === 'APPROVED' ? 'Selesai' : 
                                transaction.status === 'PENDING' ? 'Pending' : 'Gagal'}
                             </Badge>
                           </td>
