@@ -101,7 +101,6 @@ export async function POST(req: NextRequest) {
             data: {
               nisn: student.nisn,
               nama: student.nama,
-              kelas: student.kelas,
               email: student.email,
               noTelp: student.noTelp,
               alamat: student.alamat,
@@ -109,7 +108,6 @@ export async function POST(req: NextRequest) {
               status: 'ACTIVE',
               virtualAccount: vaNumber,
               enrollmentType: 'CONTINUING',
-              academicYear: '2024/2025',
             },
           });
 

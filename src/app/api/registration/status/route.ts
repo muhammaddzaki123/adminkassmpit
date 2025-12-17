@@ -26,11 +26,7 @@ export async function GET() {
     return NextResponse.json({
       nisn: user.student.nisn,
       nama: user.student.nama,
-      kelas: user.student.kelas,
-      registrationFee: user.student.registrationFee || 500000,
-      registrationPaid: user.student.registrationPaid,
       status: user.student.status,
-      approvalStatus: user.student.approvalStatus || 'PENDING',
       virtualAccount: user.student.virtualAccount || '-',
     });
   } catch (error) {

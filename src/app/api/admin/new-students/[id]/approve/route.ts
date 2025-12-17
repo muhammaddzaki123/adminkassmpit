@@ -1,13 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
+import { requireAdmin } from '@/lib/auth-helpers';
 
-// POST: Approve calon siswa dan buat Student baru
+// POST: Approve calon siswa dan buat Student baru (ADMIN ONLY)
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
+  const authResult = await requireAdmin();
+  if (authResult instanceof NextResponse) return authResult;
+
   try {
+    const { id } = await context.params;
     const body = await request.json();
     const { 
       adminId, // User ID admin yang approve
@@ -24,7 +29,7 @@ export async function POST(
 
     // Get NewStudent data
     const newStudent = await prisma.newStudent.findUnique({
-      where: { id: params.id },
+      where: { id: id },
       include: { user: true },
     });
 
@@ -58,7 +63,7 @@ export async function POST(
     const result = await prisma.$transaction(async (tx) => {
       // 1. Update NewStudent status
       await tx.newStudent.update({
-        where: { id: params.id },
+        where: { id: id },
         data: {
           approvalStatus: 'APPROVED',
           approvedBy: adminId,
@@ -72,17 +77,13 @@ export async function POST(
         data: {
           nama: newStudent.nama,
           nisn: newStudent.nisn,
-          kelas,
           noTelp: newStudent.noTelp,
           email: newStudent.email,
           alamat: newStudent.alamat,
           namaOrangTua: `${newStudent.namaAyah || ''} / ${newStudent.namaIbu || ''}`.trim(),
           status: 'ACTIVE',
           enrollmentType: newStudent.enrollmentType,
-          academicYear: newStudent.academicYear,
           admissionDate: new Date(),
-          sppStatus: 'UNPAID',
-          daftarUlangStatus: 'UNPAID',
         },
       });
 
@@ -139,9 +140,10 @@ export async function POST(
 // DELETE: Reject calon siswa
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await context.params;
     const body = await request.json();
     const { adminId, rejectionReason } = body;
 
@@ -153,7 +155,7 @@ export async function DELETE(
     }
 
     await prisma.newStudent.update({
-      where: { id: params.id },
+      where: { id: id },
       data: {
         approvalStatus: 'REJECTED',
         approvedBy: adminId,

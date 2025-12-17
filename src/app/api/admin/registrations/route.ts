@@ -13,7 +13,7 @@ export async function GET() {
         ],
       },
       orderBy: {
-        registrationDate: 'desc',
+        createdAt: 'desc',
       },
     });
 

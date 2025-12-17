@@ -1,8 +1,12 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import { StudentStatus, PaymentStatus } from '@prisma/client';
+import { StudentStatus } from '@prisma/client';
+import { requireDashboardAccess } from '@/lib/auth-helpers';
 
 export async function GET(request: Request) {
+  const authResult = await requireDashboardAccess();
+  if (authResult instanceof NextResponse) return authResult;
+
   try {
     const { searchParams } = new URL(request.url);
     const kelas = searchParams.get('kelas');
@@ -47,17 +51,13 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { nama, nisn, kelas, status, academicYear } = body;
+    const { nama, nisn, status } = body;
 
     const student = await prisma.student.create({
       data: {
         nama,
         nisn,
-        kelas,
         status: status || StudentStatus.ACTIVE,
-        sppStatus: PaymentStatus.UNPAID,
-        daftarUlangStatus: PaymentStatus.UNPAID,
-        academicYear: academicYear || '2024/2025',
         enrollmentType: 'CONTINUING',
       },
     });

@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { requireAdmin } from '@/lib/auth-helpers';
 
-// GET - Fetch all system settings
+// GET - Fetch all system settings (ADMIN ONLY)
 export async function GET() {
+  const authResult = await requireAdmin();
+  if (authResult instanceof NextResponse) return authResult;
+
   try {
     const settings = await prisma.systemSettings.findMany({
       orderBy: [
@@ -36,8 +40,11 @@ export async function GET() {
   }
 }
 
-// PUT - Update multiple settings
+// PUT - Update multiple settings (ADMIN ONLY)
 export async function PUT(request: NextRequest) {
+  const authResult = await requireAdmin();
+  if (authResult instanceof NextResponse) return authResult;
+
   try {
     const { settings, updatedBy } = await request.json();
 

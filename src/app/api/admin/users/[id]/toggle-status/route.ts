@@ -1,18 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { requireAdmin } from '@/lib/auth-helpers';
 
-interface Params {
-  params: {
-    id: string;
-  };
-}
+// PATCH - Toggle user status (active/inactive) - ADMIN ONLY
+export async function PATCH(
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
+  const authResult = await requireAdmin();
+  if (authResult instanceof NextResponse) return authResult;
 
-// PATCH - Toggle user status (active/inactive)
-export async function PATCH(request: NextRequest, { params }: Params) {
   try {
+    const { id } = await context.params;
     const body = await request.json();
     const { isActive } = body;
-    const userId = params.id;
 
     // Validasi
     if (typeof isActive !== 'boolean') {
@@ -24,7 +25,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
 
     // Update status
     const updatedUser = await prisma.user.update({
-      where: { id: userId },
+      where: { id: id },
       data: { isActive },
       select: {
         id: true,

@@ -1,14 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
+import { requireAdmin } from '@/lib/auth-helpers';
 
 const prisma = new PrismaClient();
 
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
+  const authResult = await requireAdmin();
+  if (authResult instanceof NextResponse) return authResult;
+
   try {
-    const { id } = params;
+    const { id } = await context.params;
     const body = await req.json();
     const { reason } = body;
 
@@ -17,7 +21,6 @@ export async function PUT(
       where: { id },
       data: {
         status: 'ARCHIVED',
-        approvalStatus: 'REJECTED',
       },
     });
 

@@ -1,19 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import * as bcrypt from 'bcryptjs';
+import { requireAdmin } from '@/lib/auth-helpers';
 
-interface Params {
-  params: {
-    id: string;
-  };
-}
+// PUT - Update user (ADMIN ONLY)
+export async function PUT(
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
+  const authResult = await requireAdmin();
+  if (authResult instanceof NextResponse) return authResult;
 
-// PUT - Update user
-export async function PUT(request: NextRequest, { params }: Params) {
   try {
+    const { id } = await context.params;
     const body = await request.json();
     const { email, password, nama, role, isActive } = body;
-    const userId = params.id;
+    const userId = id;
 
     // Validasi input
     if (!nama || !role) {
@@ -95,10 +97,17 @@ export async function PUT(request: NextRequest, { params }: Params) {
   }
 }
 
-// DELETE - Delete user
-export async function DELETE(request: NextRequest, { params }: Params) {
+// DELETE - Delete user (ADMIN ONLY)
+export async function DELETE(
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
+  const authResult = await requireAdmin();
+  if (authResult instanceof NextResponse) return authResult;
+
   try {
-    const userId = params.id;
+    const { id } = await context.params;
+    const userId = id;
 
     // Cek user exists
     const existingUser = await prisma.user.findUnique({

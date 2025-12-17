@@ -6,33 +6,46 @@ import { StudentSidebar } from '@/components/layout/StudentSidebar';
 import { StudentHeader } from '@/components/layout/StudentHeader';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
-import { CreditCard, Clock, CheckCircle, AlertCircle, TrendingUp } from 'lucide-react';
+import { CreditCard, Clock, CheckCircle, AlertCircle, AlertTriangle, FileText } from 'lucide-react';
 
 interface DashboardStats {
-  sppBelumBayar: number;
-  sppTerbayar: number;
-  totalTagihan: number;
-  tunggakan: number;
+  totalBillings: number;
+  unpaidBillings: number;
+  overdueBillings: number;
+  totalAmount: number;
+  paidAmount: number;
+  remainingAmount: number;
 }
 
 interface StudentData {
   id: string;
-  nama: string;
+  fullName: string;
+  nis: string;
   nisn: string;
-  kelas: string;
-  virtualAccount: string | null;
   email: string | null;
-  noTelp: string | null;
+  phone: string | null;
+  className: string;
 }
 
-interface Transaction {
+interface Billing {
   id: string;
-  paymentType: string;
-  amount: number;
-  status: string;
-  paidAt: string | null;
-  createdAt: string;
+  billNumber: string;
+  type: string;
   description: string | null;
+  totalAmount: number;
+  paidAmount: number;
+  remainingAmount: number;
+  status: string;
+  month: number | null;
+  year: number | null;
+  dueDate: string | null;
+  createdAt: string;
+  payments: {
+    id: string;
+    paymentNumber: string;
+    amount: number;
+    paidAt: string;
+  }[];
 }
 
 export default function StudentDashboard() {
@@ -40,13 +53,15 @@ export default function StudentDashboard() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<DashboardStats>({
-    sppBelumBayar: 0,
-    sppTerbayar: 0,
-    totalTagihan: 0,
-    tunggakan: 0,
+    totalBillings: 0,
+    unpaidBillings: 0,
+    overdueBillings: 0,
+    totalAmount: 0,
+    paidAmount: 0,
+    remainingAmount: 0,
   });
   const [studentInfo, setStudentInfo] = useState<StudentData | null>(null);
-  const [recentTransactions, setRecentTransactions] = useState<Transaction[]>([]);
+  const [recentBillings, setRecentBillings] = useState<Billing[]>([]);
 
   useEffect(() => {
     const userData = localStorage.getItem('user');
@@ -61,45 +76,37 @@ export default function StudentDashboard() {
       return;
     }
 
-    // Fetch real student data
-    fetchStudentData(user.studentId);
+    fetchStudentData();
   }, [router]);
 
-  const fetchStudentData = async (studentId: string) => {
+  const fetchStudentData = async () => {
     try {
-      // Fetch student info
-      const studentResponse = await fetch(`/api/students?id=${studentId}`);
-      const studentResult = await studentResponse.json();
+      // Fetch billings (includes student info)
+      const billingsResponse = await fetch('/api/billing/student');
+      const billingsResult = await billingsResponse.json();
       
-      if (studentResult.success && studentResult.data.length > 0) {
-        setStudentInfo(studentResult.data[0]);
-      }
+      if (billingsResult.success) {
+        const { student, billings, summary } = billingsResult.data;
+        
+        setStudentInfo({
+          id: student.id,
+          fullName: student.fullName,
+          nis: student.nis,
+          nisn: student.nisn || '-',
+          email: student.email,
+          phone: student.phone,
+          className: student.className || '-',
+        });
 
-      // Fetch transactions
-      const transactionsResponse = await fetch(`/api/student/transactions?studentId=${studentId}&limit=5`);
-      const transactionsResult = await transactionsResponse.json();
-      
-      if (transactionsResult.success) {
-        setRecentTransactions(transactionsResult.data);
-        
-        // Calculate stats from real data
-        const paidSPP = transactionsResult.data.filter(
-          (t: Transaction) => t.paymentType === 'SPP' && t.status === 'PAID'
-        ).length;
-        
-        const unpaidSPP = transactionsResult.data.filter(
-          (t: Transaction) => t.paymentType === 'SPP' && t.status !== 'PAID'
-        ).length;
-        
-        const totalUnpaid = transactionsResult.data
-          .filter((t: Transaction) => t.status !== 'PAID')
-          .reduce((sum: number, t: Transaction) => sum + t.amount, 0);
+        setRecentBillings(billings.slice(0, 5));
 
         setStats({
-          sppBelumBayar: unpaidSPP,
-          sppTerbayar: paidSPP,
-          totalTagihan: totalUnpaid,
-          tunggakan: totalUnpaid
+          totalBillings: summary.totalBillings,
+          unpaidBillings: summary.unpaidBillings,
+          overdueBillings: summary.overdueBillings,
+          totalAmount: summary.totalAmount,
+          paidAmount: summary.paidAmount,
+          remainingAmount: summary.remainingAmount,
         });
       }
     } catch (error) {
@@ -115,6 +122,40 @@ export default function StudentDashboard() {
       currency: 'IDR',
       minimumFractionDigits: 0,
     }).format(amount);
+  };
+
+  const getMonthName = (month: number | null): string => {
+    if (!month) return '-';
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+    return months[month - 1];
+  };
+
+  const getBadgeVariant = (status: string) => {
+    switch (status) {
+      case 'PAID':
+        return 'success';
+      case 'PARTIAL':
+        return 'warning';
+      case 'OVERDUE':
+        return 'error';
+      default:
+        return 'default';
+    }
+  };
+
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case 'PAID':
+        return 'Lunas';
+      case 'PARTIAL':
+        return 'Cicilan';
+      case 'OVERDUE':
+        return 'Jatuh Tempo';
+      case 'BILLED':
+        return 'Belum Bayar';
+      default:
+        return status;
+    }
   };
 
   if (loading) {
@@ -165,35 +206,62 @@ export default function StudentDashboard() {
             {/* Welcome Section */}
             <div>
               <h1 className="text-3xl font-bold text-neutral-900">
-                Selamat Datang, {studentInfo.nama}!
+                Selamat Datang, {studentInfo.fullName}!
               </h1>
               <p className="text-neutral-600 mt-1">
-                NISN: {studentInfo.nisn} | Kelas: {studentInfo.kelas}
+                NIS: {studentInfo.nis} | Kelas: {studentInfo.className}
               </p>
             </div>
 
-            {/* Virtual Account Card */}
-            <Card className="bg-linear-to-br from-primary-500 to-primary-600 text-white">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-sm opacity-90 mb-2">Virtual Account Number</p>
-                  <p className="text-2xl font-bold tracking-wider mb-4">{studentInfo.virtualAccount}</p>
-                  <p className="text-xs opacity-75">Gunakan nomor ini untuk pembayaran via Virtual Account</p>
+            {/* Alert for overdue billings */}
+            {stats.overdueBillings > 0 && (
+              <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-lg">
+                <div className="flex items-start gap-3">
+                  <AlertTriangle className="w-6 h-6 text-red-500 mt-0.5" />
+                  <div>
+                    <p className="font-semibold text-red-800">Perhatian! Ada Tagihan Jatuh Tempo</p>
+                    <p className="text-sm text-red-700 mt-1">
+                      Anda memiliki {stats.overdueBillings} tagihan yang sudah jatuh tempo. Segera lakukan pembayaran untuk menghindari denda.
+                    </p>
+                  </div>
                 </div>
-                <CreditCard className="w-12 h-12 opacity-50" />
               </div>
-            </Card>
+            )}
 
             {/* Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <Card padding="md">
+                <div className="flex items-center gap-3">
+                  <div className="p-3 bg-blue-100 rounded-lg">
+                    <FileText className="w-6 h-6 text-blue-600" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold text-neutral-900">{stats.totalBillings}</p>
+                    <p className="text-sm text-neutral-600">Total Tagihan</p>
+                  </div>
+                </div>
+              </Card>
+
+              <Card padding="md">
+                <div className="flex items-center gap-3">
+                  <div className="p-3 bg-yellow-100 rounded-lg">
+                    <Clock className="w-6 h-6 text-yellow-600" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold text-neutral-900">{stats.unpaidBillings}</p>
+                    <p className="text-sm text-neutral-600">Belum Bayar</p>
+                  </div>
+                </div>
+              </Card>
+
               <Card padding="md">
                 <div className="flex items-center gap-3">
                   <div className="p-3 bg-red-100 rounded-lg">
                     <AlertCircle className="w-6 h-6 text-red-600" />
                   </div>
                   <div>
-                    <p className="text-2xl font-bold text-neutral-900">{stats.sppBelumBayar}</p>
-                    <p className="text-sm text-neutral-600">SPP Belum Bayar</p>
+                    <p className="text-2xl font-bold text-neutral-900">{stats.overdueBillings}</p>
+                    <p className="text-sm text-neutral-600">Jatuh Tempo</p>
                   </div>
                 </div>
               </Card>
@@ -204,78 +272,76 @@ export default function StudentDashboard() {
                     <CheckCircle className="w-6 h-6 text-green-600" />
                   </div>
                   <div>
-                    <p className="text-2xl font-bold text-neutral-900">{stats.sppTerbayar}</p>
-                    <p className="text-sm text-neutral-600">SPP Terbayar</p>
-                  </div>
-                </div>
-              </Card>
-
-              <Card padding="md">
-                <div className="flex items-center gap-3">
-                  <div className="p-3 bg-yellow-100 rounded-lg">
-                    <TrendingUp className="w-6 h-6 text-yellow-600" />
-                  </div>
-                  <div>
-                    <p className="text-xl font-bold text-neutral-900">{formatCurrency(stats.tunggakan)}</p>
-                    <p className="text-sm text-neutral-600">Total Tunggakan</p>
-                  </div>
-                </div>
-              </Card>
-
-              <Card padding="md">
-                <div className="flex items-center gap-3">
-                  <div className="p-3 bg-blue-100 rounded-lg">
-                    <Clock className="w-6 h-6 text-blue-600" />
-                  </div>
-                  <div>
-                    <p className="text-xl font-bold text-neutral-900">{formatCurrency(stats.totalTagihan)}</p>
-                    <p className="text-sm text-neutral-600">Total Tagihan</p>
+                    <p className="text-lg font-bold text-neutral-900">{formatCurrency(stats.paidAmount)}</p>
+                    <p className="text-sm text-neutral-600">Terbayar</p>
                   </div>
                 </div>
               </Card>
             </div>
 
-            {/* Recent Transactions */}
+            {/* Outstanding Balance Card */}
+            {stats.remainingAmount > 0 && (
+              <Card className="bg-linear-to-br from-yellow-500 to-yellow-600 text-white">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="text-sm opacity-90 mb-2">Total Tunggakan</p>
+                    <p className="text-3xl font-bold mb-4">{formatCurrency(stats.remainingAmount)}</p>
+                    <p className="text-xs opacity-75">
+                      Dari total tagihan {formatCurrency(stats.totalAmount)}
+                    </p>
+                  </div>
+                  <AlertTriangle className="w-12 h-12 opacity-50" />
+                </div>
+              </Card>
+            )}
+
+            {/* Recent Billings */}
             <Card>
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-semibold text-neutral-900">Transaksi Terakhir</h2>
+                <h2 className="text-xl font-semibold text-neutral-900">Tagihan Terbaru</h2>
                 <button 
-                  onClick={() => router.push('/student/history')}
-                  className="text-sm text-primary-600 hover:text-primary-700"
+                  onClick={() => router.push('/student/spp')}
+                  className="text-sm text-primary-600 hover:text-primary-700 font-medium"
                 >
                   Lihat Semua
                 </button>
               </div>
               <div className="space-y-3">
-                {recentTransactions.length === 0 ? (
+                {recentBillings.length === 0 ? (
                   <div className="text-center py-8 text-neutral-500">
-                    <p>Belum ada transaksi</p>
+                    <FileText className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                    <p>Belum ada tagihan</p>
                   </div>
                 ) : (
-                  recentTransactions.map((transaction) => (
+                  recentBillings.map((billing) => (
                     <div
-                      key={transaction.id}
-                      className="flex items-center justify-between p-4 bg-neutral-50 rounded-lg hover:bg-neutral-100 transition"
+                      key={billing.id}
+                      className="flex items-center justify-between p-4 bg-neutral-50 rounded-lg hover:bg-neutral-100 transition cursor-pointer"
+                      onClick={() => router.push(`/student/spp?billingId=${billing.id}`)}
                     >
-                      <div>
-                        <p className="font-medium text-neutral-900">{transaction.paymentType}</p>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <p className="font-medium text-neutral-900">{billing.type}</p>
+                          <Badge variant={getBadgeVariant(billing.status)}>
+                            {getStatusText(billing.status)}
+                          </Badge>
+                        </div>
                         <p className="text-sm text-neutral-600">
-                          {new Date(transaction.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
+                          {billing.month && billing.year ? `${getMonthName(billing.month)} ${billing.year}` : billing.billNumber}
                         </p>
+                        {billing.dueDate && billing.status !== 'PAID' && (
+                          <p className="text-xs text-neutral-500 mt-1">
+                            Jatuh tempo: {new Date(billing.dueDate).toLocaleDateString('id-ID')}
+                          </p>
+                        )}
                       </div>
                       <div className="text-right">
-                        <p className="font-semibold text-neutral-900">{formatCurrency(transaction.amount)}</p>
-                        <Badge
-                          variant={
-                            transaction.status === 'PAID'
-                              ? 'success'
-                              : transaction.status === 'PENDING'
-                              ? 'warning'
-                              : 'error'
-                          }
-                        >
-                          {transaction.status === 'PAID' ? 'Lunas' : transaction.status === 'PENDING' ? 'Pending' : 'Gagal'}
-                        </Badge>
+                        <p className="font-semibold text-neutral-900">{formatCurrency(billing.remainingAmount)}</p>
+                        {billing.paidAmount > 0 && billing.status !== 'PAID' && (
+                          <p className="text-xs text-green-600 mt-1">
+                            Terbayar: {formatCurrency(billing.paidAmount)}
+                          </p>
+                        )}
                       </div>
                     </div>
                   ))
@@ -291,20 +357,20 @@ export default function StudentDashboard() {
                     <CreditCard className="w-8 h-8 text-primary-600" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-neutral-900">Bayar SPP</h3>
-                    <p className="text-sm text-neutral-600">Bayar tagihan SPP bulanan</p>
+                    <h3 className="font-semibold text-neutral-900">Lihat & Bayar Tagihan</h3>
+                    <p className="text-sm text-neutral-600">Lihat semua tagihan dan lakukan pembayaran</p>
                   </div>
                 </div>
               </Card>
 
-              <Card className="cursor-pointer hover:shadow-lg transition" onClick={() => router.push('/student/re-registration')}>
+              <Card className="cursor-pointer hover:shadow-lg transition" onClick={() => router.push('/student/history')}>
                 <div className="flex items-center gap-4">
                   <div className="p-4 bg-green-100 rounded-lg">
                     <CheckCircle className="w-8 h-8 text-green-600" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-neutral-900">Daftar Ulang</h3>
-                    <p className="text-sm text-neutral-600">Pembayaran daftar ulang</p>
+                    <h3 className="font-semibold text-neutral-900">Riwayat Pembayaran</h3>
+                    <p className="text-sm text-neutral-600">Lihat riwayat pembayaran</p>
                   </div>
                 </div>
               </Card>
@@ -315,3 +381,4 @@ export default function StudentDashboard() {
     </div>
   );
 }
+

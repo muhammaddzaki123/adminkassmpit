@@ -57,8 +57,16 @@ export default function SettingsPage() {
       const response = await fetch('/api/admin/settings');
       const result = await response.json();
 
-      if (result.success) {
-        setSettings(result.data.grouped || {
+      if (result.success && result.data) {
+        const grouped = result.data.grouped || {};
+        setSettings({
+          FEES: Array.isArray(grouped.FEES) ? grouped.FEES : [],
+          NOTIFICATION: Array.isArray(grouped.NOTIFICATION) ? grouped.NOTIFICATION : [],
+          SYSTEM: Array.isArray(grouped.SYSTEM) ? grouped.SYSTEM : []
+        });
+      } else {
+        // If no data or error, set empty arrays
+        setSettings({
           FEES: [],
           NOTIFICATION: [],
           SYSTEM: []
@@ -66,6 +74,12 @@ export default function SettingsPage() {
       }
     } catch (error) {
       console.error('Error fetching settings:', error);
+      // Set empty arrays on error
+      setSettings({
+        FEES: [],
+        NOTIFICATION: [],
+        SYSTEM: []
+      });
     } finally {
       setLoading(false);
     }
@@ -229,7 +243,7 @@ export default function SettingsPage() {
               </div>
 
               <div className="space-y-4">
-                {settings.FEES.length === 0 ? (
+                {!settings.FEES || settings.FEES.length === 0 ? (
                   <div className="text-center py-8 text-neutral-500">
                     <p>Belum ada pengaturan biaya. Klik &ldquo;Inisialisasi Default&rdquo; untuk menambahkan.</p>
                   </div>
@@ -275,7 +289,7 @@ export default function SettingsPage() {
               </div>
 
               <div className="space-y-4">
-                {settings.NOTIFICATION.length === 0 ? (
+                {!settings.NOTIFICATION || settings.NOTIFICATION.length === 0 ? (
                   <div className="text-center py-8 text-neutral-500">
                     <p>Belum ada pengaturan notifikasi. Klik &ldquo;Inisialisasi Default&rdquo; untuk menambahkan.</p>
                   </div>
@@ -338,7 +352,7 @@ export default function SettingsPage() {
               </div>
 
               <div className="space-y-4">
-                {settings.SYSTEM.length === 0 ? (
+                {!settings.SYSTEM || settings.SYSTEM.length === 0 ? (
                   <div className="text-center py-8 text-neutral-500">
                     <p>Belum ada pengaturan sistem. Klik &ldquo;Inisialisasi Default&rdquo; untuk menambahkan.</p>
                   </div>

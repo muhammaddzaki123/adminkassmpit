@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import * as bcrypt from 'bcryptjs';
+import { requireAdmin } from '@/lib/auth-helpers';
 
-// GET - Fetch all users
+// GET - Fetch all users (ADMIN ONLY)
 export async function GET() {
+  const authResult = await requireAdmin();
+  if (authResult instanceof NextResponse) return authResult;
+
   try {
     const users = await prisma.user.findMany({
       orderBy: {
@@ -30,8 +34,11 @@ export async function GET() {
   }
 }
 
-// POST - Create new user
+// POST - Create new user (ADMIN ONLY)
 export async function POST(request: NextRequest) {
+  const authResult = await requireAdmin();
+  if (authResult instanceof NextResponse) return authResult;
+
   try {
     const body = await request.json();
     const { username, email, password, nama, role, isActive } = body;

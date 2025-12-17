@@ -5,28 +5,32 @@ import { useRouter } from 'next/navigation';
 import { TreasurerSidebar } from '@/components/layout/TreasurerSidebar';
 import { TreasurerHeader } from '@/components/layout/TreasurerHeader';
 import { StatCard, Card } from '@/components/ui/Card';
-import { Users, CreditCard, TrendingDown, AlertCircle, TrendingUp, CheckCircle } from 'lucide-react';
+import { CreditCard, TrendingDown, AlertCircle, TrendingUp, CheckCircle, FileText } from 'lucide-react';
 
-interface Transaction {
+interface Payment {
   id: string;
-  createdAt: string;
-  paymentType: string;
+  paymentNumber: string;
   amount: number;
+  paidAt: string | null;
   status: string;
-  student: {
-    nama: string;
-    kelas?: string;
+  billing: {
+    student: {
+      fullName: string;
+      className: string;
+    };
+    type: string;
   };
 }
 
 interface Stats {
   totalIncome: number;
   totalExpense: number;
-  unpaidStudents: number;
+  overdueBillings: number;
   pendingVerification: number;
   monthlyIncome: number;
   monthlyExpense: number;
   balance: number;
+  unpaidAmount: number;
 }
 
 export default function TreasurerDashboard() {
@@ -35,13 +39,14 @@ export default function TreasurerDashboard() {
   const [stats, setStats] = useState<Stats>({
     totalIncome: 0,
     totalExpense: 0,
-    unpaidStudents: 0,
+    overdueBillings: 0,
     pendingVerification: 0,
     monthlyIncome: 0,
     monthlyExpense: 0,
     balance: 0,
+    unpaidAmount: 0,
   });
-  const [recentPayments, setRecentPayments] = useState<Transaction[]>([]);
+  const [recentPayments, setRecentPayments] = useState<Payment[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -64,51 +69,53 @@ export default function TreasurerDashboard() {
     try {
       setLoading(true);
       
-      // Fetch SPP payments (income)
-      const paymentsRes = await fetch('/api/spp-payments?status=PAID&limit=100');
-      const paymentsData = await paymentsRes.json();
-      
-      // Fetch expenses
-      const expensesRes = await fetch('/api/expenses?status=APPROVED');
-      const expensesData = await expensesRes.json();
-      
-      // Fetch all students
-      const studentsRes = await fetch('/api/students');
-      const studentsData = await studentsRes.json();
-      
-      let totalIncome = 0;
-      let totalExpense = 0;
-      let unpaidStudents = 0;
-      let pendingVerification = 0;
-      let monthlyIncome = 0;
-      let monthlyExpense = 0;
-      let recentTransactions: Transaction[] = [];
-      
-      const currentMonth = new Date().getMonth();
+      const currentMonth = new Date().getMonth() + 1;
       const currentYear = new Date().getFullYear();
       
-      // Calculate total income from paid SPP
-      if (paymentsData.success) {
-        const payments = paymentsData.data || [];
-        totalIncome = payments.reduce((sum: number, p: Transaction) => sum + p.amount, 0);
+      // Fetch all billings summary
+      const billingsRes = await fetch('/api/billing/list');
+      const billingsData = await billingsRes.json();
+      
+      let totalIncome = 0;
+      let unpaidAmount = 0;
+      let overdueBillings = 0;
+      let monthlyIncome = 0;
+      
+      if (billingsData.success) {
+        const summary = billingsData.data.summary;
+        totalIncome = summary.totalPaid || 0;
+        unpaidAmount = summary.totalOutstanding || 0;
+        overdueBillings = summary.statusCounts?.OVERDUE || 0;
         
-        // Calculate monthly income
-        monthlyIncome = payments
-          .filter((p: Transaction) => {
-            const date = new Date(p.createdAt);
-            return date.getMonth() === currentMonth && date.getFullYear() === currentYear;
-          })
-          .reduce((sum: number, p: Transaction) => sum + p.amount, 0);
-        
-        // Get recent 5 payments for display
-        recentTransactions = payments
-          .sort((a: Transaction, b: Transaction) => 
-            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-          )
-          .slice(0, 5);
+        // Calculate monthly income (from this month's billings)
+        const monthlyBillingsRes = await fetch(`/api/billing/list?month=${currentMonth}&year=${currentYear}`);
+        const monthlyBillingsData = await monthlyBillingsRes.json();
+        if (monthlyBillingsData.success) {
+          monthlyIncome = monthlyBillingsData.data.summary.totalPaid || 0;
+        }
       }
       
-      // Calculate total expenses
+      // Fetch recent completed payments
+      const paymentsRes = await fetch('/api/payment/list?status=COMPLETED&limit=5');
+      const paymentsData = await paymentsRes.json();
+      let recentPaymentsList: Payment[] = [];
+      if (paymentsData.success) {
+        recentPaymentsList = paymentsData.data.payments || [];
+      }
+      
+      // Fetch pending payments for verification
+      const pendingRes = await fetch('/api/payment/list?status=PENDING');
+      const pendingData = await pendingRes.json();
+      let pendingCount = 0;
+      if (pendingData.success) {
+        pendingCount = pendingData.data.total || 0;
+      }
+      
+      // Fetch expenses
+      let totalExpense = 0;
+      let monthlyExpense = 0;
+      const expensesRes = await fetch('/api/expenses?status=APPROVED');
+      const expensesData = await expensesRes.json();
       if (expensesData.success) {
         const expenses = expensesData.data || [];
         totalExpense = expenses.reduce((sum: number, e: { amount: number }) => sum + e.amount, 0);
@@ -118,37 +125,23 @@ export default function TreasurerDashboard() {
           .filter((e: { date?: string }) => {
             if (!e.date) return false;
             const date = new Date(e.date);
-            return date.getMonth() === currentMonth && date.getFullYear() === currentYear;
+            return date.getMonth() + 1 === currentMonth && date.getFullYear() === currentYear;
           })
           .reduce((sum: number, e: { amount: number }) => sum + e.amount, 0);
-      }
-      
-      // Count active students
-      if (studentsData.success) {
-        const students = studentsData.data || [];
-        unpaidStudents = students.filter((s: { status: string }) => 
-          s.status === 'ACTIVE'
-        ).length;
-      }
-      
-      // Fetch pending payments for verification
-      const pendingRes = await fetch('/api/spp-payments?status=PENDING');
-      const pendingData = await pendingRes.json();
-      if (pendingData.success) {
-        pendingVerification = (pendingData.data || []).length;
       }
       
       setStats({
         totalIncome,
         totalExpense,
-        unpaidStudents,
-        pendingVerification,
+        overdueBillings,
+        pendingVerification: pendingCount,
         monthlyIncome,
         monthlyExpense,
         balance: totalIncome - totalExpense,
+        unpaidAmount,
       });
       
-      setRecentPayments(recentTransactions);
+      setRecentPayments(recentPaymentsList);
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
     } finally {
@@ -208,7 +201,7 @@ export default function TreasurerDashboard() {
                 title="Total Pemasukan"
                 value={formatCurrency(stats.totalIncome)}
                 icon={<TrendingUp className="w-6 h-6" />}
-                trend="Dari pembayaran SPP"
+                trend="Total yang sudah dibayar"
                 trendUp={true}
                 color="primary"
               />
@@ -221,20 +214,41 @@ export default function TreasurerDashboard() {
                 color="accent"
               />
               <StatCard
-                title="Siswa Aktif"
-                value={`${stats.unpaidStudents}`}
-                icon={<Users className="w-6 h-6" />}
-                trend="Total siswa terdaftar"
+                title="Tunggakan"
+                value={formatCurrency(stats.unpaidAmount)}
+                icon={<AlertCircle className="w-6 h-6" />}
+                trend="Tagihan belum dibayar"
                 color="danger"
               />
               <StatCard
                 title="Perlu Verifikasi"
                 value={`${stats.pendingVerification}`}
-                icon={<AlertCircle className="w-6 h-6" />}
+                icon={<FileText className="w-6 h-6" />}
                 trend="Pembayaran pending"
                 color="info"
               />
             </div>
+
+            {/* Alert for overdue billings */}
+            {stats.overdueBillings > 0 && (
+              <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-lg">
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="w-6 h-6 text-red-500 mt-0.5" />
+                  <div>
+                    <p className="font-semibold text-red-800">Perhatian! Ada Tagihan Jatuh Tempo</p>
+                    <p className="text-sm text-red-700 mt-1">
+                      Terdapat {stats.overdueBillings} tagihan yang sudah jatuh tempo. Segera lakukan penagihan ke siswa terkait.
+                    </p>
+                    <button 
+                      onClick={() => router.push('/treasurer/spp?status=OVERDUE')}
+                      className="text-sm text-red-800 font-medium underline mt-2 hover:text-red-900"
+                    >
+                      Lihat Daftar Tunggakan →
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Ringkasan Bulan Ini */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -276,15 +290,23 @@ export default function TreasurerDashboard() {
             </div>
 
             <Card>
-              <h3 className="text-lg font-semibold mb-4 text-neutral-900 flex items-center gap-2">
-                <CheckCircle className="w-5 h-5 text-green-600" />
-                Transaksi Pembayaran Terbaru
-              </h3>
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-semibold text-neutral-900 flex items-center gap-2">
+                  <CheckCircle className="w-5 h-5 text-green-600" />
+                  Pembayaran Terbaru
+                </h3>
+                <button 
+                  onClick={() => router.push('/treasurer/payment')}
+                  className="text-sm text-primary-600 hover:text-primary-700 font-medium"
+                >
+                  Lihat Semua
+                </button>
+              </div>
               {recentPayments.length === 0 ? (
                 <div className="text-center py-12 text-neutral-500">
                   <CreditCard className="w-12 h-12 mx-auto mb-3 opacity-50" />
                   <p className="font-medium">Belum ada transaksi pembayaran</p>
-                  <p className="text-sm mt-1">Transaksi yang telah diverifikasi akan muncul di sini</p>
+                  <p className="text-sm mt-1">Pembayaran yang telah diverifikasi akan muncul di sini</p>
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -296,19 +318,19 @@ export default function TreasurerDashboard() {
                         </div>
                         <div>
                           <p className="text-sm font-semibold text-neutral-900">
-                            {payment.student.nama}
+                            {payment.billing.student.fullName}
                           </p>
                           <div className="flex items-center gap-2 mt-1">
                             <span className="text-xs text-neutral-600">
-                              {payment.student.kelas || 'Kelas tidak tersedia'}
+                              {payment.billing.student.className}
                             </span>
                             <span className="text-xs text-neutral-400">•</span>
                             <span className="text-xs text-neutral-600">
-                              {payment.paymentType}
+                              {payment.billing.type}
                             </span>
                           </div>
                           <p className="text-xs text-neutral-500 mt-1">
-                            {new Date(payment.createdAt).toLocaleDateString('id-ID', {
+                            {payment.paidAt && new Date(payment.paidAt).toLocaleDateString('id-ID', {
                               day: 'numeric',
                               month: 'long',
                               year: 'numeric'

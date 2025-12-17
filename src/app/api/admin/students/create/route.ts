@@ -17,7 +17,6 @@ export async function POST(request: NextRequest) {
       // Account settings
       username, // Optional, default = NISN
       password, // Optional, default = NISN
-      academicYear, // Optional, default = current year
     } = body;
 
     // Validasi
@@ -57,14 +56,6 @@ export async function POST(request: NextRequest) {
     const finalPassword = password || nisn; // Default password = NISN
     const hashedPassword = await bcrypt.hash(finalPassword, 10);
 
-    // Get current academic year if not provided
-    const now = new Date();
-    const currentYear = now.getFullYear();
-    const finalAcademicYear = academicYear || 
-      (now.getMonth() >= 6 
-        ? `${currentYear}/${currentYear + 1}` 
-        : `${currentYear - 1}/${currentYear}`);
-
     // Create Student and User in transaction
     const result = await prisma.$transaction(async (tx) => {
       // Create Student
@@ -72,16 +63,12 @@ export async function POST(request: NextRequest) {
         data: {
           nisn,
           nama,
-          kelas,
           email,
           noTelp,
           alamat,
           namaOrangTua,
           status: 'ACTIVE',
           enrollmentType: 'NEW',
-          academicYear: finalAcademicYear,
-          sppStatus: 'UNPAID',
-          daftarUlangStatus: 'UNPAID',
         },
       });
 
@@ -109,7 +96,6 @@ export async function POST(request: NextRequest) {
           id: result.student.id,
           nisn: result.student.nisn,
           nama: result.student.nama,
-          kelas: result.student.kelas,
         },
         credentials: {
           username: result.user.username,

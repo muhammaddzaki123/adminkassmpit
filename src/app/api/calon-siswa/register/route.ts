@@ -98,7 +98,7 @@ export async function POST(request: NextRequest) {
           pekerjaanAyah,
           pekerjaanIbu,
           enrollmentType,
-          academicYear,
+          academicYearId: academicYear,
           kelasYangDituju,
           asalSekolah,
           registrationFee,

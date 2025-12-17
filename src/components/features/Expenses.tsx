@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Plus, Upload, Calendar, TrendingDown, CheckCircle, AlertCircle, X, DollarSign, TrendingUp, Filter, Download } from 'lucide-react';
-import { Card, StatCard } from '@/components/ui/Card';
+import { Plus, Calendar, TrendingDown, CheckCircle, AlertCircle, X, DollarSign, TrendingUp, Filter, Download } from 'lucide-react';
+import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input, Select, TextArea } from '@/components/ui/Input';
 import { Table } from '@/components/ui/Table';

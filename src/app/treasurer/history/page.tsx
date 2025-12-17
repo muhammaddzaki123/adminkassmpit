@@ -67,7 +67,7 @@ export default function HistoryPage() {
 
       // Process expenses
       if (expensesData.success && expensesData.data) {
-        const expenses = expensesData.data.map((expense: any) => ({
+        const expenses = expensesData.data.map((expense: { id: string; date?: string; createdAt: string; category: string; amount: number; status: string; description: string }) => ({
           id: expense.id,
           createdAt: expense.date || expense.createdAt,
           type: 'expense' as const,
@@ -81,15 +81,27 @@ export default function HistoryPage() {
 
       // Process payments (income)
       if (paymentsData.success && paymentsData.data) {
-        const payments = paymentsData.data.map((payment: any) => ({
+        const payments = paymentsData.data.map((payment: { 
+          id: string; 
+          paidAt?: string; 
+          createdAt: string; 
+          paymentType?: string; 
+          amount: number; 
+          status: string; 
+          student?: { fullName: string };
+          paymentMethod?: string;
+          description?: string;
+          month?: number;
+          year?: number;
+        }) => ({
           id: payment.id,
           createdAt: payment.paidAt || payment.createdAt,
           type: 'income' as const,
           paymentType: payment.paymentType,
           amount: payment.amount,
           status: payment.status,
-          paymentMethod: payment.paymentMethod || 'CASH',
-          description: payment.description || `${payment.paymentType} - ${payment.month}/${payment.year}`,
+          paymentMethod: payment.paymentMethod || 'TUNAI',
+          description: payment.description || (payment.month && payment.year ? `${payment.paymentType} - ${payment.month}/${payment.year}` : payment.paymentType || ''),
           student: payment.student,
         }));
         allTransactions.push(...payments);

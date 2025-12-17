@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { requireAdmin } from '@/lib/auth-helpers';
 
-// GET: List all new students (calon siswa)
+// GET: List all new students (calon siswa) - ADMIN ONLY
 export async function GET(request: NextRequest) {
+  const authResult = await requireAdmin();
+  if (authResult instanceof NextResponse) return authResult;
+
   try {
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status'); // PENDING, APPROVED, REJECTED

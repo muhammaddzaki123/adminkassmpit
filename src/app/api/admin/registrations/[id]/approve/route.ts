@@ -1,22 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
+import { requireAdmin } from '@/lib/auth-helpers';
 
 const prisma = new PrismaClient();
 
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
+  const authResult = await requireAdmin();
+  if (authResult instanceof NextResponse) return authResult;
+
   try {
-    const { id } = params;
+    const { id } = await context.params;
 
     // Update student status to ACTIVE
     const student = await prisma.student.update({
       where: { id },
       data: {
         status: 'ACTIVE',
-        approvalStatus: 'APPROVED',
-        approvedAt: new Date(),
+        admissionDate: new Date(),
       },
     });
 

@@ -13,7 +13,8 @@ import {
   DollarSign,
   History,
   LogOut,
-  Wallet
+  Wallet,
+  CheckCircle
 } from 'lucide-react';
 
 export function TreasurerSidebar() {
@@ -32,6 +33,11 @@ export function TreasurerSidebar() {
       path: '/treasurer/students',
     },
     {
+      icon: Wallet,
+      label: 'Kelola Tagihan',
+      path: '/treasurer/billing',
+    },
+    {
       icon: CreditCard,
       label: 'Pembayaran SPP',
       path: '/treasurer/spp',
@@ -40,6 +46,11 @@ export function TreasurerSidebar() {
       icon: DollarSign,
       label: 'Input Pembayaran',
       path: '/treasurer/payment',
+    },
+    {
+      icon: CheckCircle,
+      label: 'Verifikasi Pembayaran',
+      path: '/treasurer/payment/manual',
     },
     {
       icon: TrendingDown,
