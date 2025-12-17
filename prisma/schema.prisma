@@ -5,47 +5,47 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
 }
 
 enum UserRole {
   TREASURER
   ADMIN
-  NEW_STUDENT  // Siswa baru, belum diapprove (tidak bisa login penuh)
-  STUDENT      // Siswa resmi, sudah diapprove (bisa login dan bayar)
+  NEW_STUDENT // Siswa baru, belum diapprove (tidak bisa login penuh)
+  STUDENT // Siswa resmi, sudah diapprove (bisa login dan bayar)
   HEADMASTER
 }
 
 enum StudentStatus {
   PENDING_REGISTRATION // Calon siswa baru (belum disetujui)
-  ACTIVE               // Siswa aktif
-  AWAITING_REREG       // Menunggu daftar ulang tahun ajaran baru
-  GRADUATED            // Lulus
-  ARCHIVED             // Non-aktif/pindah
-  DROPPED_OUT          // DO/keluar
-  TRANSFERRED          // Pindah sekolah
+  ACTIVE // Siswa aktif
+  AWAITING_REREG // Menunggu daftar ulang tahun ajaran baru
+  GRADUATED // Lulus
+  ARCHIVED // Non-aktif/pindah
+  DROPPED_OUT // DO/keluar
+  TRANSFERRED // Pindah sekolah
 }
 
 // Status pembayaran/tagihan yang lebih profesional
 enum BillingStatus {
-  UNBILLED    // Belum ditagih
-  BILLED      // Sudah ditagih, belum bayar
-  PARTIAL     // Dibayar sebagian
-  PAID        // Lunas
-  OVERDUE     // Terlambat/menunggak
-  CANCELLED   // Dibatalkan
-  WAIVED      // Dibebaskan
+  UNBILLED // Belum ditagih
+  BILLED // Sudah ditagih, belum bayar
+  PARTIAL // Dibayar sebagian
+  PAID // Lunas
+  OVERDUE // Terlambat/menunggak
+  CANCELLED // Dibatalkan
+  WAIVED // Dibebaskan
 }
 
 enum PaymentStatus {
-  PENDING     // Menunggu pembayaran
-  PROCESSING  // Sedang diproses
-  COMPLETED   // Pembayaran berhasil
-  FAILED      // Pembayaran gagal
-  EXPIRED     // Kadaluarsa
-  REFUNDED    // Dikembalikan
+  PENDING // Menunggu pembayaran
+  PROCESSING // Sedang diproses
+  COMPLETED // Pembayaran berhasil
+  FAILED // Pembayaran gagal
+  EXPIRED // Kadaluarsa
+  REFUNDED // Dikembalikan
 }
 
 enum PaymentType {
@@ -97,129 +97,135 @@ model User {
   isActive     Boolean     @default(true) @map("is_active")
   createdAt    DateTime    @default(now()) @map("created_at")
   updatedAt    DateTime    @updatedAt @map("updated_at")
-  
+
   // Relations
-  activityLogs ActivityLog[]
+  activityLogs         ActivityLog[]
+  processedPayments    Payment[]         @relation("PaymentProcessor")
+  issuedBillings       Billing[]         @relation("BillingIssuer")
+  waivedBillings       Billing[]         @relation("BillingWaiver")
+  createdAcademicYears AcademicYear[]    @relation("AcademicYearCreator")
+  createdTemplates     BillingTemplate[] @relation("TemplateCreator")
+  updatedSettings      SystemSettings[]  @relation("SettingsUpdater")
 
   @@map("users")
 }
 
 // Siswa resmi yang sudah terdaftar di sekolah
 model Student {
-  id                String        @id @default(uuid())
-  nama              String
-  nisn              String        @unique
-  noTelp            String?       @map("no_telp")
-  email             String?
-  alamat            String?
-  namaOrangTua      String?       @map("nama_orang_tua")
-  noTelpOrangTua    String?       @map("no_telp_orang_tua")
-  
+  id             String  @id @default(uuid())
+  nama           String
+  nisn           String  @unique
+  noTelp         String? @map("no_telp")
+  email          String?
+  alamat         String?
+  namaOrangTua   String? @map("nama_orang_tua")
+  noTelpOrangTua String? @map("no_telp_orang_tua")
+
   // Status siswa
-  status            StudentStatus @default(ACTIVE)
-  
+  status StudentStatus @default(ACTIVE)
+
   // Virtual Account untuk pembayaran
-  virtualAccount    String?       @unique @map("virtual_account") // VA number for payments
-  
+  virtualAccount String? @unique @map("virtual_account") // VA number for payments
+
   // Academic info
-  enrollmentType    String?       @map("enrollment_type") // NEW, CONTINUING, TRANSFER
-  admissionDate     DateTime      @default(now()) @map("admission_date") // Tanggal diterima
-  graduationDate    DateTime?     @map("graduation_date")
-  
+  enrollmentType String?   @map("enrollment_type") // NEW, CONTINUING, TRANSFER
+  admissionDate  DateTime  @default(now()) @map("admission_date") // Tanggal diterima
+  graduationDate DateTime? @map("graduation_date")
+
   // Metadata
-  photoUrl          String?       @map("photo_url")
-  birthPlace        String?       @map("birth_place")
-  birthDate         DateTime?     @map("birth_date")
-  gender            String?       // L/P
-  religion          String?
-  
-  createdAt         DateTime      @default(now()) @map("created_at")
-  updatedAt         DateTime      @updatedAt @map("updated_at")
+  photoUrl   String?   @map("photo_url")
+  birthPlace String?   @map("birth_place")
+  birthDate  DateTime? @map("birth_date")
+  gender     String? // L/P
+  religion   String?
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   // Relasi ke sistem baru (PROFESIONAL)
-  studentClasses    StudentClass[]
-  billings          Billing[]
-  
+  studentClasses StudentClass[]
+  billings       Billing[]
+
   // Relasi one-to-one
-  user              User? // One-to-one relation
+  user User? // One-to-one relation
 
   @@map("students")
 }
 
 // Calon siswa baru (pendaftaran/admission)
 model NewStudent {
-  id                String        @id @default(uuid())
-  nama              String
-  nisn              String        @unique
-  tempatLahir       String?       @map("tempat_lahir")
-  tanggalLahir      DateTime?     @map("tanggal_lahir")
-  jenisKelamin      String?       @map("jenis_kelamin") // L/P
-  agama             String?
-  alamat            String?
-  noTelp            String?       @map("no_telp")
-  email             String?
-  
-  // Data Orang Tua
-  namaAyah          String?       @map("nama_ayah")
-  namaIbu           String?       @map("nama_ibu")
-  noTelpOrtu        String?       @map("no_telp_ortu")
-  pekerjaanAyah     String?       @map("pekerjaan_ayah")
-  pekerjaanIbu      String?       @map("pekerjaan_ibu")
-  
-  // Pendaftaran - SEKARANG PAKAI RELASI KE ACADEMIC YEAR
-  enrollmentType    String        @map("enrollment_type") // NEW, TRANSFER
-  academicYearId    String        @map("academic_year_id")
-  academicYear      AcademicYear  @relation(fields: [academicYearId], references: [id])
-  kelasYangDituju   String        @map("kelas_yang_dituju") // Kelas yang didaftar
-  asalSekolah       String?       @map("asal_sekolah") // For transfer students
-  
-  // Dokumen
-  fotoSiswa         String?       @map("foto_siswa") // URL
-  aktaKelahiran     String?       @map("akta_kelahiran") // URL
-  kartuKeluarga     String?       @map("kartu_keluarga") // URL
-  ijazahSebelumnya  String?       @map("ijazah_sebelumnya") // URL
-  
-  // Status & Pembayaran
-  registrationDate  DateTime      @default(now()) @map("registration_date")
-  registrationFee   Float         @default(0) @map("registration_fee")
-  registrationPaid  Boolean       @default(false) @map("registration_paid")
-  paidAt            DateTime?     @map("paid_at")
-  virtualAccount    String?       @unique @map("virtual_account")
-  
-  // Approval
-  approvalStatus    String        @default("PENDING") @map("approval_status") // PENDING, APPROVED, REJECTED
-  approvedBy        String?       @map("approved_by") // User ID admin
-  approvedAt        DateTime?     @map("approved_at")
-  rejectionReason   String?       @map("rejection_reason")
-  notes             String?       @db.Text // Catatan admin
-  
-  createdAt         DateTime      @default(now()) @map("created_at")
-  updatedAt         DateTime      @updatedAt @map("updated_at")
+  id           String    @id @default(uuid())
+  nama         String
+  nisn         String    @unique
+  tempatLahir  String?   @map("tempat_lahir")
+  tanggalLahir DateTime? @map("tanggal_lahir")
+  jenisKelamin String?   @map("jenis_kelamin") // L/P
+  agama        String?
+  alamat       String?
+  noTelp       String?   @map("no_telp")
+  email        String?
 
-  user              User? // One-to-one relation
-  transactions      NewStudentTransaction[]
+  // Data Orang Tua
+  namaAyah      String? @map("nama_ayah")
+  namaIbu       String? @map("nama_ibu")
+  noTelpOrtu    String? @map("no_telp_ortu")
+  pekerjaanAyah String? @map("pekerjaan_ayah")
+  pekerjaanIbu  String? @map("pekerjaan_ibu")
+
+  // Pendaftaran - SEKARANG PAKAI RELASI KE ACADEMIC YEAR
+  enrollmentType  String       @map("enrollment_type") // NEW, TRANSFER
+  academicYearId  String       @map("academic_year_id")
+  academicYear    AcademicYear @relation(fields: [academicYearId], references: [id])
+  kelasYangDituju String       @map("kelas_yang_dituju") // Kelas yang didaftar
+  asalSekolah     String?      @map("asal_sekolah") // For transfer students
+
+  // Dokumen
+  fotoSiswa        String? @map("foto_siswa") // URL
+  aktaKelahiran    String? @map("akta_kelahiran") // URL
+  kartuKeluarga    String? @map("kartu_keluarga") // URL
+  ijazahSebelumnya String? @map("ijazah_sebelumnya") // URL
+
+  // Status & Pembayaran
+  registrationDate DateTime  @default(now()) @map("registration_date")
+  registrationFee  Float     @default(0) @map("registration_fee")
+  registrationPaid Boolean   @default(false) @map("registration_paid")
+  paidAt           DateTime? @map("paid_at")
+  virtualAccount   String?   @unique @map("virtual_account")
+
+  // Approval
+  approvalStatus  String    @default("PENDING") @map("approval_status") // PENDING, APPROVED, REJECTED
+  approvedBy      String?   @map("approved_by") // User ID admin
+  approvedAt      DateTime? @map("approved_at")
+  rejectionReason String?   @map("rejection_reason")
+  notes           String?   @db.Text // Catatan admin
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user         User? // One-to-one relation
+  transactions NewStudentTransaction[]
 
   @@map("new_students")
 }
 
 // Transaction khusus untuk calon siswa (biaya pendaftaran)
 model NewStudentTransaction {
-  id                String        @id @default(uuid())
-  newStudentId      String        @map("new_student_id")
-  newStudent        NewStudent    @relation(fields: [newStudentId], references: [id])
-  paymentMethod     PaymentMethod @map("payment_method")
-  amount            Float
-  adminFee          Float         @default(0) @map("admin_fee")
-  totalAmount       Float         @map("total_amount")
-  status            PaymentStatus @default(PENDING)
-  externalId        String?       @unique @map("external_id")
-  vaNumber          String?       @map("va_number")
-  expiredAt         DateTime?     @map("expired_at")
-  paidAt            DateTime?     @map("paid_at")
-  description       String?
-  buktiPembayaran   String?       @map("bukti_pembayaran")
-  createdAt         DateTime      @default(now()) @map("created_at")
-  updatedAt         DateTime      @updatedAt @map("updated_at")
+  id              String        @id @default(uuid())
+  newStudentId    String        @map("new_student_id")
+  newStudent      NewStudent    @relation(fields: [newStudentId], references: [id])
+  paymentMethod   PaymentMethod @map("payment_method")
+  amount          Float
+  adminFee        Float         @default(0) @map("admin_fee")
+  totalAmount     Float         @map("total_amount")
+  status          PaymentStatus @default(PENDING)
+  externalId      String?       @unique @map("external_id")
+  vaNumber        String?       @map("va_number")
+  expiredAt       DateTime?     @map("expired_at")
+  paidAt          DateTime?     @map("paid_at")
+  description     String?
+  buktiPembayaran String?       @map("bukti_pembayaran")
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
 
   @@map("new_student_transactions")
 }
@@ -244,11 +250,12 @@ model Expense {
 model SystemSettings {
   id          String   @id @default(uuid())
   key         String   @unique // e.g., "REGISTRATION_FEE", "SPP_MONTHLY"
-  value       String   // Store as string, parse based on type
-  type        String   // NUMBER, TEXT, BOOLEAN
-  category    String   // FEES, NOTIFICATION, SYSTEM
+  value       String // Store as string, parse based on type
+  type        String // NUMBER, TEXT, BOOLEAN
+  category    String // FEES, NOTIFICATION, SYSTEM
   description String?
-  updatedBy   String?  @map("updated_by") // User ID
+  updatedById String?  @map("updated_by_id")
+  updatedBy   User?    @relation("SettingsUpdater", fields: [updatedById], references: [id])
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
@@ -256,17 +263,17 @@ model SystemSettings {
 }
 
 model NotificationLog {
-  id        String   @id @default(uuid())
-  userId    String?  @map("user_id") // User who received notification
-  type      String   // EMAIL, WHATSAPP, SMS
-  status    String   // SENT, FAILED, PENDING
-  recipient String   // Email or phone number
+  id        String    @id @default(uuid())
+  userId    String?   @map("user_id") // User who received notification
+  type      String // EMAIL, WHATSAPP, SMS
+  status    String // SENT, FAILED, PENDING
+  recipient String // Email or phone number
   subject   String?
-  content   String   @db.Text
-  template  String?  // Template name used
-  metadata  String?  @db.Text // JSON string for additional data
+  content   String    @db.Text
+  template  String? // Template name used
+  metadata  String?   @db.Text // JSON string for additional data
   sentAt    DateTime? @map("sent_at")
-  createdAt DateTime @default(now()) @map("created_at")
+  createdAt DateTime  @default(now()) @map("created_at")
 
   @@map("notification_logs")
 }
@@ -277,45 +284,46 @@ model NotificationLog {
 
 // 1. TAHUN AJARAN (Academic Year)
 model AcademicYear {
-  id            String    @id @default(uuid())
-  year          String    @unique // "2024/2025"
-  startDate     DateTime  @map("start_date")
-  endDate       DateTime  @map("end_date")
-  isActive      Boolean   @default(false) @map("is_active") // Hanya 1 yang aktif
-  
+  id        String   @id @default(uuid())
+  year      String   @unique // "2024/2025"
+  startDate DateTime @map("start_date")
+  endDate   DateTime @map("end_date")
+  isActive  Boolean  @default(false) @map("is_active") // Hanya 1 yang aktif
+
   // Metadata
-  description   String?
-  createdBy     String?   @map("created_by")
-  createdAt     DateTime  @default(now()) @map("created_at")
-  updatedAt     DateTime  @updatedAt @map("updated_at")
+  description String?
+  createdById String?  @map("created_by_id")
+  createdBy   User?    @relation("AcademicYearCreator", fields: [createdById], references: [id])
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
 
   // Relasi
-  studentClasses StudentClass[]
-  billings       Billing[]
-  registrations  NewStudent[]
+  studentClasses   StudentClass[]
+  billings         Billing[]
+  registrations    NewStudent[]
+  billingTemplates BillingTemplate[]
 
   @@map("academic_years")
 }
 
 // 2. KELAS/TINGKAT (Class/Grade)
 model Class {
-  id            String    @id @default(uuid())
-  name          String    // "7A", "7B", "8A", etc.
-  grade         Int       // 7, 8, 9
-  
+  id    String @id @default(uuid())
+  name  String // "7A", "7B", "8A", etc.
+  grade Int // 7, 8, 9
+
   // Tarif SPP per kelas
-  sppAmount     Float     @default(0) @map("spp_amount") // Tarif SPP bulanan
-  maxCapacity   Int?      @default(40) @map("max_capacity")
-  
+  sppAmount   Float @default(0) @map("spp_amount") // Tarif SPP bulanan
+  maxCapacity Int?  @default(40) @map("max_capacity")
+
   // Metadata
-  isActive      Boolean   @default(true) @map("is_active")
-  waliKelas     String?   @map("wali_kelas")
-  description   String?
-  createdAt     DateTime  @default(now()) @map("created_at")
-  updatedAt     DateTime  @updatedAt @map("updated_at")
+  isActive    Boolean  @default(true) @map("is_active")
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
 
   // Relasi
-  studentClasses StudentClass[]
+  studentClasses   StudentClass[]
   billingTemplates BillingTemplate[]
 
   @@unique([name, grade])
@@ -324,25 +332,25 @@ model Class {
 
 // 3. STUDENT CLASS (History Enrollment Siswa)
 model StudentClass {
-  id              String       @id @default(uuid())
-  studentId       String       @map("student_id")
-  student         Student      @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  
-  classId         String       @map("class_id")
-  class           Class        @relation(fields: [classId], references: [id])
-  
-  academicYearId  String       @map("academic_year_id")
-  academicYear    AcademicYear @relation(fields: [academicYearId], references: [id])
-  
+  id        String  @id @default(uuid())
+  studentId String  @map("student_id")
+  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  classId String @map("class_id")
+  class   Class  @relation(fields: [classId], references: [id])
+
+  academicYearId String       @map("academic_year_id")
+  academicYear   AcademicYear @relation(fields: [academicYearId], references: [id])
+
   // Status enrollment
-  enrollmentDate  DateTime     @default(now()) @map("enrollment_date")
-  endDate         DateTime?    @map("end_date") // Null jika masih aktif
-  isActive        Boolean      @default(true) @map("is_active")
-  
+  enrollmentDate DateTime  @default(now()) @map("enrollment_date")
+  endDate        DateTime? @map("end_date") // Null jika masih aktif
+  isActive       Boolean   @default(true) @map("is_active")
+
   // Metadata
-  notes           String?      @db.Text
-  createdAt       DateTime     @default(now()) @map("created_at")
-  updatedAt       DateTime     @updatedAt @map("updated_at")
+  notes     String?  @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@unique([studentId, academicYearId]) // Siswa hanya bisa di 1 kelas per tahun ajaran
   @@map("student_classes")
@@ -350,106 +358,112 @@ model StudentClass {
 
 // 4. TEMPLATE TAGIHAN (Billing Template)
 model BillingTemplate {
-  id            String    @id @default(uuid())
-  name          String    // "SPP Kelas 7", "Uang Gedung", etc.
-  type          PaymentType
-  academicYear  String    @map("academic_year") // "2024/2025"
-  dueDate       DateTime  @map("due_date") // Jatuh tempo default
-  
+  id             String       @id @default(uuid())
+  name           String // "SPP Kelas 7", "Uang Gedung", etc.
+  type           PaymentType
+  academicYearId String       @map("academic_year_id")
+  academicYear   AcademicYear @relation(fields: [academicYearId], references: [id])
+  dueDate        DateTime     @map("due_date") // Jatuh tempo default
+
   // Target
-  classId       String?   @map("class_id") // Null = berlaku untuk semua
-  class         Class?    @relation(fields: [classId], references: [id])
-  
+  classId String? @map("class_id") // Null = berlaku untuk semua
+  class   Class?  @relation(fields: [classId], references: [id])
+
   // Tarif
-  amount        Float     // Nominal tagihan
-  isRecurring   Boolean   @default(false) @map("is_recurring") // true untuk SPP bulanan
-  
+  amount      Float // Nominal tagihan
+  isRecurring Boolean @default(false) @map("is_recurring") // true untuk SPP bulanan
+
   // Metadata
-  description   String?   @db.Text
-  isActive      Boolean   @default(true) @map("is_active")
-  createdBy     String?   @map("created_by")
-  createdAt     DateTime  @default(now()) @map("created_at")
-  updatedAt     DateTime  @updatedAt @map("updated_at")
+  description String?  @db.Text
+  isActive    Boolean  @default(true) @map("is_active")
+  createdById String?  @map("created_by_id")
+  createdBy   User?    @relation("TemplateCreator", fields: [createdById], references: [id])
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
 
   // Relasi
-  items         BillingItem[] @relation("items")
+  items    BillingItem[] @relation("items")
+  billings Billing[]
 
   @@map("billing_templates")
 }
 
 // 5. ITEM TAGIHAN (Billing Item) - Breakdown tagihan
 model BillingItem {
-  id                  String          @id @default(uuid())
-  billingTemplateId   String          @map("billing_template_id")
-  billingTemplate     BillingTemplate @relation("items", fields: [billingTemplateId], references: [id], onDelete: Cascade)
-  
-  itemName            String          @map("item_name") // "SPP Bulan November", "Biaya Lab", etc.
-  description         String?         @db.Text
-  amount              Float
-  quantity            Int             @default(1)
-  
+  id                String          @id @default(uuid())
+  billingTemplateId String          @map("billing_template_id")
+  billingTemplate   BillingTemplate @relation("items", fields: [billingTemplateId], references: [id], onDelete: Cascade)
+
+  itemName    String  @map("item_name") // "SPP Bulan November", "Biaya Lab", etc.
+  description String? @db.Text
+  amount      Float
+  quantity    Int     @default(1)
+
   // Metadata
-  isRequired          Boolean         @default(true) @map("is_required")
-  isOptional          Boolean         @default(false) @map("is_optional")
-  createdAt           DateTime        @default(now()) @map("created_at")
-  updatedAt           DateTime        @updatedAt @map("updated_at")
+  isRequired Boolean  @default(true) @map("is_required")
+  isOptional Boolean  @default(false) @map("is_optional")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
 
   @@map("billing_items")
 }
 
 // 6. TAGIHAN/INVOICE (Billing) - INI YANG PALING PENTING!
 model Billing {
-  id              String          @id @default(uuid())
-  billNumber      String          @unique @map("bill_number") // INV/2024/11/001
-  
+  id         String @id @default(uuid())
+  billNumber String @unique @map("bill_number") // INV/2024/11/001
+
   // Target siswa
-  studentId       String          @map("student_id")
-  student         Student         @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  
+  studentId String  @map("student_id")
+  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
   // Template (opsional)
-  templateId      String?         @map("template_id")
-  
+  templateId String?          @map("template_id")
+  template   BillingTemplate? @relation(fields: [templateId], references: [id])
+
   // Periode
-  academicYearId  String          @map("academic_year_id")
-  academicYear    AcademicYear    @relation(fields: [academicYearId], references: [id])
-  
+  academicYearId String       @map("academic_year_id")
+  academicYear   AcademicYear @relation(fields: [academicYearId], references: [id])
+
   // Jenis tagihan
-  type            PaymentType
-  month           Int?            // 1-12 untuk SPP bulanan, null untuk sekali bayar
-  year            Int             // 2024, 2025, etc.
-  
+  type  PaymentType
+  month Int? // 1-12 untuk SPP bulanan, null untuk sekali bayar
+  year  Int // 2024, 2025, etc.
+
   // Nominal
-  subtotal        Float           // Total sebelum diskon
-  discount        Float           @default(0) // Diskon jika ada
-  discountReason  String?         @map("discount_reason") // Alasan diskon
-  totalAmount     Float           @map("total_amount") // Total yang harus dibayar
-  paidAmount      Float           @default(0) @map("paid_amount") // Total sudah dibayar
-  
+  subtotal       Float // Total sebelum diskon
+  discount       Float   @default(0) // Diskon jika ada
+  discountReason String? @map("discount_reason") // Alasan diskon
+  totalAmount    Float   @map("total_amount") // Total yang harus dibayar
+  paidAmount     Float   @default(0) @map("paid_amount") // Total sudah dibayar
+
   // Cicilan (Installment)
-  allowInstallments Boolean       @default(false) @map("allow_installments")
-  installmentCount  Int?          @map("installment_count") // Jumlah cicilan
-  installmentAmount Float?        @map("installment_amount") // Nominal per cicilan
-  
+  allowInstallments Boolean @default(false) @map("allow_installments")
+  installmentCount  Int?    @map("installment_count") // Jumlah cicilan
+  installmentAmount Float?  @map("installment_amount") // Nominal per cicilan
+
   // Status & deadline
-  status          BillingStatus   @default(BILLED)
-  dueDate         DateTime        @map("due_date") // Jatuh tempo
-  billDate        DateTime        @default(now()) @map("bill_date") // Tanggal tagihan dibuat
-  
+  status   BillingStatus @default(BILLED)
+  dueDate  DateTime      @map("due_date") // Jatuh tempo
+  billDate DateTime      @default(now()) @map("bill_date") // Tanggal tagihan dibuat
+
   // Waiver (Pembebasan)
-  waivedAt        DateTime?       @map("waived_at")
-  waivedBy        String?         @map("waived_by") // User ID bendahara
-  waivedReason    String?         @map("waived_reason")
-  
+  waivedAt     DateTime? @map("waived_at")
+  waivedById   String?   @map("waived_by_id")
+  waivedBy     User?     @relation("BillingWaiver", fields: [waivedById], references: [id])
+  waivedReason String?   @map("waived_reason")
+
   // Metadata
-  description     String?         @db.Text
-  notes           String?         @db.Text // Catatan admin
-  issuedBy        String?         @map("issued_by") // User ID yang buat tagihan
-  createdAt       DateTime        @default(now()) @map("created_at")
-  updatedAt       DateTime        @updatedAt @map("updated_at")
+  description String?  @db.Text
+  notes       String?  @db.Text // Catatan admin
+  issuedById  String?  @map("issued_by_id")
+  issuedBy    User?    @relation("BillingIssuer", fields: [issuedById], references: [id])
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
 
   // Relasi
-  payments        Payment[]
-  installments    Installment[]
+  payments     Payment[]
+  installments Installment[]
 
   @@index([studentId, academicYearId])
   @@index([status])
@@ -459,43 +473,44 @@ model Billing {
 
 // 7. PEMBAYARAN (Payment) - Refactored
 model Payment {
-  id              String          @id @default(uuid())
-  paymentNumber   String          @unique @map("payment_number") // PAY/2024/11/001
-  
+  id            String @id @default(uuid())
+  paymentNumber String @unique @map("payment_number") // PAY/2024/11/001
+
   // Link ke tagihan
-  billingId       String          @map("billing_id")
-  billing         Billing         @relation(fields: [billingId], references: [id], onDelete: Cascade)
-  
+  billingId String  @map("billing_id")
+  billing   Billing @relation(fields: [billingId], references: [id], onDelete: Cascade)
+
   // Metode pembayaran
-  method          PaymentMethod
-  amount          Float           // Nominal yang dibayar (bisa cicilan)
-  adminFee        Float           @default(0) @map("admin_fee")
-  totalPaid       Float           @map("total_paid") // amount + adminFee
-  
+  method    PaymentMethod
+  amount    Float // Nominal yang dibayar (bisa cicilan)
+  adminFee  Float         @default(0) @map("admin_fee")
+  totalPaid Float         @map("total_paid") // amount + adminFee
+
   // Status pembayaran
-  status          PaymentStatus   @default(PENDING)
-  
+  status PaymentStatus @default(PENDING)
+
   // Payment gateway integration
-  externalId      String?         @unique @map("external_id") // ID dari payment gateway
-  vaNumber        String?         @map("va_number")
-  qrCode          String?         @map("qr_code")
-  deeplink        String?         // Link untuk e-wallet
-  
+  externalId String? @unique @map("external_id") // ID dari payment gateway
+  vaNumber   String? @map("va_number")
+  qrCode     String? @map("qr_code")
+  deeplink   String? // Link untuk e-wallet
+
   // Timestamp
-  expiredAt       DateTime?       @map("expired_at")
-  paidAt          DateTime?       @map("paid_at")
-  
+  expiredAt DateTime? @map("expired_at")
+  paidAt    DateTime? @map("paid_at")
+
   // Bukti pembayaran
-  receiptUrl      String?         @map("receipt_url")
-  notes           String?         @db.Text
-  
+  receiptUrl String? @map("receipt_url")
+  notes      String? @db.Text
+
   // Metadata
-  processedBy     String?         @map("processed_by") // User ID bendahara
-  createdAt       DateTime        @default(now()) @map("created_at")
-  updatedAt       DateTime        @updatedAt @map("updated_at")
+  processedById String?  @map("processed_by_id")
+  processedBy   User?    @relation("PaymentProcessor", fields: [processedById], references: [id])
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
 
   // Relasi
-  details         PaymentDetail[]
+  details PaymentDetail[]
 
   @@index([billingId])
   @@index([status])
@@ -504,41 +519,41 @@ model Payment {
 
 // 8. DETAIL PEMBAYARAN (Payment Detail) - Breakdown pembayaran
 model PaymentDetail {
-  id            String    @id @default(uuid())
-  paymentId     String    @map("payment_id")
-  payment       Payment   @relation(fields: [paymentId], references: [id], onDelete: Cascade)
-  
-  description   String    // "Pembayaran SPP November", "Biaya Admin", etc.
-  amount        Float
-  
+  id        String  @id @default(uuid())
+  paymentId String  @map("payment_id")
+  payment   Payment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+
+  description String // "Pembayaran SPP November", "Biaya Admin", etc.
+  amount      Float
+
   // Metadata
-  notes         String?
-  createdAt     DateTime  @default(now()) @map("created_at")
+  notes     String?
+  createdAt DateTime @default(now()) @map("created_at")
 
   @@map("payment_details")
 }
 
 // 9. CICILAN (Installment) - Jadwal cicilan pembayaran
 model Installment {
-  id              String          @id @default(uuid())
-  billingId       String          @map("billing_id")
-  billing         Billing         @relation(fields: [billingId], references: [id], onDelete: Cascade)
-  
+  id        String  @id @default(uuid())
+  billingId String  @map("billing_id")
+  billing   Billing @relation(fields: [billingId], references: [id], onDelete: Cascade)
+
   // Detail cicilan
-  installmentNo   Int             @map("installment_no") // 1, 2, 3, dst
-  amount          Float           // Nominal cicilan ini
-  dueDate         DateTime        @map("due_date") // Tanggal jatuh tempo
-  
+  installmentNo Int      @map("installment_no") // 1, 2, 3, dst
+  amount        Float // Nominal cicilan ini
+  dueDate       DateTime @map("due_date") // Tanggal jatuh tempo
+
   // Status pembayaran
-  isPaid          Boolean         @default(false) @map("is_paid")
-  paidAmount      Float           @default(0) @map("paid_amount")
-  paidAt          DateTime?       @map("paid_at")
-  paymentId       String?         @map("payment_id") // Link to Payment if paid
-  
+  isPaid     Boolean   @default(false) @map("is_paid")
+  paidAmount Float     @default(0) @map("paid_amount")
+  paidAt     DateTime? @map("paid_at")
+  paymentId  String?   @map("payment_id") // Link to Payment if paid
+
   // Metadata
-  notes           String?         @db.Text
-  createdAt       DateTime        @default(now()) @map("created_at")
-  updatedAt       DateTime        @updatedAt @map("updated_at")
+  notes     String?  @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@index([billingId])
   @@map("installments")
@@ -546,18 +561,18 @@ model Installment {
 
 // 10. ACTIVITY LOG - Audit trail untuk semua aktivitas penting
 model ActivityLog {
-  id          String   @id @default(uuid())
-  userId      String   @map("user_id")
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+  id     String @id @default(uuid())
+  userId String @map("user_id")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   // Detail aktivitas
-  action      String   // "UPDATE_STUDENT_STATUS", "APPLY_DISCOUNT", "WAIVE_BILLING", etc.
-  entity      String   // "Student", "Billing", "Payment", etc.
-  entityId    String   @map("entity_id") // ID dari entity yang diubah
-  details     String?  @db.Text // JSON string untuk detail tambahan
-  
+  action   String // "UPDATE_STUDENT_STATUS", "APPLY_DISCOUNT", "WAIVE_BILLING", etc.
+  entity   String // "Student", "Billing", "Payment", etc.
+  entityId String  @map("entity_id") // ID dari entity yang diubah
+  details  String? @db.Text // JSON string untuk detail tambahan
+
   // Metadata
-  createdAt   DateTime @default(now()) @map("created_at")
+  createdAt DateTime @default(now()) @map("created_at")
 
   @@index([userId])
   @@index([entity, entityId])

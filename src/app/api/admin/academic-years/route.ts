@@ -86,7 +86,7 @@ export async function POST(request: NextRequest) {
         endDate: new Date(endDate),
         isActive: isActive || false,
         description,
-        createdBy: session.user.id,
+        createdById: session.user.id,
       },
     });
 

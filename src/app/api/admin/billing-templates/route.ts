@@ -40,10 +40,10 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { name, type, amount, academicYear, description, dueDate, items } = body;
+    const { name, type, amount, academicYearId, description, dueDate, items } = body;
 
     // Validate required fields
-    if (!name || !academicYear || !dueDate || !type || amount === undefined) {
+    if (!name || !academicYearId || !dueDate || !type || amount === undefined) {
       return NextResponse.json(
         { error: 'Name, type, amount, academic year, and due date are required' },
         { status: 400 }
@@ -56,10 +56,10 @@ export async function POST(request: NextRequest) {
         name,
         type,
         amount,
-        academicYear,
+        academicYearId,
         description,
         dueDate: new Date(dueDate),
-        createdBy: session.user.id,
+        createdById: session.user.id,
         items: {
           create: items?.map((item: { itemName: string; amount: number; isRequired?: boolean }) => ({
             itemName: item.itemName,

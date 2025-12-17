@@ -61,7 +61,7 @@ export async function POST(
         data: {
           status: 'WAIVED',
           waivedAt: new Date(),
-          waivedBy: session.user.id,
+          waivedById: session.user.id,
           waivedReason
         }
       }),

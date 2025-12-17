@@ -55,7 +55,7 @@ export async function PUT(
 
   try {
     const body = await request.json();
-    const { name, academicYear, description, dueDate, items } = body;
+    const { name, academicYearId, description, dueDate, items } = body;
 
     // Check if template exists
     const existing = await prisma.billingTemplate.findUnique({
@@ -74,7 +74,7 @@ export async function PUT(
       where: { id },
       data: {
         name,
-        academicYear,
+        academicYearId,
         description,
         dueDate: dueDate ? new Date(dueDate) : undefined,
         items: items ? {

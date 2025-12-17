@@ -151,7 +151,7 @@ export async function POST(request: NextRequest) {
             dueDate,
             billDate: new Date(),
             description: description || `${type} ${getMonthName(month)} ${year}`,
-            issuedBy: session.user.id,
+            issuedById: session.user.id,
           },
         });
 

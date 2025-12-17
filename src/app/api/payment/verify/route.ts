@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
         data: {
           status: action === 'APPROVE' ? 'COMPLETED' : 'FAILED',
           paidAt: action === 'APPROVE' ? new Date() : null,
-          processedBy: session.user.id,
+          processedById: session.user.id,
           notes: notes || payment.notes,
         },
       });
