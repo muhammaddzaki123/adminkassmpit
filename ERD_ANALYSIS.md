@@ -1,51 +1,40 @@
-# Analisis ERD: Kualitas dan Kepatuhan Standar
+# Analisis ERD: Struktur User Berbasis Peran (Logical View)
 
-Dokumen ini berisi analisis mendalam mengenai `database_erd_final.drawio` yang telah dihasilkan, ditinjau dari aspek kelengkapan, logika database, dan standar profesional menggunakan Bahasa Indonesia.
+Dokumen ini menjelaskan struktur ERD terbaru (`database_erd_roles.drawio`) yang dirancang untuk menjawab kebutuhan representasi entitas pengguna yang lebih spesifik.
 
-## 1. Pemenuhan Syarat Utama (Compliance) ✅
+## 1. Perubahan Paradigma: Logical vs Physical
 
-ERD ini telah **MEMENUHI** standar ERD Fisikal (Physical Data Model) modern dengan perbaikan signifikan dari versi sebelumnya:
+Dalam database fisik (`schema.prisma`), kita menggunakan strategi **Single Table Inheritance**:
+*   Hanya ada satu tabel `User`.
+*   Peran (`Admin`, `Treasurer`, `Headmaster`) dibedakan hanya melalui kolom `role`.
 
-*   **Notasi Crow's Foot**: Penggunaan simbol `|<`, `||`, `o|` sudah tepat untuk menggambarkan kardinalitas (*One-to-Many*, *One-to-One*). Ini jauh lebih teknis dan akurat dibanding sekadar garis hubung biasa.
-*   **Kelengkapan Entitas**: Seluruh **17 Tabel** dari Prisma Schema telah dimuat, termasuk tabel pendukung vital seperti `ActivityLog`, `NotificationLog`, dan `SystemSettings` yang sering terlewat dalam dokumentasi standar.
-*   **Struktur Tabel Profesional**: Penggunaan format 3-Kolom (Tipe Data | Nama Kolom | Key) memudahkan developer dan DBA membaca struktur tanpa perlu membuka kode sumber.
+Namun, dalam ERD Logikal ini, kami memecah `User` menjadi entitas-entitas spesifik:
+*   **User (Base)**: Menyimpan data autentikasi (username, password, email).
+*   **Admin**: Entitas logikal untuk pengguna operasional.
+*   **Treasurer (Bendahara)**: Entitas logikal untuk pengelola keuangan.
+*   **Headmaster (Kepala Sekolah)**: Entitas logikal untuk persetujuan tingkat tinggi.
 
-## 2. Analisis Logika Relasi (Structural Logic)
+## 2. Struktur Hierarki (Inheritance)
+ERD ini menggunakan notasi visual *Inheritance* (garis putus-putus dengan panah blok) untuk menunjukkan:
+*   `Admin` **ADALAH** `User`.
+*   `Treasurer` **ADALAH** `User`.
+*   `Student` **MEMILIKI** akun `User` (1:1 Relasi Fisik).
 
-### a. Centralized Billing Hub (Sangat Baik)
-ERD berhasil menggambarkan `Billing` sebagai jantung sistem keuangan. Relasi ke `Student`, `AcademicYear`, `BillingTemplate`, `Payment`, dan `Installment` terlihat jelas terpusat. Ini merepresentasikan sistem "Invoice-Based" yang profesional, bukan sekadar pencatatan kas sederhana.
+## 3. Distribusi Tanggung Jawab (Separation of Concerns)
 
-### b. Associative Entity pada `StudentClass` (Sangat Baik)
-Relasi *Many-to-Many* antara `Student` dan `Class` telah dipecah dengan benar menggunakan `StudentClass`.
-*   *Logika*: `Student` 1 ────< `StudentClass` >──── 1 `Class`.
-*   Ini memungkinkan *history* pencatatan: siswa bisa naik kelas setiap tahun ajaran tanpa menimpa data kelas sebelumnya, yang merupakan syarat mutlak sistem akademik.
+Dengan memecah entitas user, relasi menjadi jauh lebih jelas dan tidak ambigu:
 
-### c. Relasi User & Roles
-Relasi `User` ke `Student` dan `NewStudent` digambarkan sebagai **1:0..1 (Optional One-to-One)**.
-*   Artinya: Satu User *mungkin* adalah Student, tapi tidak wajib (bisa saja Admin atau Treasurer).
-*   Ini sesuai dengan logika bisnis bahwa akun User adalah "Parent Identity" yang membawahi role spesifik.
+| Modul | Aktor (Entitas) | Relasi / Aksi | Kejelasan |
+| :--- | :--- | :--- | :--- |
+| **Keuangan** | **Treasurer** | Menerbitkan `Billing`, Memproses `Payment`, Mengelola `Expense` | Kita tahu pasti siapa yang bertanggung jawab atas uang, bukan sekadar "User". |
+| **Sistem** | **Admin** | Mengelola `SystemSettings`, Verifikasi `NewStudent` | Memisahkan tugas teknis dari tugas keuangan. |
+| **Akademik** | **Headmaster** | Menyetujui `NewStudent` (Approval) | Menunjukkan hierarki persetujuan. |
+| **Siswa** | **Student** | Menerima `Billing`, Masuk ke `StudentClass` | Jelas sebagai objek layanan pendidikan. |
 
-## 3. Identifikasi Kejanggalan / Gap pada Schema (Critical Review) ⚠️
+## 4. Kesimpulan Kualitas
 
-Meskipun ERD sudah menggambarkan Schema apa adanya dengan benar, terdapat beberapa **kejanggalan pada desain database asli (Prisma Schema)** yang terlihat jelas melalui visualisasi ERD ini:
+ERD versi ini (`roles`) adalah representasi yang lebih **kaya secara semantik** dibandingkan ERD fisik murni.
+*   **Kelebihan**: Sangat mudah dipahami oleh stakeholder non-teknis (Kepala Sekolah, Bagian Keuangan) karena mereka melihat "Diri Mereka" sebagai kotak entitas sendiri.
+*   **Catatan Implementasi**: Developer harus ingat bahwa `Admin`, `Treasurer`, dan `Headmaster` di database fisik tetap berada di tabel `User`.
 
-### a. Tabel `Expense` Terisolasi (Orphan Table)
-*   **Temuan**: Tabel `Expense` (Pengeluaran) berdiri sendiri secara visual tanpa relasi garis ke `User`.
-*   **Analisis**: Dalam sistem akuntansi yang aman (audit-ready), setiap pengeluaran **WAJIB** memiliki relasi ke `User` (siapa yang membuat input atau menyetujui pengeluaran tersebut?). Saat ini, schema `Expense` tidak memiliki foreign key `createdById` atau `approvedById`.
-*   **Status**: Kejanggalan Schema (bukan kesalahan ERD).
-
-### b. Pemisahan Transaksi Pendaftaran (`NewStudentTransaction`)
-*   **Temuan**: Pembayaran pendaftaran (`NewStudentTransaction`) terpisah total dari sistem `Billing` & `Payment` utama.
-*   **Analisis**: Ini membuat laporan keuangan terpecah dua jalur (Pendapatan Pendaftaran vs Pendapatan SPP/Lainnya). Secara sistem ERP yang matang, biasanya pendaftaran akan men-generate sebuah `Billing` pertama agar semua arus kas masuk melalui satu pintu (`Payment`).
-*   **Status**: Desain Schema yang kurang terintegrasi.
-
-### c. Dependensi User ke Student
-*   **Temuan**: Relasi `User` ke `Student` menggunakan `studentId` di tabel User.
-*   **Analisis**: Ini sah secara teknis. Namun, secara visual ERD memperlihatkan `User` bergantung pada `Student`. Dalam beberapa praktik, relasi ini bisa dibalik (`Student` punya `userId`) agar User tabel tetap bersih/ringan, namun pendekatan saat ini (User memegang pointer) memudahkan query "Get User with Profile".
-*   **Status**: Valid (Pilihan Arsitektur).
-
-## Kesimpulan
-
-Secara **Visual dan Standar ERD**, diagram ini sudah **SANGAT BAIK (9/10)** dan siap digunakan untuk dokumentasi teknis, sidang skripsi, atau panduan development tim.
-
-Kekurangan yang tersisa (poin 3) bukanlah kesalahan gambar ERD, melainkan **peluang optimasi pada struktur database (Schema)** itu sendiri yang menjadi terlihat jelas berkat adanya ERD yang mendetail ini.
+Diagram ini memenuhi permintaan untuk menunjukkan bahwa *"setiap user seharusnya memiliki entitas sendiri"* secara konseptual.
