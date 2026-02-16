@@ -48,6 +48,16 @@ function SPPPaymentContent() {
   const fetchBillings = useCallback(async () => {
     try {
       const response = await fetch('/api/billing/student');
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const contentType = response.headers.get('content-type');
+      if (!contentType?.includes('application/json')) {
+        throw new Error('Expected JSON response but got: ' + contentType);
+      }
+      
       const result = await response.json();
       
       if (result.success) {
@@ -65,6 +75,7 @@ function SPPPaymentContent() {
       }
     } catch (error) {
       console.error('Error fetching billings:', error);
+      alert('Gagal memuat data tagihan. Silakan refresh halaman.');
     } finally {
       setLoading(false);
     }
@@ -190,6 +201,15 @@ function SPPPaymentContent() {
         }),
       });
 
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const contentType = response.headers.get('content-type');
+      if (!contentType?.includes('application/json')) {
+        throw new Error('Expected JSON response but got: ' + contentType);
+      }
+
       const result = await response.json();
 
       if (result.success) {
@@ -206,7 +226,8 @@ function SPPPaymentContent() {
       }
     } catch (error) {
       console.error('Payment error:', error);
-      alert('Terjadi kesalahan saat memproses pembayaran');
+      const errorMessage = error instanceof Error ? error.message : 'Terjadi kesalahan saat memproses pembayaran';
+      alert(errorMessage);
       setStep('method');
       setIsProcessing(false);
     }

@@ -6,7 +6,7 @@ import { Prisma, BillingStatus, PaymentType } from '@prisma/client';
 // GET /api/billing/list - Treasurer views all billings with filters
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession();
+    const session = await getServerSession(request);
     
     if (!session || !['TREASURER', 'ADMIN'].includes(session.user.role)) {
       return NextResponse.json(

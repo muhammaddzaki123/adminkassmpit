@@ -70,13 +70,24 @@ export default function LoginPage() {
         }),
       });
 
-      const data = await response.json();
-
       if (!response.ok) {
-        setError(data.error || 'Login gagal');
+        const contentType = response.headers.get('content-type');
+        if (contentType?.includes('application/json')) {
+          const data = await response.json();
+          setError(data.error || 'Login gagal');
+        } else {
+          setError(`Login gagal: ${response.status}`);
+        }
         setIsLoading(false);
         return;
       }
+      
+      const contentType = response.headers.get('content-type');
+      if (!contentType?.includes('application/json')) {
+        throw new Error('Expected JSON response but got: ' + contentType);
+      }
+
+      const data = await response.json();
 
       // Simpan user data ke localStorage
       localStorage.setItem('user', JSON.stringify(data.user));

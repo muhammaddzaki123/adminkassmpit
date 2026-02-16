@@ -4,7 +4,7 @@ import { requireDashboardAccess } from '@/lib/auth-helpers';
 
 // GET - Get installment payments report
 export async function GET(request: NextRequest) {
-  const authResult = await requireDashboardAccess();
+  const authResult = await requireDashboardAccess(request);
   if (authResult instanceof NextResponse) {
     return authResult;
   }

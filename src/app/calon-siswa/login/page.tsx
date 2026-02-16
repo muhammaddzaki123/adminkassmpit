@@ -28,11 +28,22 @@ export default function NewStudentLoginPage() {
         body: JSON.stringify(formData),
       });
 
-      const data = await response.json();
-
       if (!response.ok) {
-        throw new Error(data.error || 'Login gagal');
+        const contentType = response.headers.get('content-type');
+        if (contentType?.includes('application/json')) {
+          const data = await response.json();
+          throw new Error(data.error || 'Login gagal');
+        } else {
+          throw new Error(`Login gagal: ${response.status}`);
+        }
       }
+      
+      const contentType = response.headers.get('content-type');
+      if (!contentType?.includes('application/json')) {
+        throw new Error('Expected JSON response but got: ' + contentType);
+      }
+
+      const data = await response.json();
 
       // Redirect ke dashboard calon siswa
       router.push('/calon-siswa/dashboard');

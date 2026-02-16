@@ -8,7 +8,7 @@ export async function PUT(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
-  const authResult = await requireAdmin();
+  const authResult = await requireAdmin(request);
   if (authResult instanceof NextResponse) return authResult;
 
   try {
@@ -102,7 +102,7 @@ export async function DELETE(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
-  const authResult = await requireAdmin();
+  const authResult = await requireAdmin(request);
   if (authResult instanceof NextResponse) return authResult;
 
   try {

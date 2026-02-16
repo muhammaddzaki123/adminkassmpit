@@ -68,6 +68,12 @@ export default function BillingManagementPage() {
   const fetchClasses = async () => {
     try {
       const response = await fetch('/api/admin/classes');
+      if (!response.ok) {
+        throw new Error(`Failed to fetch classes: ${response.status}`);
+      }
+      if (!response.headers.get('content-type')?.includes('application/json')) {
+        throw new Error('Expected JSON from classes API');
+      }
       const result = await response.json();
       if (result.success) {
         setClasses(result.data);
@@ -80,6 +86,12 @@ export default function BillingManagementPage() {
   const fetchAcademicYears = async () => {
     try {
       const response = await fetch('/api/admin/academic-years');
+      if (!response.ok) {
+        throw new Error(`Failed to fetch academic years: ${response.status}`);
+      }
+      if (!response.headers.get('content-type')?.includes('application/json')) {
+        throw new Error('Expected JSON from academic years API');
+      }
       const result = await response.json();
       if (result.success) {
         setAcademicYears(result.data);
@@ -96,6 +108,12 @@ export default function BillingManagementPage() {
   const fetchStats = async () => {
     try {
       const response = await fetch('/api/billing/stats');
+      if (!response.ok) {
+        throw new Error(`Failed to fetch stats: ${response.status}`);
+      }
+      if (!response.headers.get('content-type')?.includes('application/json')) {
+        throw new Error('Expected JSON from stats API');
+      }
       const result = await response.json();
       if (result.success) {
         setStats(result.data);
@@ -120,6 +138,14 @@ export default function BillingManagementPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
       });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      if (!response.headers.get('content-type')?.includes('application/json')) {
+        throw new Error('Expected JSON response');
+      }
 
       const result = await response.json();
 

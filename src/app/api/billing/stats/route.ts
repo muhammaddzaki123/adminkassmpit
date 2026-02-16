@@ -1,11 +1,11 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getServerSession } from '@/lib/auth';
 
 // GET /api/billing/stats - Get billing statistics
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession();
+    const session = await getServerSession(request);
     
     if (!session || !['TREASURER', 'ADMIN', 'HEADMASTER'].includes(session.user.role)) {
       return NextResponse.json(

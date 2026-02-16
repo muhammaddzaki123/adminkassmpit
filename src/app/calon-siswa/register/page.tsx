@@ -101,6 +101,23 @@ export default function RegisterCalonSiswaPage() {
         body: JSON.stringify(formData),
       });
 
+      if (!response.ok) {
+        const contentType = response.headers.get('content-type');
+        if (contentType?.includes('application/json')) {
+          const data = await response.json();
+          alert(data.error || 'Pendaftaran gagal');
+        } else {
+          alert(`Pendaftaran gagal: ${response.status}`);
+        }
+        setIsLoading(false);
+        return;
+      }
+      
+      const contentType = response.headers.get('content-type');
+      if (!contentType?.includes('application/json')) {
+        throw new Error('Expected JSON response but got: ' + contentType);
+      }
+
       const data = await response.json();
 
       if (response.ok) {
@@ -111,12 +128,11 @@ export default function RegisterCalonSiswaPage() {
           `Silakan login menggunakan NISN dan password Anda.`
         );
         router.push('/calon-siswa/login');
-      } else {
-        alert(data.error || 'Pendaftaran gagal');
       }
     } catch (error) {
       console.error('Registration error:', error);
-      alert('Terjadi kesalahan saat mendaftar');
+      const errorMessage = error instanceof Error ? error.message : 'Terjadi kesalahan saat mendaftar';
+      alert(errorMessage);
     } finally {
       setIsLoading(false);
     }

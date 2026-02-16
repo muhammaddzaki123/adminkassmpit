@@ -52,6 +52,16 @@ export default function HistoryPage() {
   const fetchTransactions = async () => {
     try {
       const response = await fetch('/api/student/transactions?studentId=student-123');
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const contentType = response.headers.get('content-type');
+      if (!contentType?.includes('application/json')) {
+        throw new Error('Expected JSON response but got: ' + contentType);
+      }
+      
       const result = await response.json();
       
       if (result.success) {
@@ -59,6 +69,7 @@ export default function HistoryPage() {
       }
     } catch (error) {
       console.error('Fetch transactions error:', error);
+      alert('Gagal memuat riwayat transaksi.');
     } finally {
       setIsLoading(false);
     }

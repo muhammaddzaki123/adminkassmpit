@@ -4,8 +4,8 @@ import * as bcrypt from 'bcryptjs';
 import { requireAdmin } from '@/lib/auth-helpers';
 
 // GET - Fetch all users (ADMIN ONLY)
-export async function GET() {
-  const authResult = await requireAdmin();
+export async function GET(request: NextRequest) {
+  const authResult = await requireAdmin(request);
   if (authResult instanceof NextResponse) return authResult;
 
   try {
@@ -36,7 +36,7 @@ export async function GET() {
 
 // POST - Create new user (ADMIN ONLY)
 export async function POST(request: NextRequest) {
-  const authResult = await requireAdmin();
+  const authResult = await requireAdmin(request);
   if (authResult instanceof NextResponse) return authResult;
 
   try {

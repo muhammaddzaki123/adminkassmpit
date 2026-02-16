@@ -6,7 +6,7 @@ import { Prisma, BillingStatus, PaymentType } from '@prisma/client'
 // GET /api/billing/student - Get billings for logged-in student
 export async function GET(req: NextRequest) {
   try {
-    const session = await getServerSession()
+    const session = await getServerSession(req)
     
     if (!session || session.user.role !== 'STUDENT') {
       return NextResponse.json(

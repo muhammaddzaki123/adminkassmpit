@@ -74,6 +74,12 @@ export default function TreasurerDashboard() {
       
       // Fetch all billings summary
       const billingsRes = await fetch('/api/billing/list');
+      if (!billingsRes.ok) {
+        throw new Error(`Failed to fetch billings: ${billingsRes.status}`);
+      }
+      if (!billingsRes.headers.get('content-type')?.includes('application/json')) {
+        throw new Error('Expected JSON from billings API');
+      }
       const billingsData = await billingsRes.json();
       
       let totalIncome = 0;
@@ -89,45 +95,55 @@ export default function TreasurerDashboard() {
         
         // Calculate monthly income (from this month's billings)
         const monthlyBillingsRes = await fetch(`/api/billing/list?month=${currentMonth}&year=${currentYear}`);
-        const monthlyBillingsData = await monthlyBillingsRes.json();
-        if (monthlyBillingsData.success) {
-          monthlyIncome = monthlyBillingsData.data.summary.totalPaid || 0;
+        if (monthlyBillingsRes.ok && monthlyBillingsRes.headers.get('content-type')?.includes('application/json')) {
+          const monthlyBillingsData = await monthlyBillingsRes.json();
+          if (monthlyBillingsData.success) {
+            monthlyIncome = monthlyBillingsData.data.summary.totalPaid || 0;
+          }
         }
       }
       
       // Fetch recent completed payments
       const paymentsRes = await fetch('/api/payment/list?status=COMPLETED&limit=5');
-      const paymentsData = await paymentsRes.json();
       let recentPaymentsList: Payment[] = [];
-      if (paymentsData.success) {
-        recentPaymentsList = paymentsData.data.payments || [];
+      if (paymentsRes.ok && paymentsRes.headers.get('content-type')?.includes('application/json')) {
+        const paymentsData = await paymentsRes.json();
+        if (paymentsData.success) {
+          recentPaymentsList = paymentsData.data.payments || [];
+        }
       }
       
       // Fetch pending payments for verification
       const pendingRes = await fetch('/api/payment/list?status=PENDING');
-      const pendingData = await pendingRes.json();
       let pendingCount = 0;
-      if (pendingData.success) {
-        pendingCount = pendingData.data.total || 0;
+      if (pendingRes.ok && pendingRes.headers.get('content-type')?.includes('application/json')) {
+        const pendingData = await pendingRes.json();
+        if (pendingData.success) {
+          pendingCount = pendingData.data.total || 0;
+        }
       }
       
       // Fetch expenses
       let totalExpense = 0;
       let monthlyExpense = 0;
       const expensesRes = await fetch('/api/expenses?status=APPROVED');
-      const expensesData = await expensesRes.json();
-      if (expensesData.success) {
-        const expenses = expensesData.data || [];
-        totalExpense = expenses.reduce((sum: number, e: { amount: number }) => sum + e.amount, 0);
-        
-        // Calculate monthly expenses
-        monthlyExpense = expenses
-          .filter((e: { date?: string }) => {
-            if (!e.date) return false;
-            const date = new Date(e.date);
-            return date.getMonth() + 1 === currentMonth && date.getFullYear() === currentYear;
-          })
-          .reduce((sum: number, e: { amount: number }) => sum + e.amount, 0);
+      if (expensesRes.ok && expensesRes.headers.get('content-type')?.includes('application/json')) {
+        const expensesData = await expensesRes.json();
+      if (expensesRes.ok && expensesRes.headers.get('content-type')?.includes('application/json')) {
+        const expensesData = await expensesRes.json();
+        if (expensesData.success) {
+          const expenses = expensesData.data || [];
+          totalExpense = expenses.reduce((sum: number, e: { amount: number }) => sum + e.amount, 0);
+          
+          // Calculate monthly expenses
+          monthlyExpense = expenses
+            .filter((e: { date?: string }) => {
+              if (!e.date) return false;
+              const date = new Date(e.date);
+              return date.getMonth() + 1 === currentMonth && date.getFullYear() === currentYear;
+            })
+            .reduce((sum: number, e: { amount: number }) => sum + e.amount, 0);
+        }
       }
       
       setStats({
@@ -144,6 +160,7 @@ export default function TreasurerDashboard() {
       setRecentPayments(recentPaymentsList);
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
+      alert('Gagal memuat data dashboard. Silakan refresh halaman.');
     } finally {
       setLoading(false);
     }

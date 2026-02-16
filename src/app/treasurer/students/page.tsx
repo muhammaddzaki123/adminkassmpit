@@ -50,6 +50,12 @@ export default function StudentsPage() {
     try {
       setLoading(true);
       const response = await fetch('/api/students');
+      if (!response.ok) {
+        throw new Error(`Failed to fetch students: ${response.status}`);
+      }
+      if (!response.headers.get('content-type')?.includes('application/json')) {
+        throw new Error('Expected JSON from students API');
+      }
       const data = await response.json();
       
       if (data.success) {
@@ -57,6 +63,7 @@ export default function StudentsPage() {
       }
     } catch (error) {
       console.error('Error fetching students:', error);
+      alert('Gagal memuat data siswa.');
     } finally {
       setLoading(false);
     }

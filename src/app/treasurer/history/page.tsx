@@ -60,6 +60,15 @@ export default function HistoryPage() {
         fetch('/api/spp-payments?status=PAID')
       ]);
 
+      if (!expensesRes.ok || !paymentsRes.ok) {
+        throw new Error('Failed to fetch transaction data');
+      }
+      
+      if (!expensesRes.headers.get('content-type')?.includes('application/json') ||
+          !paymentsRes.headers.get('content-type')?.includes('application/json')) {
+        throw new Error('Expected JSON response');
+      }
+
       const expensesData = await expensesRes.json();
       const paymentsData = await paymentsRes.json();
 

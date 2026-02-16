@@ -52,6 +52,12 @@ export default function ManualPaymentPage() {
       });
       
       const response = await fetch(`/api/billing/list?${params.toString()}`);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch billings: ${response.status}`);
+      }
+      if (!response.headers.get('content-type')?.includes('application/json')) {
+        throw new Error('Expected JSON response');
+      }
       const result = await response.json();
 
       if (result.success) {
@@ -62,6 +68,7 @@ export default function ManualPaymentPage() {
       }
     } catch (error) {
       console.error('Error fetching billings:', error);
+      alert('Gagal memuat data tagihan.');
     } finally {
       setLoading(false);
     }
@@ -125,6 +132,22 @@ export default function ManualPaymentPage() {
         }),
       });
 
+      if (!response.ok) {
+        const contentType = response.headers.get('content-type');
+        if (contentType?.includes('application/json')) {
+          const result = await response.json();
+          setMessage({ type: 'error', text: result.error || 'Gagal verifikasi pembayaran' });
+        } else {
+          setMessage({ type: 'error', text: `Error: ${response.status}` });
+        }
+        setLoading(false);
+        return;
+      }
+      
+      if (!response.headers.get('content-type')?.includes('application/json')) {
+        throw new Error('Expected JSON response');
+      }
+
       const result = await response.json();
 
       if (result.success) {
@@ -139,8 +162,9 @@ export default function ManualPaymentPage() {
       } else {
         setMessage({ type: 'error', text: result.error || 'Gagal verifikasi pembayaran' });
       }
-    } catch {
-      setMessage({ type: 'error', text: 'Terjadi kesalahan' });
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Terjadi kesalahan';
+      setMessage({ type: 'error', text: errorMessage });
     } finally {
       setLoading(false);
     }

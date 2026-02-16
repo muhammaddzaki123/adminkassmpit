@@ -5,7 +5,7 @@ import { BillingStatus } from '@prisma/client';
 
 // GET - Get discounts and waivers report
 export async function GET(request: NextRequest) {
-  const authResult = await requireDashboardAccess();
+  const authResult = await requireDashboardAccess(request);
   if (authResult instanceof NextResponse) {
     return authResult;
   }

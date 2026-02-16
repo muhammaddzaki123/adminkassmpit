@@ -29,6 +29,12 @@ export default function RegistrationStatusPage() {
     setLoading(true);
     try {
       const response = await fetch('/api/registration/status');
+      if (!response.ok) {
+        throw new Error(`Failed to fetch status: ${response.status}`);
+      }
+      if (!response.headers.get('content-type')?.includes('application/json')) {
+        throw new Error('Expected JSON response');
+      }
       const data = await response.json();
       setStatus(data);
     } catch (error) {

@@ -7,7 +7,7 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const authResult = await requireAdmin();
+  const authResult = await requireAdmin(request);
   if (authResult instanceof NextResponse) {
     return authResult;
   }
@@ -46,7 +46,7 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const authResult = await requireAdmin();
+  const authResult = await requireAdmin(request);
   if (authResult instanceof NextResponse) {
     return authResult;
   }
@@ -109,7 +109,7 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const authResult = await requireAdmin();
+  const authResult = await requireAdmin(request);
   if (authResult instanceof NextResponse) {
     return authResult;
   }

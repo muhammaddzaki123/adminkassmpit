@@ -5,7 +5,7 @@ import { getServerSession } from '@/lib/auth';
 // POST /api/payment/create - Create payment for a billing (PROPER FLOW)
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession();
+    const session = await getServerSession(request);
     
     if (!session || !['STUDENT', 'TREASURER'].includes(session.user.role)) {
       return NextResponse.json(

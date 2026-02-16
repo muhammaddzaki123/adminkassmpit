@@ -3,9 +3,9 @@ import prisma from '@/lib/prisma';
 import { getServerSession } from '@/lib/auth';
 
 // GET /api/admin/academic-years - Get all academic years
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession();
+    const session = await getServerSession(request);
     
     if (!session || !['TREASURER', 'ADMIN', 'HEADMASTER'].includes(session.user.role)) {
       return NextResponse.json(
@@ -53,7 +53,7 @@ export async function GET() {
 // POST /api/admin/academic-years - Create new academic year
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession();
+    const session = await getServerSession(request);
     
     if (!session || !['ADMIN'].includes(session.user.role)) {
       return NextResponse.json(

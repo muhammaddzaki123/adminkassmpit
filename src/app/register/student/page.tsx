@@ -74,17 +74,33 @@ export default function StudentRegistrationPage() {
         body: JSON.stringify(formData),
       });
 
+      if (!response.ok) {
+        const contentType = response.headers.get('content-type');
+        if (contentType?.includes('application/json')) {
+          const data = await response.json();
+          alert(data.message || 'Pendaftaran gagal');
+        } else {
+          alert(`Pendaftaran gagal: ${response.status}`);
+        }
+        setLoading(false);
+        return;
+      }
+      
+      const contentType = response.headers.get('content-type');
+      if (!contentType?.includes('application/json')) {
+        throw new Error('Expected JSON response but got: ' + contentType);
+      }
+
       const data = await response.json();
 
       if (response.ok) {
         setSuccess(true);
         setPaymentInfo(data.payment);
-      } else {
-        alert(data.message || 'Pendaftaran gagal');
       }
     } catch (error) {
       console.error('Error registering:', error);
-      alert('Terjadi kesalahan saat pendaftaran');
+      const errorMessage = error instanceof Error ? error.message : 'Terjadi kesalahan saat pendaftaran';
+      alert(errorMessage);
     } finally {
       setLoading(false);
     }

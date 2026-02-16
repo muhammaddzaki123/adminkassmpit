@@ -1,5 +1,5 @@
 // src/lib/auth-helpers.ts
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from './auth';
 import { UserRole } from '@prisma/client';
 
@@ -7,8 +7,8 @@ import { UserRole } from '@prisma/client';
  * Check if user is authenticated and has required role
  * Returns session if authorized, throws NextResponse error if not
  */
-export async function requireAuth(allowedRoles: UserRole[]) {
-  const session = await getServerSession();
+export async function requireAuth(request: NextRequest, allowedRoles: UserRole[]) {
+  const session = await getServerSession(request);
   
   if (!session) {
     return NextResponse.json(
@@ -30,48 +30,48 @@ export async function requireAuth(allowedRoles: UserRole[]) {
 /**
  * Check if user is ADMIN only
  */
-export async function requireAdmin() {
-  return requireAuth(['ADMIN']);
+export async function requireAdmin(request: NextRequest) {
+  return requireAuth(request, ['ADMIN']);
 }
 
 /**
  * Check if user is TREASURER only
  */
-export async function requireTreasurer() {
-  return requireAuth(['TREASURER']);
+export async function requireTreasurer(request: NextRequest) {
+  return requireAuth(request, ['TREASURER']);
 }
 
 /**
  * Check if user is ADMIN or TREASURER
  */
-export async function requireAdminOrTreasurer() {
-  return requireAuth(['ADMIN', 'TREASURER']);
+export async function requireAdminOrTreasurer(request: NextRequest) {
+  return requireAuth(request, ['ADMIN', 'TREASURER']);
 }
 
 /**
  * Check if user is HEADMASTER only
  */
-export async function requireHeadmaster() {
-  return requireAuth(['HEADMASTER']);
+export async function requireHeadmaster(request: NextRequest) {
+  return requireAuth(request, ['HEADMASTER']);
 }
 
 /**
  * Check if user has read-only dashboard access
  */
-export async function requireDashboardAccess() {
-  return requireAuth(['ADMIN', 'TREASURER', 'HEADMASTER']);
+export async function requireDashboardAccess(request: NextRequest) {
+  return requireAuth(request, ['ADMIN', 'TREASURER', 'HEADMASTER']);
 }
 
 /**
  * Check if user is STUDENT only
  */
-export async function requireStudent() {
-  return requireAuth(['STUDENT']);
+export async function requireStudent(request: NextRequest) {
+  return requireAuth(request, ['STUDENT']);
 }
 
 /**
  * Check if user is NEW_STUDENT only
  */
-export async function requireNewStudent() {
-  return requireAuth(['NEW_STUDENT']);
+export async function requireNewStudent(request: NextRequest) {
+  return requireAuth(request, ['NEW_STUDENT']);
 }

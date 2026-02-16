@@ -4,7 +4,7 @@ import { requireAdmin } from '@/lib/auth-helpers';
 
 // GET: List all new students (calon siswa) - ADMIN ONLY
 export async function GET(request: NextRequest) {
-  const authResult = await requireAdmin();
+  const authResult = await requireAdmin(request);
   if (authResult instanceof NextResponse) return authResult;
 
   try {

@@ -90,10 +90,22 @@ export default function ReportsPage() {
     try {
       // Fetch income data (SPP Payments)
       const incomeResponse = await fetch('/api/spp-payments?status=PAID');
+      if (!incomeResponse.ok) {
+        throw new Error(`Failed to fetch income data: ${incomeResponse.status}`);
+      }
+      if (!incomeResponse.headers.get('content-type')?.includes('application/json')) {
+        throw new Error('Expected JSON from income API');
+      }
       const incomeData = await incomeResponse.json();
       
       // Fetch expense data
       const expenseResponse = await fetch('/api/expenses?status=APPROVED');
+      if (!expenseResponse.ok) {
+        throw new Error(`Failed to fetch expense data: ${expenseResponse.status}`);
+      }
+      if (!expenseResponse.headers.get('content-type')?.includes('application/json')) {
+        throw new Error('Expected JSON from expense API');
+      }
       const expenseData = await expenseResponse.json();
 
       if (incomeData.success && expenseData.success) {

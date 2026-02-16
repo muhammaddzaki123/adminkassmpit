@@ -58,6 +58,12 @@ export default function ReRegistrationPage() {
       setLoading(true);
       // Fetch students with re-registration status
       const response = await fetch('/api/students?status=AWAITING_REREG');
+      if (!response.ok) {
+        throw new Error(`Failed to fetch re-registrations: ${response.status}`);
+      }
+      if (!response.headers.get('content-type')?.includes('application/json')) {
+        throw new Error('Expected JSON response');
+      }
       const data = await response.json();
       
       if (data.success) {
@@ -76,6 +82,7 @@ export default function ReRegistrationPage() {
       }
     } catch (error) {
       console.error('Error fetching re-registrations:', error);
+      alert('Gagal memuat data daftar ulang.');
     } finally {
       setLoading(false);
     }

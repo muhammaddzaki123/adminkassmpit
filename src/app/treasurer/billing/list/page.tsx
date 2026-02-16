@@ -51,6 +51,12 @@ export default function BillingListPage() {
       if (filters.search) params.append('search', filters.search);
 
       const response = await fetch(`/api/billing/list?${params.toString()}`);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch billings: ${response.status}`);
+      }
+      if (!response.headers.get('content-type')?.includes('application/json')) {
+        throw new Error('Expected JSON from billings API');
+      }
       const result = await response.json();
 
       if (result.success) {
@@ -58,6 +64,7 @@ export default function BillingListPage() {
       }
     } catch (error) {
       console.error('Error fetching billings:', error);
+      alert('Gagal memuat data tagihan.');
     } finally {
       setLoading(false);
     }

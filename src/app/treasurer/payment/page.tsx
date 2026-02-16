@@ -82,6 +82,12 @@ export default function PaymentPage() {
   const fetchRecentPayments = async () => {
     try {
       const response = await fetch('/api/spp-payments?limit=10');
+      if (!response.ok) {
+        throw new Error(`Failed to fetch payments: ${response.status}`);
+      }
+      if (!response.headers.get('content-type')?.includes('application/json')) {
+        throw new Error('Expected JSON from payments API');
+      }
       const data = await response.json();
       if (data.success) {
         setRecentPayments(data.data);
@@ -99,6 +105,12 @@ export default function PaymentPage() {
 
     try {
       const response = await fetch(`/api/students?search=${query}`);
+      if (!response.ok) {
+        throw new Error(`Failed to search students: ${response.status}`);
+      }
+      if (!response.headers.get('content-type')?.includes('application/json')) {
+        throw new Error('Expected JSON from students API');
+      }
       const data = await response.json();
       if (data.success) {
         setStudents(data.data.slice(0, 10));

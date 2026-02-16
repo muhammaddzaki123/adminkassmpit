@@ -7,7 +7,7 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const authResult = await requireTreasurer();
+  const authResult = await requireTreasurer(request);
   if (authResult instanceof NextResponse) {
     return authResult;
   }
@@ -113,7 +113,7 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const authResult = await requireTreasurer();
+  const authResult = await requireTreasurer(request);
   if (authResult instanceof NextResponse) {
     return authResult;
   }

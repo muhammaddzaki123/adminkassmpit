@@ -6,7 +6,7 @@ import { Prisma, PaymentStatus, PaymentMethod } from '@prisma/client';
 // GET /api/payment/list - List payments with filters (treasurer only)
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession();
+    const session = await getServerSession(request);
     
     if (!session || !['TREASURER', 'ADMIN'].includes(session.user.role)) {
       return NextResponse.json(

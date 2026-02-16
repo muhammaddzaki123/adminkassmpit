@@ -83,6 +83,16 @@ export default function StudentDashboard() {
     try {
       // Fetch billings (includes student info)
       const billingsResponse = await fetch('/api/billing/student');
+      
+      if (!billingsResponse.ok) {
+        throw new Error(`HTTP error! status: ${billingsResponse.status}`);
+      }
+      
+      const contentType = billingsResponse.headers.get('content-type');
+      if (!contentType?.includes('application/json')) {
+        throw new Error('Expected JSON response but got: ' + contentType);
+      }
+      
       const billingsResult = await billingsResponse.json();
       
       if (billingsResult.success) {
@@ -111,6 +121,7 @@ export default function StudentDashboard() {
       }
     } catch (error) {
       console.error('Error fetching student data:', error);
+      alert('Gagal memuat data. Silakan refresh halaman.');
     } finally {
       setLoading(false);
     }

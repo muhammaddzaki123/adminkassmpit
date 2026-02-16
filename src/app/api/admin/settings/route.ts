@@ -3,8 +3,8 @@ import prisma from '@/lib/prisma';
 import { requireAdmin } from '@/lib/auth-helpers';
 
 // GET - Fetch all system settings (ADMIN ONLY)
-export async function GET() {
-  const authResult = await requireAdmin();
+export async function GET(request: NextRequest) {
+  const authResult = await requireAdmin(request);
   if (authResult instanceof NextResponse) return authResult;
 
   try {
@@ -42,7 +42,7 @@ export async function GET() {
 
 // PUT - Update multiple settings (ADMIN ONLY)
 export async function PUT(request: NextRequest) {
-  const authResult = await requireAdmin();
+  const authResult = await requireAdmin(request);
   if (authResult instanceof NextResponse) return authResult;
 
   try {

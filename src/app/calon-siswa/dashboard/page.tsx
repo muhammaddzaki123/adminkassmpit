@@ -64,6 +64,12 @@ export default function NewStudentDashboard() {
         }
         throw new Error('Gagal memuat data');
       }
+      
+      const contentType = response.headers.get('content-type');
+      if (!contentType?.includes('application/json')) {
+        throw new Error('Expected JSON response but got: ' + contentType);
+      }
+      
       const result = await response.json();
       setData(result.data);
     } catch (err) {

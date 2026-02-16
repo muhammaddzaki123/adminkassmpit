@@ -1,10 +1,10 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { StudentStatus } from '@prisma/client';
 import { requireDashboardAccess } from '@/lib/auth-helpers';
 
-export async function GET(request: Request) {
-  const authResult = await requireDashboardAccess();
+export async function GET(request: NextRequest) {
+  const authResult = await requireDashboardAccess(request);
   if (authResult instanceof NextResponse) return authResult;
 
   try {
@@ -48,7 +48,10 @@ export async function GET(request: Request) {
   }
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
+  const authResult = await requireDashboardAccess(request);
+  if (authResult instanceof NextResponse) return authResult;
+
   try {
     const body = await request.json();
     const { nama, nisn, status } = body;
