@@ -1,0 +1,410 @@
+<mxfile host="app.diagrams.net" modified="2026-02-18T04:02:52.745062" agent="JulesAgent" version="21.6.5" type="device">
+<diagram id="98c4d3b6-bdae-45a6-9358-59af32610da8" name="New Student Admission">
+<mxGraphModel dx="1422" dy="794" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+<root>
+<mxCell id="0" /><mxCell id="1" parent="0" />
+        <mxCell id="c5a6062a-820e-421a-b951-1e81fc5faaf0" value="Calon Siswa" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;" vertex="1" parent="1">
+          <mxGeometry x="100" y="40" width="100" height="1000" as="geometry" />
+        </mxCell>
+
+        <mxCell id="a580c293-19e1-4969-b6eb-951b95e340e7" value="Web Portal" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;" vertex="1" parent="1">
+          <mxGeometry x="300" y="40" width="100" height="1000" as="geometry" />
+        </mxCell>
+
+        <mxCell id="7e589071-b8e4-48a3-a35f-f76d5a32e0ac" value="PPDB Service" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;" vertex="1" parent="1">
+          <mxGeometry x="500" y="40" width="100" height="1000" as="geometry" />
+        </mxCell>
+
+        <mxCell id="16742790-2bd6-46c8-a4e6-1230fb28e614" value="Database" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;" vertex="1" parent="1">
+          <mxGeometry x="700" y="40" width="100" height="1000" as="geometry" />
+        </mxCell>
+
+        <mxCell id="4c2b810d-52b5-4ff4-8749-3591f013790a" value="Payment Gateway" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;" vertex="1" parent="1">
+          <mxGeometry x="900" y="40" width="100" height="1000" as="geometry" />
+        </mxCell>
+
+        <mxCell id="9b900031-580a-4af8-9ef7-2162db182ffa" value="Admin Dashboard" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;" vertex="1" parent="1">
+          <mxGeometry x="1100" y="40" width="100" height="1000" as="geometry" />
+        </mxCell>
+
+        <mxCell id="2b2925aa-fa30-40e9-a07d-e01eaa44f8e7" value="Notification Service" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;" vertex="1" parent="1">
+          <mxGeometry x="1300" y="40" width="100" height="1000" as="geometry" />
+        </mxCell>
+
+        <mxCell id="25300088-53aa-45a0-981b-b9239d2b57bc" value="1. Fill Registration Form" style="endArrow=block;html=1;endFill=1;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="150" y="100" as="sourcePoint" />
+            <mxPoint x="350" y="100" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="d07466d1-1c90-4929-9a94-9c7f6298bcd4" value="2. submitRegistration(data)" style="endArrow=block;html=1;endFill=1;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="350" y="160" as="sourcePoint" />
+            <mxPoint x="550" y="160" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="32dff486-60ce-4ff9-96b8-cec832809474" value="3. INSERT NewStudent" style="endArrow=block;html=1;endFill=1;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="550" y="220" as="sourcePoint" />
+            <mxPoint x="750" y="220" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="6f81876a-a21c-4a1c-b542-5a58090cb71a" value="4. Returns ID" style="endArrow=block;html=1;endFill=1;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="750" y="280" as="sourcePoint" />
+            <mxPoint x="550" y="280" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="d68bf016-8c61-421b-a675-7c0f8a378aab" value="5. Registration Created" style="endArrow=block;html=1;endFill=1;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="550" y="340" as="sourcePoint" />
+            <mxPoint x="350" y="340" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="c73ca48a-0085-4554-9098-3a5b90a09db2" value="6. Show Payment Options" style="endArrow=block;html=1;endFill=1;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="350" y="400" as="sourcePoint" />
+            <mxPoint x="150" y="400" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="14812d38-aead-4581-978e-0aa2a570ddbf" value="7. Select Payment (VA)" style="endArrow=block;html=1;endFill=1;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="150" y="460" as="sourcePoint" />
+            <mxPoint x="350" y="460" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="a4c0a56e-de43-4871-bb19-378c03bcd944" value="8. createTransaction(amount)" style="endArrow=block;html=1;endFill=1;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="350" y="520" as="sourcePoint" />
+            <mxPoint x="950" y="520" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="ecc9fde9-a0f8-4eb2-9467-c9b619736efe" value="9. Return VA Number" style="endArrow=block;html=1;endFill=1;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="950" y="580" as="sourcePoint" />
+            <mxPoint x="350" y="580" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="7f259dfd-d2a5-4bfc-8596-9b50542ecaf1" value="10. Display VA Number" style="endArrow=block;html=1;endFill=1;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="350" y="640" as="sourcePoint" />
+            <mxPoint x="150" y="640" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="0ba53cb3-1e5d-4568-97ec-ab93f3246a9b" value="11. Transfer to VA" style="endArrow=block;html=1;endFill=1;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="150" y="700" as="sourcePoint" />
+            <mxPoint x="950" y="700" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="7d7306f6-0bc4-4313-8878-016e32a7c217" value="12. Webhook: Payment Success" style="endArrow=block;html=1;endFill=1;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="950" y="760" as="sourcePoint" />
+            <mxPoint x="550" y="760" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="2a86c7d6-4fa6-427f-908a-3c6e267d1e0c" value="13. UPDATE NewStudent (paid=true)" style="endArrow=block;html=1;endFill=1;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="550" y="820" as="sourcePoint" />
+            <mxPoint x="750" y="820" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="2a3c58bb-bd1f-40f9-91a0-f3a12e8b4040" value="14. Notify Admin" style="endArrow=block;html=1;endFill=1;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="550" y="880" as="sourcePoint" />
+            <mxPoint x="1350" y="880" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="d19375a7-a509-4abf-ab6b-9a3c34743eac" value="15. Review & Approve" style="endArrow=block;html=1;endFill=1;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="1150" y="940" as="sourcePoint" />
+            <mxPoint x="550" y="940" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="6b9550b0-3c4f-4de6-9b8d-f9532dfeb3c4" value="16. UPDATE NewStudent (status=APPROVED)" style="endArrow=block;html=1;endFill=1;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="550" y="1000" as="sourcePoint" />
+            <mxPoint x="750" y="1000" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="bec2a233-7d37-49d1-937c-79306b096e1b" value="17. INSERT Student & User" style="endArrow=block;html=1;endFill=1;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="550" y="1060" as="sourcePoint" />
+            <mxPoint x="750" y="1060" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="d14b648d-8d02-4f52-b663-3ce901c7eb1e" value="18. Send Login Credentials" style="endArrow=block;html=1;endFill=1;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="550" y="1120" as="sourcePoint" />
+            <mxPoint x="1350" y="1120" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="95c6d2ff-accd-4aea-97ab-cf12a5911099" value="19. Email: Login Info" style="endArrow=block;html=1;endFill=1;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="1350" y="1180" as="sourcePoint" />
+            <mxPoint x="150" y="1180" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+</root>
+</mxGraphModel>
+</diagram>
+<diagram id="3fd80000-f95e-4446-9f68-2a2b0cea94ea" name="SPP Payment Flow">
+<mxGraphModel dx="1422" dy="794" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+<root>
+<mxCell id="0" /><mxCell id="1" parent="0" />
+        <mxCell id="b3c2481e-41dc-48dc-bc9c-6e44ad5ee660" value="Siswa/Wali" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;" vertex="1" parent="1">
+          <mxGeometry x="100" y="40" width="100" height="1000" as="geometry" />
+        </mxCell>
+
+        <mxCell id="ea904c00-e813-499a-8b3e-10617c6e454f" value="Student Portal" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;" vertex="1" parent="1">
+          <mxGeometry x="300" y="40" width="100" height="1000" as="geometry" />
+        </mxCell>
+
+        <mxCell id="c5831e25-a7c3-4239-96e8-78f341d9880c" value="Finance Service" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;" vertex="1" parent="1">
+          <mxGeometry x="500" y="40" width="100" height="1000" as="geometry" />
+        </mxCell>
+
+        <mxCell id="715a7619-0f43-4c1e-9796-a256cfef66b6" value="Database" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;" vertex="1" parent="1">
+          <mxGeometry x="700" y="40" width="100" height="1000" as="geometry" />
+        </mxCell>
+
+        <mxCell id="93c6a038-ca6d-48ca-8389-92142290225e" value="Payment Gateway" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;" vertex="1" parent="1">
+          <mxGeometry x="900" y="40" width="100" height="1000" as="geometry" />
+        </mxCell>
+
+        <mxCell id="308bd83c-7788-4261-8f17-1400269d399c" value="WhatsApp Service" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;" vertex="1" parent="1">
+          <mxGeometry x="1100" y="40" width="100" height="1000" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e44caab5-bd6e-46f3-8314-015d8ad05bed" value="1. View Bills" style="endArrow=block;html=1;endFill=1;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="150" y="100" as="sourcePoint" />
+            <mxPoint x="350" y="100" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="b4f0aaf8-7311-4e0e-b6ff-b0a11804ea65" value="2. getUnpaidBillings(studentId)" style="endArrow=block;html=1;endFill=1;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="350" y="160" as="sourcePoint" />
+            <mxPoint x="550" y="160" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="95fbc3c5-818c-443d-a440-e74ccff54ffb" value="3. SELECT * FROM Billing WHERE status=UNPAID" style="endArrow=block;html=1;endFill=1;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="550" y="220" as="sourcePoint" />
+            <mxPoint x="750" y="220" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="ef42fd45-dd49-4e48-8da8-de3125a019fb" value="4. Return Billings" style="endArrow=block;html=1;endFill=1;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="750" y="280" as="sourcePoint" />
+            <mxPoint x="550" y="280" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="44f27491-b45e-43b5-b4c3-8c7514e252c6" value="5. List of Bills" style="endArrow=block;html=1;endFill=1;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="550" y="340" as="sourcePoint" />
+            <mxPoint x="350" y="340" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="6e08fada-5dfd-46b5-ae20-ab10e79462c8" value="6. Select Bill & Pay" style="endArrow=block;html=1;endFill=1;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="150" y="400" as="sourcePoint" />
+            <mxPoint x="350" y="400" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="8cfbe621-f797-4f46-8e8b-2cf2e9ee44ce" value="7. createTransaction(billId)" style="endArrow=block;html=1;endFill=1;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="350" y="460" as="sourcePoint" />
+            <mxPoint x="950" y="460" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="74051e15-7c26-4527-8bcf-8517ad743ffb" value="8. Return Payment Page/VA" style="endArrow=block;html=1;endFill=1;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="950" y="520" as="sourcePoint" />
+            <mxPoint x="350" y="520" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="c3ecc33f-6b93-4e94-a718-5ce008967d5c" value="9. Complete Payment" style="endArrow=block;html=1;endFill=1;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="150" y="580" as="sourcePoint" />
+            <mxPoint x="950" y="580" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="e0339bd5-fa1c-4f0e-bef6-0c8e6531d57a" value="10. Webhook: Payment Success" style="endArrow=block;html=1;endFill=1;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="950" y="640" as="sourcePoint" />
+            <mxPoint x="550" y="640" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="846fb532-8c10-4be2-9102-c0005dc65c96" value="11. INSERT Payment" style="endArrow=block;html=1;endFill=1;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="550" y="700" as="sourcePoint" />
+            <mxPoint x="750" y="700" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="432cc397-ebd9-4b39-8db0-8bcba7a59de2" value="12. UPDATE Billing (status=PAID)" style="endArrow=block;html=1;endFill=1;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="550" y="760" as="sourcePoint" />
+            <mxPoint x="750" y="760" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="38d4e0fc-261e-43c1-b17d-3e29155891d0" value="13. Send Receipt" style="endArrow=block;html=1;endFill=1;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="550" y="820" as="sourcePoint" />
+            <mxPoint x="1150" y="820" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="fa76d884-fb05-48d0-aec3-06e48a7832b4" value="14. WhatsApp: Payment Receipt" style="endArrow=block;html=1;endFill=1;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="1150" y="880" as="sourcePoint" />
+            <mxPoint x="150" y="880" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+</root>
+</mxGraphModel>
+</diagram>
+<diagram id="bc72cdcc-0046-4b44-924b-a580b5e939d5" name="Expense Management">
+<mxGraphModel dx="1422" dy="794" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+<root>
+<mxCell id="0" /><mxCell id="1" parent="0" />
+        <mxCell id="e048b8c0-0099-4b02-a91d-4d3547cb854b" value="Bendahara" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;" vertex="1" parent="1">
+          <mxGeometry x="100" y="40" width="100" height="1000" as="geometry" />
+        </mxCell>
+
+        <mxCell id="ad4c5cad-4fc1-44e9-bbd9-cfd97733fd2b" value="Admin Dashboard" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;" vertex="1" parent="1">
+          <mxGeometry x="300" y="40" width="100" height="1000" as="geometry" />
+        </mxCell>
+
+        <mxCell id="d6abe6dd-dac6-4fa1-970d-32f57dcd27d4" value="Finance Service" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;" vertex="1" parent="1">
+          <mxGeometry x="500" y="40" width="100" height="1000" as="geometry" />
+        </mxCell>
+
+        <mxCell id="4a341a98-d4ad-4010-bf51-5e320f260f84" value="Database" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;" vertex="1" parent="1">
+          <mxGeometry x="700" y="40" width="100" height="1000" as="geometry" />
+        </mxCell>
+
+        <mxCell id="a01945c5-daf8-4f0d-a2cc-e6e26ffeaefc" value="Kepala Sekolah" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;" vertex="1" parent="1">
+          <mxGeometry x="900" y="40" width="100" height="1000" as="geometry" />
+        </mxCell>
+
+        <mxCell id="450228f4-6b8c-405d-93c9-163d9ba60fbf" value="1. Input Expense Data" style="endArrow=block;html=1;endFill=1;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="150" y="100" as="sourcePoint" />
+            <mxPoint x="350" y="100" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="19a7ef5f-869d-4077-ad8d-64616df5c64f" value="2. createExpense(data)" style="endArrow=block;html=1;endFill=1;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="350" y="160" as="sourcePoint" />
+            <mxPoint x="550" y="160" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="b63eb8f4-88e4-4e62-9f97-3fa422da1e23" value="3. INSERT Expense (status=PENDING)" style="endArrow=block;html=1;endFill=1;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="550" y="220" as="sourcePoint" />
+            <mxPoint x="750" y="220" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="9161be70-54f5-4022-a059-0e9dfb093157" value="4. Expense ID" style="endArrow=block;html=1;endFill=1;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="750" y="280" as="sourcePoint" />
+            <mxPoint x="550" y="280" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="64582f70-fbb4-4302-ba05-580c5dbd8fd8" value="5. Success Message" style="endArrow=block;html=1;endFill=1;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="550" y="340" as="sourcePoint" />
+            <mxPoint x="350" y="340" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="bcf7d5e6-e5e6-4e65-a0a2-f2822be7aec0" value="6. View Pending Expenses" style="endArrow=block;html=1;endFill=1;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="950" y="400" as="sourcePoint" />
+            <mxPoint x="350" y="400" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="4eccfd46-c785-46ed-8191-a808e0adca30" value="7. getPendingExpenses()" style="endArrow=block;html=1;endFill=1;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="350" y="460" as="sourcePoint" />
+            <mxPoint x="550" y="460" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="a1db4ca1-6fbf-4c60-a296-0dd192675433" value="8. List Expenses" style="endArrow=block;html=1;endFill=1;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="550" y="520" as="sourcePoint" />
+            <mxPoint x="350" y="520" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="8efdce23-3d73-4618-b5f7-374d5336844e" value="9. Approve Expense" style="endArrow=block;html=1;endFill=1;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="950" y="580" as="sourcePoint" />
+            <mxPoint x="350" y="580" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="a01aafe6-3e1b-4cc9-962b-bf69fa9f17d8" value="10. approveExpense(id)" style="endArrow=block;html=1;endFill=1;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="350" y="640" as="sourcePoint" />
+            <mxPoint x="550" y="640" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="8f80be07-7467-4257-90b1-0e42dc3c968e" value="11. UPDATE Expense (status=APPROVED)" style="endArrow=block;html=1;endFill=1;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="550" y="700" as="sourcePoint" />
+            <mxPoint x="750" y="700" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="5ec71d1d-8b98-4dff-b142-a6e9675ebb14" value="12. Approval Success" style="endArrow=block;html=1;endFill=1;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="550" y="760" as="sourcePoint" />
+            <mxPoint x="350" y="760" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+</root>
+</mxGraphModel>
+</diagram>
+</mxfile>
