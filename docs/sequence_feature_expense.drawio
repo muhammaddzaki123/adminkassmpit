@@ -1,0 +1,113 @@
+<mxfile host="app.diagrams.net" modified="2026-02-18T04:15:51.792743" agent="JulesAgent" version="21.6.5" type="device">
+<diagram id="554968ac-703b-43e1-9bbe-5cbf9fb566af" name="Expense Management Flow">
+<mxGraphModel dx="1422" dy="794" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+<root>
+<mxCell id="0" /><mxCell id="1" parent="0" />
+        <mxCell id="96d49e8a-6667-4ea5-8485-a5d2c1b8d655" value="Bendahara" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;" vertex="1" parent="1">
+          <mxGeometry x="100" y="40" width="100" height="1000" as="geometry" />
+        </mxCell>
+
+        <mxCell id="a1b50567-f57c-418c-8b44-11d6aacfb29a" value="Admin Dashboard" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;" vertex="1" parent="1">
+          <mxGeometry x="300" y="40" width="100" height="1000" as="geometry" />
+        </mxCell>
+
+        <mxCell id="b5e5ef9d-8a8a-4a0f-83f8-3794be7ef6cd" value="Finance Service" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;" vertex="1" parent="1">
+          <mxGeometry x="500" y="40" width="100" height="1000" as="geometry" />
+        </mxCell>
+
+        <mxCell id="ce5e8adf-c400-460a-a925-59a6578ba47a" value="Database" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;" vertex="1" parent="1">
+          <mxGeometry x="700" y="40" width="100" height="1000" as="geometry" />
+        </mxCell>
+
+        <mxCell id="796cba07-248f-4340-88b5-9795c0251a16" value="Kepala Sekolah" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;" vertex="1" parent="1">
+          <mxGeometry x="900" y="40" width="100" height="1000" as="geometry" />
+        </mxCell>
+
+        <mxCell id="dbf3498d-ba2b-4c31-a482-74fffa0104f4" value="1. Input Expense Data" style="endArrow=block;html=1;endFill=1;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="150" y="100" as="sourcePoint" />
+            <mxPoint x="350" y="100" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="f12ef3d8-1e0c-40b3-933d-dd316a1809a6" value="2. createExpense(data)" style="endArrow=block;html=1;endFill=1;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="350" y="160" as="sourcePoint" />
+            <mxPoint x="550" y="160" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="aea07387-d721-4a48-a4ba-ee864f7fbc25" value="3. INSERT Expense (status=PENDING)" style="endArrow=block;html=1;endFill=1;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="550" y="220" as="sourcePoint" />
+            <mxPoint x="750" y="220" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="bd4e89da-1cd5-4198-afa9-221e69e8ceda" value="4. Expense ID" style="endArrow=open;dashed=1;html=1;endFill=0;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="750" y="280" as="sourcePoint" />
+            <mxPoint x="550" y="280" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="813f2959-1464-4d84-97dd-eadadaabd479" value="5. Success Message" style="endArrow=open;dashed=1;html=1;endFill=0;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="550" y="340" as="sourcePoint" />
+            <mxPoint x="350" y="340" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="2cd746a9-6fcf-47dc-8977-c04fdacf68c4" value="6. View Pending Expenses" style="endArrow=block;html=1;endFill=1;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="950" y="400" as="sourcePoint" />
+            <mxPoint x="350" y="400" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="47b351b9-3000-42fc-bef8-40a843f1e6d0" value="7. getPendingExpenses()" style="endArrow=block;html=1;endFill=1;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="350" y="460" as="sourcePoint" />
+            <mxPoint x="550" y="460" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="bd5aedbd-b59f-44d6-9729-493363d8cc1c" value="8. List Expenses" style="endArrow=open;dashed=1;html=1;endFill=0;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="550" y="520" as="sourcePoint" />
+            <mxPoint x="350" y="520" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="008209b4-f150-4636-84a1-94025779334d" value="9. Approve Expense" style="endArrow=block;html=1;endFill=1;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="950" y="580" as="sourcePoint" />
+            <mxPoint x="350" y="580" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="9d8bdba4-6f4b-446e-bafa-c9450d4c093c" value="10. approveExpense(id)" style="endArrow=block;html=1;endFill=1;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="350" y="640" as="sourcePoint" />
+            <mxPoint x="550" y="640" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="c5193696-9a2d-4bc9-a651-5665410db1fe" value="11. UPDATE Expense (status=APPROVED)" style="endArrow=block;html=1;endFill=1;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="550" y="700" as="sourcePoint" />
+            <mxPoint x="750" y="700" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="671cf9b1-b85e-46b7-a23d-247572d953cc" value="12. Approval Success" style="endArrow=open;dashed=1;html=1;endFill=0;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="550" y="760" as="sourcePoint" />
+            <mxPoint x="350" y="760" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+</root>
+</mxGraphModel>
+</diagram>
+</mxfile>

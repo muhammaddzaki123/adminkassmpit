@@ -1,0 +1,131 @@
+<mxfile host="app.diagrams.net" modified="2026-02-18T04:15:51.791807" agent="JulesAgent" version="21.6.5" type="device">
+<diagram id="7ebb3676-016f-445c-b2c1-cf573057ccf9" name="SPP Payment Flow">
+<mxGraphModel dx="1422" dy="794" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+<root>
+<mxCell id="0" /><mxCell id="1" parent="0" />
+        <mxCell id="0126832a-bdde-44ee-b012-2ae2d34e9494" value="Siswa/Wali" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;" vertex="1" parent="1">
+          <mxGeometry x="100" y="40" width="100" height="1000" as="geometry" />
+        </mxCell>
+
+        <mxCell id="46cc80a0-d237-47f0-acba-13491021e85f" value="Student Portal" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;" vertex="1" parent="1">
+          <mxGeometry x="300" y="40" width="100" height="1000" as="geometry" />
+        </mxCell>
+
+        <mxCell id="c99c406a-0fdd-4319-b342-369ab2a2a23a" value="Finance Service" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;" vertex="1" parent="1">
+          <mxGeometry x="500" y="40" width="100" height="1000" as="geometry" />
+        </mxCell>
+
+        <mxCell id="97503f74-68f6-462b-b547-cedddf2bb05c" value="Database" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;" vertex="1" parent="1">
+          <mxGeometry x="700" y="40" width="100" height="1000" as="geometry" />
+        </mxCell>
+
+        <mxCell id="afe24670-ebaf-479c-ab4e-97bfe149041e" value="Payment Gateway" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;" vertex="1" parent="1">
+          <mxGeometry x="900" y="40" width="100" height="1000" as="geometry" />
+        </mxCell>
+
+        <mxCell id="792dc244-9c2c-41f5-888b-b50adb99aec8" value="WhatsApp Service" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;" vertex="1" parent="1">
+          <mxGeometry x="1100" y="40" width="100" height="1000" as="geometry" />
+        </mxCell>
+
+        <mxCell id="324b7b31-900a-4386-9d5b-8331f0d1b9fd" value="1. View Bills" style="endArrow=block;html=1;endFill=1;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="150" y="100" as="sourcePoint" />
+            <mxPoint x="350" y="100" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="f621c7d8-9b1c-4a75-97b4-870d69ff0861" value="2. getUnpaidBillings(studentId)" style="endArrow=block;html=1;endFill=1;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="350" y="160" as="sourcePoint" />
+            <mxPoint x="550" y="160" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="bbcb9676-3fa2-41e8-a82c-a8ccb1fde665" value="3. SELECT * FROM Billing WHERE status=UNPAID" style="endArrow=block;html=1;endFill=1;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="550" y="220" as="sourcePoint" />
+            <mxPoint x="750" y="220" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="96c76ddc-892a-4d88-b384-9b8573a64c7e" value="4. Return Billings" style="endArrow=open;dashed=1;html=1;endFill=0;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="750" y="280" as="sourcePoint" />
+            <mxPoint x="550" y="280" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="328243a3-9c7e-4c8c-8de6-9244d209d699" value="5. List of Bills" style="endArrow=open;dashed=1;html=1;endFill=0;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="550" y="340" as="sourcePoint" />
+            <mxPoint x="350" y="340" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="49687d1b-d378-4ef0-b795-849029dfd368" value="6. Select Bill & Pay" style="endArrow=block;html=1;endFill=1;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="150" y="400" as="sourcePoint" />
+            <mxPoint x="350" y="400" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="acd6f7fd-d10a-4dd3-b533-7326389f9afa" value="7. createTransaction(billId)" style="endArrow=block;html=1;endFill=1;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="350" y="460" as="sourcePoint" />
+            <mxPoint x="950" y="460" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="6bdf1104-0333-44ba-8fdd-358b9ecbbe80" value="8. Return Payment Page/VA" style="endArrow=open;dashed=1;html=1;endFill=0;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="950" y="520" as="sourcePoint" />
+            <mxPoint x="350" y="520" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="b06dea8c-d221-423f-906d-6ac231e82218" value="9. Complete Payment" style="endArrow=block;html=1;endFill=1;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="150" y="580" as="sourcePoint" />
+            <mxPoint x="950" y="580" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="5b0aa403-80be-4b51-82d3-df896987f2d3" value="10. Webhook: Payment Success" style="endArrow=block;html=1;endFill=1;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="950" y="640" as="sourcePoint" />
+            <mxPoint x="550" y="640" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="487e4cc3-bac4-4cda-a54e-f94e17f76256" value="11. INSERT Payment" style="endArrow=block;html=1;endFill=1;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="550" y="700" as="sourcePoint" />
+            <mxPoint x="750" y="700" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="de689067-4f6e-4634-a799-e7244ea8ee26" value="12. UPDATE Billing (status=PAID)" style="endArrow=block;html=1;endFill=1;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="550" y="760" as="sourcePoint" />
+            <mxPoint x="750" y="760" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="6155400d-b445-490e-a781-2ffe8408ba62" value="13. Send Receipt" style="endArrow=block;html=1;endFill=1;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="550" y="820" as="sourcePoint" />
+            <mxPoint x="1150" y="820" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="5bf469ec-62db-4be6-a604-88b31534ea69" value="14. WhatsApp: Payment Receipt" style="endArrow=block;html=1;endFill=1;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="1150" y="880" as="sourcePoint" />
+            <mxPoint x="150" y="880" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+</root>
+</mxGraphModel>
+</diagram>
+</mxfile>
