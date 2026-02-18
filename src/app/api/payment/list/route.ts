@@ -111,7 +111,7 @@ export async function GET(request: NextRequest) {
           id: payment.billing?.student?.id || '',
           nis: payment.billing?.student?.nisn || '',
           fullName: payment.billing?.student?.nama || '',
-          className: payment.billing?.student?.studentClasses[0]?.class.name || '-',
+          className: payment.billing?.student?.studentClasses?.[0]?.class?.name || '-',
         },
       },
       method: payment.method,

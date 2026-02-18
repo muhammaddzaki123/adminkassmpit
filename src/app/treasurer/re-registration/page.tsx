@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { fetchWithAuth } from '@/lib/api-client';
 import { TreasurerSidebar } from '@/components/layout/TreasurerSidebar';
 import { TreasurerHeader } from '@/components/layout/TreasurerHeader';
 import { Card } from '@/components/ui/Card';
@@ -57,7 +58,7 @@ export default function ReRegistrationPage() {
     try {
       setLoading(true);
       // Fetch students with re-registration status
-      const response = await fetch('/api/students?status=AWAITING_REREG');
+      const response = await fetchWithAuth('/api/students?status=AWAITING_REREG');
       if (!response.ok) {
         throw new Error(`Failed to fetch re-registrations: ${response.status}`);
       }

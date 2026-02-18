@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { fetchWithAuth } from '@/lib/api-client';
 import { AdminHeader } from '@/components/layout/AdminHeader';
 import { AdminSidebar } from '@/components/layout/AdminSidebar';
 import { Card } from '@/components/ui/Card';
@@ -37,7 +38,7 @@ export default function AdminStudentsPage() {
   const fetchStudents = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch('/api/students');
+      const response = await fetchWithAuth('/api/students');
       if (response.ok) {
         const result = await response.json();
         setStudents(result.data || []);

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { fetchWithAuth } from '@/lib/api-client';
 import { AdminHeader } from '@/components/layout/AdminHeader';
 import { AdminSidebar } from '@/components/layout/AdminSidebar';
 import { Card } from '@/components/ui/Card';
@@ -46,7 +47,7 @@ export default function NewStudentsPage() {
         ? '/api/admin/new-students'
         : `/api/admin/new-students?status=${statusFilter}`;
       
-      const response = await fetch(url);
+      const response = await fetchWithAuth(url);
       if (response.ok) {
         const result = await response.json();
         setStudents(result.data || []);
@@ -75,7 +76,7 @@ export default function NewStudentsPage() {
       const userData = localStorage.getItem('user');
       const adminId = userData ? JSON.parse(userData).id : '';
 
-      const response = await fetch(`/api/admin/new-students/${selectedStudent.id}/approve`, {
+      const response = await fetchWithAuth(`/api/admin/new-students/${selectedStudent.id}/approve`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ adminId, kelas }),
@@ -113,7 +114,7 @@ export default function NewStudentsPage() {
       const userData = localStorage.getItem('user');
       const adminId = userData ? JSON.parse(userData).id : '';
 
-      const response = await fetch(`/api/admin/new-students/${selectedStudent.id}/approve`, {
+      const response = await fetchWithAuth(`/api/admin/new-students/${selectedStudent.id}/approve`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ adminId, rejectionReason }),

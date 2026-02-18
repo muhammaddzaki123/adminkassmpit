@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { fetchWithAuth } from '@/lib/api-client';
 import { StudentSidebar } from '@/components/layout/StudentSidebar';
 import { StudentHeader } from '@/components/layout/StudentHeader';
 import { Card } from '@/components/ui/Card';
@@ -51,7 +52,7 @@ export default function HistoryPage() {
 
   const fetchTransactions = async () => {
     try {
-      const response = await fetch('/api/student/transactions?studentId=student-123');
+      const response = await fetchWithAuth('/api/student/transactions?studentId=student-123');
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);

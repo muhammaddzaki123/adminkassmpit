@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { fetchWithAuth } from '@/lib/api-client';
 import { StudentSidebar } from '@/components/layout/StudentSidebar';
 import { StudentHeader } from '@/components/layout/StudentHeader';
 import { Card } from '@/components/ui/Card';
@@ -47,7 +48,7 @@ function SPPPaymentContent() {
 
   const fetchBillings = useCallback(async () => {
     try {
-      const response = await fetch('/api/billing/student');
+      const response = await fetchWithAuth('/api/billing/student');
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -190,7 +191,7 @@ function SPPPaymentContent() {
     setStep('process');
 
     try {
-      const response = await fetch('/api/payment/create', {
+      const response = await fetchWithAuth('/api/payment/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

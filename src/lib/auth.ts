@@ -26,14 +26,14 @@ export async function getServerSession(request?: NextRequest): Promise<Session |
   }
 
   try {
-    // Try to get token from Authorization header
+    // Try to get token from Authorization header first
     const authHeader = request.headers.get('authorization');
     let token: string | null = null;
 
     if (authHeader && authHeader.startsWith('Bearer ')) {
       token = authHeader.substring(7);
     } else {
-      // Try to get token from cookies
+      // Fallback: Try to get token from cookies
       token = request.cookies.get('token')?.value || null;
     }
 

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { fetchWithAuth } from '@/lib/api-client';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
@@ -69,7 +70,7 @@ export default function AdminRegistrationsPage() {
   const fetchRegistrations = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/admin/registrations');
+      const response = await fetchWithAuth('/api/admin/registrations');
       const data = await response.json();
       setRegistrations(data);
     } catch (error) {
@@ -83,7 +84,7 @@ export default function AdminRegistrationsPage() {
     if (!confirm('Setujui pendaftaran siswa ini?')) return;
 
     try {
-      const response = await fetch(`/api/admin/registrations/${id}/approve`, {
+      const response = await fetchWithAuth(`/api/admin/registrations/${id}/approve`, {
         method: 'PUT',
       });
 
@@ -104,7 +105,7 @@ export default function AdminRegistrationsPage() {
     if (!reason) return;
 
     try {
-      const response = await fetch(`/api/admin/registrations/${id}/reject`, {
+      const response = await fetchWithAuth(`/api/admin/registrations/${id}/reject`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ reason }),

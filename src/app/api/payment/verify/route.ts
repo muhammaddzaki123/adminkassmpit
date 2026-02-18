@@ -41,14 +41,20 @@ export async function POST(request: NextRequest) {
         const newPayment = await tx.payment.create({
           data: {
             paymentNumber,
-            billingId,
+            billing: {
+              connect: { id: billingId }
+            },
             amount,
+            adminFee: 0,
+            totalPaid: amount,
             method: method || 'TUNAI',
             status: 'COMPLETED',
             paidAt: paidAt ? new Date(paidAt) : new Date(),
             notes: notes || `Manual payment by ${session.user.nama}`,
             receiptUrl,
-            processedById: session.user.id,
+            processedBy: {
+              connect: { id: session.user.id }
+            },
           },
         });
 

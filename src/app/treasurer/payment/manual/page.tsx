@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import { fetchWithAuth } from '@/lib/api-client';
 import { TreasurerSidebar } from '@/components/layout/TreasurerSidebar';
 import { TreasurerHeader } from '@/components/layout/TreasurerHeader';
 import { Card } from '@/components/ui/Card';
@@ -51,7 +52,7 @@ export default function ManualPaymentPage() {
         search: searchQuery,
       });
       
-      const response = await fetch(`/api/billing/list?${params.toString()}`);
+      const response = await fetchWithAuth(`/api/billing/list?${params.toString()}`);
       if (!response.ok) {
         throw new Error(`Failed to fetch billings: ${response.status}`);
       }
@@ -119,7 +120,7 @@ export default function ManualPaymentPage() {
     setMessage(null);
 
     try {
-      const response = await fetch('/api/payment/verify', {
+      const response = await fetchWithAuth('/api/payment/verify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

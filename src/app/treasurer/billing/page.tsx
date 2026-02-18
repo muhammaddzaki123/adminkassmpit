@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { fetchWithAuth } from '@/lib/api-client';
 import { TreasurerSidebar } from '@/components/layout/TreasurerSidebar';
 import { TreasurerHeader } from '@/components/layout/TreasurerHeader';
 import { Card } from '@/components/ui/Card';
@@ -67,7 +68,7 @@ export default function BillingManagementPage() {
 
   const fetchClasses = async () => {
     try {
-      const response = await fetch('/api/admin/classes');
+      const response = await fetchWithAuth('/api/admin/classes');
       if (!response.ok) {
         throw new Error(`Failed to fetch classes: ${response.status}`);
       }
@@ -85,7 +86,7 @@ export default function BillingManagementPage() {
 
   const fetchAcademicYears = async () => {
     try {
-      const response = await fetch('/api/admin/academic-years');
+      const response = await fetchWithAuth('/api/admin/academic-years');
       if (!response.ok) {
         throw new Error(`Failed to fetch academic years: ${response.status}`);
       }
@@ -107,7 +108,7 @@ export default function BillingManagementPage() {
 
   const fetchStats = async () => {
     try {
-      const response = await fetch('/api/billing/stats');
+      const response = await fetchWithAuth('/api/billing/stats');
       if (!response.ok) {
         throw new Error(`Failed to fetch stats: ${response.status}`);
       }
@@ -133,7 +134,7 @@ export default function BillingManagementPage() {
     setMessage(null);
 
     try {
-      const response = await fetch('/api/billing/generate', {
+      const response = await fetchWithAuth('/api/billing/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),

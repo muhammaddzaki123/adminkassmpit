@@ -6,6 +6,7 @@ import { TreasurerSidebar } from '@/components/layout/TreasurerSidebar';
 import { TreasurerHeader } from '@/components/layout/TreasurerHeader';
 import { StatCard, Card } from '@/components/ui/Card';
 import { CreditCard, TrendingDown, AlertCircle, TrendingUp, CheckCircle, FileText } from 'lucide-react';
+import { fetchWithAuth } from '@/lib/api-client';
 
 interface Payment {
   id: string;
@@ -73,7 +74,7 @@ export default function TreasurerDashboard() {
       const currentYear = new Date().getFullYear();
       
       // Fetch all billings summary
-      const billingsRes = await fetch('/api/billing/list');
+      const billingsRes = await fetchWithAuth('/api/billing/list');
       if (!billingsRes.ok) {
         throw new Error(`Failed to fetch billings: ${billingsRes.status}`);
       }
@@ -94,7 +95,7 @@ export default function TreasurerDashboard() {
         overdueBillings = summary.statusCounts?.OVERDUE || 0;
         
         // Calculate monthly income (from this month's billings)
-        const monthlyBillingsRes = await fetch(`/api/billing/list?month=${currentMonth}&year=${currentYear}`);
+        const monthlyBillingsRes = await fetchWithAuth(`/api/billing/list?month=${currentMonth}&year=${currentYear}`);
         if (monthlyBillingsRes.ok && monthlyBillingsRes.headers.get('content-type')?.includes('application/json')) {
           const monthlyBillingsData = await monthlyBillingsRes.json();
           if (monthlyBillingsData.success) {
@@ -104,7 +105,7 @@ export default function TreasurerDashboard() {
       }
       
       // Fetch recent completed payments
-      const paymentsRes = await fetch('/api/payment/list?status=COMPLETED&limit=5');
+      const paymentsRes = await fetchWithAuth('/api/payment/list?status=COMPLETED&limit=5');
       let recentPaymentsList: Payment[] = [];
       if (paymentsRes.ok && paymentsRes.headers.get('content-type')?.includes('application/json')) {
         const paymentsData = await paymentsRes.json();
@@ -114,7 +115,7 @@ export default function TreasurerDashboard() {
       }
       
       // Fetch pending payments for verification
-      const pendingRes = await fetch('/api/payment/list?status=PENDING');
+      const pendingRes = await fetchWithAuth('/api/payment/list?status=PENDING');
       let pendingCount = 0;
       if (pendingRes.ok && pendingRes.headers.get('content-type')?.includes('application/json')) {
         const pendingData = await pendingRes.json();
@@ -126,9 +127,7 @@ export default function TreasurerDashboard() {
       // Fetch expenses
       let totalExpense = 0;
       let monthlyExpense = 0;
-      const expensesRes = await fetch('/api/expenses?status=APPROVED');
-      if (expensesRes.ok && expensesRes.headers.get('content-type')?.includes('application/json')) {
-        const expensesData = await expensesRes.json();
+      const expensesRes = await fetchWithAuth('/api/expenses?status=APPROVED');
       if (expensesRes.ok && expensesRes.headers.get('content-type')?.includes('application/json')) {
         const expensesData = await expensesRes.json();
         if (expensesData.success) {

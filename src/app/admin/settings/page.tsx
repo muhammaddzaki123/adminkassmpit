@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { fetchWithAuth } from '@/lib/api-client';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { Header } from '@/components/layout/Header';
 import { Card } from '@/components/ui/Card';
@@ -54,7 +55,7 @@ export default function SettingsPage() {
 
   const fetchSettings = async () => {
     try {
-      const response = await fetch('/api/admin/settings');
+      const response = await fetchWithAuth('/api/admin/settings');
       const result = await response.json();
 
       if (result.success && result.data) {
@@ -92,7 +93,7 @@ export default function SettingsPage() {
 
     setSeeding(true);
     try {
-      const response = await fetch('/api/admin/settings', {
+      const response = await fetchWithAuth('/api/admin/settings', {
         method: 'POST'
       });
 
@@ -124,7 +125,7 @@ export default function SettingsPage() {
         ...settings.SYSTEM
       ];
 
-      const response = await fetch('/api/admin/settings', {
+      const response = await fetchWithAuth('/api/admin/settings', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json'

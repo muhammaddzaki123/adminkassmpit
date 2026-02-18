@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import { fetchWithAuth } from '@/lib/api-client';
 import { TreasurerSidebar } from '@/components/layout/TreasurerSidebar';
 import { TreasurerHeader } from '@/components/layout/TreasurerHeader';
 import { Card } from '@/components/ui/Card';
@@ -50,7 +51,7 @@ export default function BillingListPage() {
       if (filters.year) params.append('year', filters.year);
       if (filters.search) params.append('search', filters.search);
 
-      const response = await fetch(`/api/billing/list?${params.toString()}`);
+      const response = await fetchWithAuth(`/api/billing/list?${params.toString()}`);
       if (!response.ok) {
         throw new Error(`Failed to fetch billings: ${response.status}`);
       }

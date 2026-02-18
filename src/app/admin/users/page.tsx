@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { fetchWithAuth } from '@/lib/api-client';
 import { AdminHeader } from '@/components/layout/AdminHeader';
 import { AdminSidebar } from '@/components/layout/AdminSidebar';
 import { Card } from '@/components/ui/Card';
@@ -59,7 +60,7 @@ export default function UsersManagement() {
   const fetchUsers = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch('/api/admin/users');
+      const response = await fetchWithAuth('/api/admin/users');
       if (response.ok) {
         const data = await response.json();
         setUsers(data);
@@ -79,7 +80,7 @@ export default function UsersManagement() {
       const url = editingUser ? `/api/admin/users/${editingUser.id}` : '/api/admin/users';
       const method = editingUser ? 'PUT' : 'POST';
 
-      const response = await fetch(url, {
+      const response = await fetchWithAuth(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
@@ -118,7 +119,7 @@ export default function UsersManagement() {
     if (!confirm('Yakin ingin menghapus user ini?')) return;
 
     try {
-      const response = await fetch(`/api/admin/users/${userId}`, {
+      const response = await fetchWithAuth(`/api/admin/users/${userId}`, {
         method: 'DELETE',
       });
 
@@ -132,7 +133,7 @@ export default function UsersManagement() {
 
   const toggleUserStatus = async (userId: string, currentStatus: boolean) => {
     try {
-      const response = await fetch(`/api/admin/users/${userId}/toggle-status`, {
+      const response = await fetchWithAuth(`/api/admin/users/${userId}/toggle-status`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ isActive: !currentStatus }),

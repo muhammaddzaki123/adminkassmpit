@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { fetchWithAuth } from '@/lib/api-client';
 import { TreasurerSidebar } from '@/components/layout/TreasurerSidebar';
 import { TreasurerHeader } from '@/components/layout/TreasurerHeader';
 import { Card } from '@/components/ui/Card';
@@ -81,7 +82,7 @@ export default function PaymentPage() {
 
   const fetchRecentPayments = async () => {
     try {
-      const response = await fetch('/api/spp-payments?limit=10');
+      const response = await fetchWithAuth('/api/spp-payments?limit=10');
       if (!response.ok) {
         throw new Error(`Failed to fetch payments: ${response.status}`);
       }
@@ -104,7 +105,7 @@ export default function PaymentPage() {
     }
 
     try {
-      const response = await fetch(`/api/students?search=${query}`);
+      const response = await fetchWithAuth(`/api/students?search=${query}`);
       if (!response.ok) {
         throw new Error(`Failed to search students: ${response.status}`);
       }
@@ -164,7 +165,7 @@ export default function PaymentPage() {
         status: 'PAID'
       };
 
-      const response = await fetch('/api/spp-payments', {
+      const response = await fetchWithAuth('/api/spp-payments', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)

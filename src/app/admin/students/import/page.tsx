@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { fetchWithAuth } from '@/lib/api-client';
 import { AdminHeader } from '@/components/layout/AdminHeader';
 import { AdminSidebar } from '@/components/layout/AdminSidebar';
 import { Card } from '@/components/ui/Card';
@@ -38,7 +39,7 @@ export default function ImportStudentsPage() {
     formData.append('file', file);
 
     try {
-      const response = await fetch('/api/admin/students/import', {
+      const response = await fetchWithAuth('/api/admin/students/import', {
         method: 'POST',
         body: formData,
       });

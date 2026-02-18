@@ -44,7 +44,6 @@ export async function GET(request: NextRequest) {
         sppAmount: cls.sppAmount,
         maxCapacity: cls.maxCapacity,
         currentStudents: cls._count.studentClasses,
-        waliKelas: cls.waliKelas,
       })),
     });
   } catch (error) {
@@ -68,7 +67,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { name, grade, sppAmount, maxCapacity, waliKelas, description } = await request.json();
+    const { name, grade, sppAmount, maxCapacity, description } = await request.json();
 
     if (!name || !grade) {
       return NextResponse.json(
@@ -83,7 +82,6 @@ export async function POST(request: NextRequest) {
         grade: parseInt(grade),
         sppAmount: parseFloat(sppAmount || 0),
         maxCapacity: maxCapacity ? parseInt(maxCapacity) : 40,
-        waliKelas,
         description,
       },
     });

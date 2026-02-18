@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { fetchWithAuth } from '@/lib/api-client';
 import { AdminHeader } from '@/components/layout/AdminHeader';
 import { AdminSidebar } from '@/components/layout/AdminSidebar';
 import { Card } from '@/components/ui/Card';
@@ -44,7 +45,7 @@ export default function CreateStudentPage() {
       const userData = localStorage.getItem('user');
       const adminId = userData ? JSON.parse(userData).id : '';
 
-      const response = await fetch('/api/admin/students/create', {
+      const response = await fetchWithAuth('/api/admin/students/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...formData, adminId }),

@@ -118,7 +118,9 @@ export async function POST(request: NextRequest) {
       const newPayment = await tx.payment.create({
         data: {
           paymentNumber,
-          billingId,
+          billing: {
+            connect: { id: billingId }
+          },
           method,
           amount,
           adminFee,
@@ -127,7 +129,11 @@ export async function POST(request: NextRequest) {
           notes,
           receiptUrl,
           paidAt: paymentStatus === 'COMPLETED' ? new Date() : null,
-          processedBy: session.user.role === 'TREASURER' ? session.user.id : null,
+          ...(session.user.role === 'TREASURER' && {
+            processedBy: {
+              connect: { id: session.user.id }
+            }
+          }),
         },
       });
 

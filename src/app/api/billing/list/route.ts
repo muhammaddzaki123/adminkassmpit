@@ -136,7 +136,7 @@ export async function GET(request: NextRequest) {
         id: billing.student?.id || '',
         nis: billing.student?.nisn || '',
         fullName: billing.student?.nama || '',
-        className: billing.student?.studentClasses[0]?.class.name || '-',
+        className: billing.student?.studentClasses?.[0]?.class?.name || '-',
       },
       type: billing.type,
       month: billing.month,

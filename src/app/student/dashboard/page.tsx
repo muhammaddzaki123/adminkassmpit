@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { fetchWithAuth } from '@/lib/api-client';
 import { StudentSidebar } from '@/components/layout/StudentSidebar';
 import { StudentHeader } from '@/components/layout/StudentHeader';
 import { Card } from '@/components/ui/Card';
@@ -82,7 +83,7 @@ export default function StudentDashboard() {
   const fetchStudentData = async () => {
     try {
       // Fetch billings (includes student info)
-      const billingsResponse = await fetch('/api/billing/student');
+      const billingsResponse = await fetchWithAuth('/api/billing/student');
       
       if (!billingsResponse.ok) {
         throw new Error(`HTTP error! status: ${billingsResponse.status}`);

@@ -370,7 +370,11 @@ export async function updateSettings(
       where: { key },
       update: {
         value,
-        updatedBy,
+        ...(updatedBy && {
+          updatedBy: {
+            connect: { id: updatedBy }
+          }
+        }),
         updatedAt: new Date()
       },
       create: {
@@ -378,7 +382,11 @@ export async function updateSettings(
         value,
         type: 'TEXT',
         category: 'SYSTEM',
-        updatedBy
+        ...(updatedBy && {
+          updatedBy: {
+            connect: { id: updatedBy }
+          }
+        })
       }
     });
 

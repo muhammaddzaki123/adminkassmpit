@@ -89,8 +89,11 @@ export default function LoginPage() {
 
       const data = await response.json();
 
-      // Simpan user data ke localStorage
+      // Simpan user data dan token ke localStorage
       localStorage.setItem('user', JSON.stringify(data.user));
+      if (data.token) {
+        localStorage.setItem('token', data.token);
+      }
       
       // Redirect berdasarkan role
       if (data.user.role === 'ADMIN') {
