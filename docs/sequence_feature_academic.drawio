@@ -1,94 +1,105 @@
-<mxfile host="app.diagrams.net" modified="2026-02-18T04:15:51.794080" agent="JulesAgent" version="21.6.5" type="device">
-<diagram id="b404aa1f-0e89-430c-90db-0b1f1e375f54" name="Academic Setup Flow">
-<mxGraphModel dx="1422" dy="794" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+<mxfile host="app.diagrams.net" modified="2026-02-18T04:32:55.109616" agent="JulesAgent" version="21.6.5" type="device">
+<diagram id="b1e43012-31f0-4ced-aed9-591e1e04683a" name="Pengaturan Akademik">
+<mxGraphModel dx="1422" dy="794" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1200" math="0" shadow="0">
 <root>
 <mxCell id="0" /><mxCell id="1" parent="0" />
-        <mxCell id="806a1863-af7f-4a6b-aceb-9f5d076243b6" value="Admin Sekolah" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;" vertex="1" parent="1">
-          <mxGeometry x="100" y="40" width="100" height="1000" as="geometry" />
+        <mxCell id="ff7f410b-63f9-4348-8cb3-1b9754a13879" value="Admin Sekolah" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="100" y="40" width="120" height="1200" as="geometry" />
         </mxCell>
 
-        <mxCell id="7461d3bb-a030-44c7-bcdd-4a1d6177b189" value="System Admin" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;" vertex="1" parent="1">
-          <mxGeometry x="300" y="40" width="100" height="1000" as="geometry" />
+        <mxCell id="12d7fe21-0b6e-4dc4-9e56-2e3fd8086f34" value="Sistem Akademik" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="350" y="40" width="120" height="1200" as="geometry" />
         </mxCell>
 
-        <mxCell id="ef2c2244-3a82-4f9c-b3a2-51237b2d2fae" value="Database" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;" vertex="1" parent="1">
-          <mxGeometry x="500" y="40" width="100" height="1000" as="geometry" />
+        <mxCell id="8d95145a-bdf1-4060-af22-b107de66f4f7" value="Database" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="600" y="40" width="120" height="1200" as="geometry" />
         </mxCell>
 
-        <mxCell id="68034f78-2c96-41b0-86a9-5c139e86c05c" value="1. Create Academic Year (2025/2026)" style="endArrow=block;html=1;endFill=1;" edge="1" parent="1">
-          <mxGeometry width="50" height="50" relative="1" as="geometry">
-            <mxPoint x="150" y="100" as="sourcePoint" />
-            <mxPoint x="350" y="100" as="targetPoint" />
+        <mxCell id="d21752d1-e968-41f2-8c4f-3d7736d4ec2b" value="1. Buat Tahun Ajaran Baru (2025/2026)" style="html=1;verticalAlign=bottom;endArrow=block;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;rounded=0;labelBackgroundColor=#ffffff;fontSize=11;" edge="1" parent="1">
+          <mxGeometry width="80" relative="1" as="geometry">
+            <mxPoint x="160" y="120" as="sourcePoint" />
+            <mxPoint x="410" y="120" as="targetPoint" />
+            <mxPoint as="offset" />
           </mxGeometry>
         </mxCell>
 
-        <mxCell id="b0c29e6d-2a71-4533-a607-a2ac1fd51ec1" value="2. INSERT AcademicYear" style="endArrow=block;html=1;endFill=1;" edge="1" parent="1">
-          <mxGeometry width="50" height="50" relative="1" as="geometry">
-            <mxPoint x="350" y="160" as="sourcePoint" />
-            <mxPoint x="550" y="160" as="targetPoint" />
+        <mxCell id="409b84fb-03e4-40f3-9980-ed9d64c40ee6" value="2. INSERT AcademicYear" style="html=1;verticalAlign=bottom;endArrow=block;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;rounded=0;labelBackgroundColor=#ffffff;fontSize=11;" edge="1" parent="1">
+          <mxGeometry width="80" relative="1" as="geometry">
+            <mxPoint x="410" y="170" as="sourcePoint" />
+            <mxPoint x="660" y="170" as="targetPoint" />
+            <mxPoint as="offset" />
           </mxGeometry>
         </mxCell>
 
-        <mxCell id="3e7750a1-b235-429e-9402-8ca0c1137046" value="3. Success" style="endArrow=open;dashed=1;html=1;endFill=0;" edge="1" parent="1">
-          <mxGeometry width="50" height="50" relative="1" as="geometry">
-            <mxPoint x="550" y="220" as="sourcePoint" />
-            <mxPoint x="350" y="220" as="targetPoint" />
+        <mxCell id="62679c03-1383-49e4-aaf9-8b530c216276" value="3. Sukses" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;endSize=8;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;rounded=0;labelBackgroundColor=#ffffff;fontSize=11;" edge="1" parent="1">
+          <mxGeometry width="80" relative="1" as="geometry">
+            <mxPoint x="660" y="220" as="sourcePoint" />
+            <mxPoint x="410" y="220" as="targetPoint" />
+            <mxPoint as="offset" />
           </mxGeometry>
         </mxCell>
 
-        <mxCell id="6f05548f-5920-40d0-97a6-0203d430fec2" value="4. Setup Classes (7A, 7B, etc.)" style="endArrow=block;html=1;endFill=1;" edge="1" parent="1">
-          <mxGeometry width="50" height="50" relative="1" as="geometry">
-            <mxPoint x="150" y="280" as="sourcePoint" />
-            <mxPoint x="350" y="280" as="targetPoint" />
+        <mxCell id="f3d47dec-13ac-4904-a4b4-b760d2a7539f" value="4. Atur Kelas (7A, 7B, dst)" style="html=1;verticalAlign=bottom;endArrow=block;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;rounded=0;labelBackgroundColor=#ffffff;fontSize=11;" edge="1" parent="1">
+          <mxGeometry width="80" relative="1" as="geometry">
+            <mxPoint x="160" y="270" as="sourcePoint" />
+            <mxPoint x="410" y="270" as="targetPoint" />
+            <mxPoint as="offset" />
           </mxGeometry>
         </mxCell>
 
-        <mxCell id="0d1f68ee-ecd3-4576-b616-b884ad86af90" value="5. INSERT Classes" style="endArrow=block;html=1;endFill=1;" edge="1" parent="1">
-          <mxGeometry width="50" height="50" relative="1" as="geometry">
-            <mxPoint x="350" y="340" as="sourcePoint" />
-            <mxPoint x="550" y="340" as="targetPoint" />
+        <mxCell id="5f8b146e-c743-48d2-a722-82578ff53547" value="5. INSERT Classes" style="html=1;verticalAlign=bottom;endArrow=block;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;rounded=0;labelBackgroundColor=#ffffff;fontSize=11;" edge="1" parent="1">
+          <mxGeometry width="80" relative="1" as="geometry">
+            <mxPoint x="410" y="320" as="sourcePoint" />
+            <mxPoint x="660" y="320" as="targetPoint" />
+            <mxPoint as="offset" />
           </mxGeometry>
         </mxCell>
 
-        <mxCell id="bab93f90-00ba-4434-b23f-32ddd115d00b" value="6. Create Billing Template (SPP)" style="endArrow=block;html=1;endFill=1;" edge="1" parent="1">
-          <mxGeometry width="50" height="50" relative="1" as="geometry">
-            <mxPoint x="150" y="400" as="sourcePoint" />
-            <mxPoint x="350" y="400" as="targetPoint" />
+        <mxCell id="dff6d84a-da6a-42fb-bc43-fc0eed7cbb28" value="6. Buat Template Tagihan (SPP)" style="html=1;verticalAlign=bottom;endArrow=block;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;rounded=0;labelBackgroundColor=#ffffff;fontSize=11;" edge="1" parent="1">
+          <mxGeometry width="80" relative="1" as="geometry">
+            <mxPoint x="160" y="370" as="sourcePoint" />
+            <mxPoint x="410" y="370" as="targetPoint" />
+            <mxPoint as="offset" />
           </mxGeometry>
         </mxCell>
 
-        <mxCell id="13f2585d-7a4b-45ba-9e3a-1f4ce3c53b60" value="7. INSERT BillingTemplate" style="endArrow=block;html=1;endFill=1;" edge="1" parent="1">
-          <mxGeometry width="50" height="50" relative="1" as="geometry">
-            <mxPoint x="350" y="460" as="sourcePoint" />
-            <mxPoint x="550" y="460" as="targetPoint" />
+        <mxCell id="aca24522-b3c8-4de5-aa11-6e20e5da8b42" value="7. INSERT BillingTemplate" style="html=1;verticalAlign=bottom;endArrow=block;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;rounded=0;labelBackgroundColor=#ffffff;fontSize=11;" edge="1" parent="1">
+          <mxGeometry width="80" relative="1" as="geometry">
+            <mxPoint x="410" y="420" as="sourcePoint" />
+            <mxPoint x="660" y="420" as="targetPoint" />
+            <mxPoint as="offset" />
           </mxGeometry>
         </mxCell>
 
-        <mxCell id="e522cff0-558d-4842-8add-8bc45520099c" value="8. Assign Student to Class" style="endArrow=block;html=1;endFill=1;" edge="1" parent="1">
-          <mxGeometry width="50" height="50" relative="1" as="geometry">
-            <mxPoint x="150" y="520" as="sourcePoint" />
-            <mxPoint x="350" y="520" as="targetPoint" />
+        <mxCell id="9c163395-bb8d-4586-bcfb-56c76ecf85eb" value="8. Masukkan Siswa ke Kelas" style="html=1;verticalAlign=bottom;endArrow=block;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;rounded=0;labelBackgroundColor=#ffffff;fontSize=11;" edge="1" parent="1">
+          <mxGeometry width="80" relative="1" as="geometry">
+            <mxPoint x="160" y="470" as="sourcePoint" />
+            <mxPoint x="410" y="470" as="targetPoint" />
+            <mxPoint as="offset" />
           </mxGeometry>
         </mxCell>
 
-        <mxCell id="b57db14d-5d47-4bff-b085-711f17496e96" value="9. INSERT StudentClass" style="endArrow=block;html=1;endFill=1;" edge="1" parent="1">
-          <mxGeometry width="50" height="50" relative="1" as="geometry">
-            <mxPoint x="350" y="580" as="sourcePoint" />
-            <mxPoint x="550" y="580" as="targetPoint" />
+        <mxCell id="8ed333f8-a261-49e4-9db5-d4a0a1eb7c4f" value="9. INSERT StudentClass" style="html=1;verticalAlign=bottom;endArrow=block;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;rounded=0;labelBackgroundColor=#ffffff;fontSize=11;" edge="1" parent="1">
+          <mxGeometry width="80" relative="1" as="geometry">
+            <mxPoint x="410" y="520" as="sourcePoint" />
+            <mxPoint x="660" y="520" as="targetPoint" />
+            <mxPoint as="offset" />
           </mxGeometry>
         </mxCell>
 
-        <mxCell id="4f8d30ee-8630-4718-9bf5-7cdd785af031" value="10. Generate Billings (from Template)" style="endArrow=block;html=1;endFill=1;" edge="1" parent="1">
-          <mxGeometry width="50" height="50" relative="1" as="geometry">
-            <mxPoint x="350" y="640" as="sourcePoint" />
-            <mxPoint x="550" y="640" as="targetPoint" />
+        <mxCell id="21905fe7-0334-4589-9264-3739b654827c" value="10. Generate Tagihan (Sesuai Template)" style="html=1;verticalAlign=bottom;endArrow=block;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;rounded=0;labelBackgroundColor=#ffffff;fontSize=11;" edge="1" parent="1">
+          <mxGeometry width="80" relative="1" as="geometry">
+            <mxPoint x="410" y="570" as="sourcePoint" />
+            <mxPoint x="660" y="570" as="targetPoint" />
+            <mxPoint as="offset" />
           </mxGeometry>
         </mxCell>
 
-        <mxCell id="aac3b1a6-0389-459e-a7eb-325536b2a1ab" value="11. Billings Created" style="endArrow=block;html=1;endFill=1;" edge="1" parent="1">
-          <mxGeometry width="50" height="50" relative="1" as="geometry">
-            <mxPoint x="550" y="700" as="sourcePoint" />
-            <mxPoint x="350" y="700" as="targetPoint" />
+        <mxCell id="70ba06e5-c333-4ccc-9704-bdde79ecb857" value="11. Tagihan Terbuat" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;endSize=8;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;rounded=0;labelBackgroundColor=#ffffff;fontSize=11;" edge="1" parent="1">
+          <mxGeometry width="80" relative="1" as="geometry">
+            <mxPoint x="660" y="620" as="sourcePoint" />
+            <mxPoint x="410" y="620" as="targetPoint" />
+            <mxPoint as="offset" />
           </mxGeometry>
         </mxCell>
 
