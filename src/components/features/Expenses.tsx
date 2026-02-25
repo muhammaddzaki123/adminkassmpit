@@ -72,7 +72,7 @@ export function Expenses() {
       const expensesRes = await fetch(`/api/expenses?${params.toString()}`);
       
       // Fetch income (SPP payments)
-      const incomeRes = await fetch('/api/spp-payments?status=PAID');
+      const incomeRes = await fetch('/api/spp-payments?status=COMPLETED');
       
       if (expensesRes.ok && incomeRes.ok) {
         const expensesData = await expensesRes.json();

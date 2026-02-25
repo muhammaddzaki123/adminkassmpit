@@ -57,7 +57,7 @@ export default function HistoryPage() {
       // Fetch both expenses and payments
       const [expensesRes, paymentsRes] = await Promise.all([
         fetch('/api/expenses'),
-        fetch('/api/spp-payments?status=PAID')
+        fetch('/api/spp-payments?status=COMPLETED')
       ]);
 
       if (!expensesRes.ok || !paymentsRes.ok) {
@@ -267,10 +267,10 @@ export default function HistoryPage() {
                           </td>
                           <td className="p-4 text-center">
                             <Badge variant={
-                              transaction.status === 'PAID' || transaction.status === 'APPROVED' ? 'success' : 
+                              transaction.status === 'COMPLETED' || transaction.status === 'APPROVED' ? 'success' : 
                               transaction.status === 'PENDING' ? 'warning' : 'error'
                             }>
-                              {transaction.status === 'PAID' || transaction.status === 'APPROVED' ? 'Selesai' : 
+                              {transaction.status === 'COMPLETED' || transaction.status === 'APPROVED' ? 'Selesai' : 
                                transaction.status === 'PENDING' ? 'Pending' : 'Gagal'}
                             </Badge>
                           </td>

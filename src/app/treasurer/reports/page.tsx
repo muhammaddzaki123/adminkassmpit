@@ -90,7 +90,7 @@ export default function ReportsPage() {
     
     try {
       // Fetch income data (SPP Payments)
-      const incomeResponse = await fetchWithAuth('/api/spp-payments?status=PAID');
+      const incomeResponse = await fetchWithAuth('/api/spp-payments?status=COMPLETED');
       if (!incomeResponse.ok) {
         throw new Error(`Failed to fetch income data: ${incomeResponse.status}`);
       }

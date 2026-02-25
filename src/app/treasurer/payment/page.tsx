@@ -162,7 +162,7 @@ export default function PaymentPage() {
         year: formData.paymentType === 'SPP' ? parseInt(formData.year) : undefined,
         paidAt: new Date(formData.paidAt).toISOString(),
         description: formData.description || undefined,
-        status: 'PAID'
+        status: 'COMPLETED'
       };
 
       const response = await fetchWithAuth('/api/spp-payments', {

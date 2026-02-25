@@ -29,7 +29,7 @@ export function TreasurerHeader({ onMenuClick }: TreasurerHeaderProps) {
       const startOfDay = new Date(today.setHours(0, 0, 0, 0));
       
       // Fetch today's payments
-      const paymentsRes = await fetch('/api/spp-payments?status=PAID');
+      const paymentsRes = await fetch('/api/spp-payments?status=COMPLETED');
       const paymentsData = await paymentsRes.json();
       
       // Fetch today's expenses

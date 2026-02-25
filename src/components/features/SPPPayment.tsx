@@ -98,12 +98,12 @@ export function SPPPayment() {
 
   const calculateStats = (paymentsData: Payment[]) => {
     const totalAmount = paymentsData
-      .filter(p => p.status === 'PAID')
+      .filter(p => p.status === 'COMPLETED')
       .reduce((sum, p) => sum + p.amount, 0);
     
-    const paidCount = paymentsData.filter(p => p.status === 'PAID').length;
+    const paidCount = paymentsData.filter(p => p.status === 'COMPLETED').length;
     const pendingCount = paymentsData.filter(p => p.status === 'PENDING').length;
-    const unpaidCount = paymentsData.filter(p => p.status === 'UNPAID').length;
+    const unpaidCount = paymentsData.filter(p => !['COMPLETED', 'PENDING'].includes(p.status)).length;
 
     setStats({
       totalAmount,
@@ -159,7 +159,7 @@ export function SPPPayment() {
         amount: parseFloat(formData.amount),
         month: parseInt(formData.month),
         year: parseInt(formData.year),
-        status: 'PAID',
+        status: 'COMPLETED',
         paidAt: new Date().toISOString(),
         description: `Pembayaran SPP via ${formData.paymentMethod}`
       };
@@ -242,8 +242,8 @@ export function SPPPayment() {
       label: 'Status',
       width: '10%',
       render: (item: Payment) => (
-        <Badge variant={item.status === 'PAID' ? 'success' : item.status === 'PENDING' ? 'warning' : 'error'}>
-          {item.status === 'PAID' ? 'Lunas' : item.status === 'PENDING' ? 'Pending' : 'Belum'}
+        <Badge variant={item.status === 'COMPLETED' ? 'success' : item.status === 'PENDING' ? 'warning' : 'error'}>
+          {item.status === 'COMPLETED' ? 'Lunas' : item.status === 'PENDING' ? 'Pending' : 'Belum'}
         </Badge>
       )
     },
@@ -316,9 +316,9 @@ export function SPPPayment() {
             onChange={(e) => setSelectedStatus(e.target.value)}
             options={[
               { value: 'all', label: 'Semua Status' },
-              { value: 'PAID', label: 'Lunas' },
+              { value: 'COMPLETED', label: 'Lunas' },
               { value: 'PENDING', label: 'Pending' },
-              { value: 'UNPAID', label: 'Belum Dibayar' },
+              { value: 'FAILED', label: 'Gagal' },
             ]}
             className="w-48"
           />

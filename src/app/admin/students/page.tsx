@@ -61,7 +61,7 @@ export default function AdminStudentsPage() {
     return matchesSearch && matchesStatus && matchesKelas;
   });
 
-  const uniqueKelas = Array.from(new Set(students.map(s => s.kelas))).sort();
+  const uniqueKelas = Array.from(new Set(students.map(s => s.kelas).filter(k => k && k.trim()))).sort();
 
   return (
     <div className="min-h-screen bg-neutral-50">

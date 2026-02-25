@@ -17,7 +17,7 @@ interface Transaction {
   amount: number;
   adminFee: number;
   totalAmount: number;
-  status: 'PAID' | 'PENDING' | 'FAILED' | 'EXPIRED';
+  status: 'COMPLETED' | 'PENDING' | 'FAILED' | 'EXPIRED';
   paymentMethod: string;
   description: string;
   vaNumber?: string;
@@ -269,7 +269,7 @@ export default function HistoryPage() {
                 <div className="text-center">
                   <p className="text-sm text-neutral-600 mb-1">Berhasil</p>
                   <p className="text-2xl font-bold text-green-600">
-                    {transactions.filter(t => t.status === 'PAID').length}
+                    {transactions.filter(t => t.status === 'COMPLETED').length}
                   </p>
                 </div>
                 <div className="text-center">
@@ -277,7 +277,7 @@ export default function HistoryPage() {
                   <p className="text-2xl font-bold text-primary-600">
                     {formatCurrency(
                       transactions
-                        .filter(t => t.status === 'PAID')
+                        .filter(t => t.status === 'COMPLETED')
                         .reduce((sum, t) => sum + t.totalAmount, 0)
                     )}
                   </p>
