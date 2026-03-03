@@ -83,6 +83,11 @@ enum ExpenseCategory {
   LAINNYA
 }
 
+enum TransactionType {
+  INCOME // Pemasukan
+  EXPENSE // Pengeluaran
+}
+
 model User {
   id           String      @id @default(uuid())
   username     String      @unique
@@ -106,6 +111,7 @@ model User {
   createdAcademicYears AcademicYear[]    @relation("AcademicYearCreator")
   createdTemplates     BillingTemplate[] @relation("TemplateCreator")
   updatedSettings      SystemSettings[]  @relation("SettingsUpdater")
+  recordedLedgers      GeneralLedger[]   @relation("LedgerRecorder")
 
   @@map("users")
 }
@@ -233,6 +239,35 @@ model NewStudentTransaction {
 // ==========================================
 // SISTEM KEUANGAN PROFESIONAL
 // ==========================================
+
+// 0. BUKU BESAR (General Ledger) - Jantung Keuangan
+model GeneralLedger {
+  id            String          @id @default(uuid())
+  date          DateTime        @default(now())
+  type          TransactionType // INCOME atau EXPENSE
+  amount        Float // Nominal transaksi
+  balanceBefore Float           @map("balance_before") // Saldo sebelum transaksi
+  balanceAfter  Float           @map("balance_after") // Saldo setelah transaksi
+  description   String          @db.Text
+
+  // Relasi fleksibel ke sumber transaksi
+  referenceId   String? @map("reference_id") // ID dari Payment atau Expense
+  referenceType String? @map("reference_type") // "PAYMENT", "EXPENSE", "MANUAL"
+
+  // Metadata
+  recordedById String   @map("recorded_by_id")
+  recordedBy   User     @relation("LedgerRecorder", fields: [recordedById], references: [id])
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  // Reverse relations for Prisma
+  payment Payment? @relation("PaymentLedger")
+  expense Expense? @relation("ExpenseLedger")
+
+  @@index([date])
+  @@index([type])
+  @@map("general_ledgers")
+}
+
 model Expense {
   id          String          @id @default(uuid())
   date        DateTime
@@ -241,8 +276,13 @@ model Expense {
   amount      Float
   status      ExpenseStatus   @default(PENDING)
   receipt     String? // URL to receipt
-  createdAt   DateTime        @default(now()) @map("created_at")
-  updatedAt   DateTime        @updatedAt @map("updated_at")
+
+  // Relasi ke Buku Besar
+  ledgerId String?        @unique @map("ledger_id")
+  ledger   GeneralLedger? @relation("ExpenseLedger", fields: [ledgerId], references: [id])
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("expenses")
 }
@@ -504,10 +544,15 @@ model Payment {
   notes      String? @db.Text
 
   // Metadata
-  processedById String?  @map("processed_by_id")
-  processedBy   User?    @relation("PaymentProcessor", fields: [processedById], references: [id])
-  createdAt     DateTime @default(now()) @map("created_at")
-  updatedAt     DateTime @updatedAt @map("updated_at")
+  processedById String? @map("processed_by_id")
+  processedBy   User?   @relation("PaymentProcessor", fields: [processedById], references: [id])
+
+  // Relasi ke Buku Besar
+  ledgerId String?        @unique @map("ledger_id")
+  ledger   GeneralLedger? @relation("PaymentLedger", fields: [ledgerId], references: [id])
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   // Relasi
   details PaymentDetail[]
