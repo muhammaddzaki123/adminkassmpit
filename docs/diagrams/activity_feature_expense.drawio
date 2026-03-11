@@ -1,0 +1,97 @@
+<mxfile host="app.diagrams.net" modified="2024-12-25T10:15:00.000Z" agent="5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36" etag="dummy-etag-expense" version="21.0.0" type="device">
+  <diagram id="Expense-Process" name="Expense Management Activity Diagram">
+    <mxGraphModel dx="1000" dy="1000" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="1654" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- Swimlanes -->
+        <mxCell id="pool_expense" value="Manajemen Pengeluaran (Expense)" style="swimlane;html=1;childLayout=stackLayout;resizeParent=1;resizeParentMax=0;startSize=20;horizontal=1;horizontalStack=0;" vertex="1" parent="1">
+          <mxGeometry x="40" y="40" width="840" height="800" as="geometry" />
+        </mxCell>
+
+        <mxCell id="lane_staff" value="Staff / Pengaju" style="swimlane;html=1;startSize=20;" vertex="1" parent="pool_expense">
+          <mxGeometry x="0" y="20" width="280" height="780" as="geometry" />
+        </mxCell>
+
+        <mxCell id="lane_headmaster" value="Kepala Sekolah" style="swimlane;html=1;startSize=20;" vertex="1" parent="pool_expense">
+          <mxGeometry x="280" y="20" width="280" height="780" as="geometry" />
+        </mxCell>
+
+        <mxCell id="lane_treasurer" value="Bendahara" style="swimlane;html=1;startSize=20;" vertex="1" parent="pool_expense">
+          <mxGeometry x="560" y="20" width="280" height="780" as="geometry" />
+        </mxCell>
+
+        <!-- Nodes Lane Staff -->
+        <mxCell id="start_exp" value="" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=#000000;" vertex="1" parent="lane_staff">
+          <mxGeometry x="120" y="40" width="40" height="40" as="geometry" />
+        </mxCell>
+
+        <mxCell id="act_create_req" value="Buat Pengajuan Dana" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="lane_staff">
+          <mxGeometry x="80" y="120" width="120" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="act_revise" value="Terima Notifikasi / Revisi" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="lane_staff">
+          <mxGeometry x="80" y="400" width="120" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- Nodes Lane Headmaster -->
+        <mxCell id="act_review" value="Review Pengajuan" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="lane_headmaster">
+          <mxGeometry x="80" y="220" width="120" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="dec_approve" value="Setuju?" style="rhombus;whiteSpace=wrap;html=1;" vertex="1" parent="lane_headmaster">
+          <mxGeometry x="100" y="320" width="80" height="80" as="geometry" />
+        </mxCell>
+
+        <!-- Nodes Lane Treasurer -->
+        <mxCell id="act_process_fund" value="Proses Pencairan Dana" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="lane_treasurer">
+          <mxGeometry x="80" y="450" width="120" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="act_upload_proof" value="Upload Bukti Transfer" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="lane_treasurer">
+          <mxGeometry x="80" y="550" width="120" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="end_exp" value="" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;strokeWidth=2;fillColor=#000000;strokeColor=#000000;" vertex="1" parent="lane_treasurer">
+          <mxGeometry x="120" y="650" width="40" height="40" as="geometry" />
+        </mxCell>
+
+        <!-- Edges -->
+        <mxCell id="e_exp1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="pool_expense" source="start_exp" target="act_create_req">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_exp2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="pool_expense" source="act_create_req" target="act_review">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_exp3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="pool_expense" source="act_review" target="dec_approve">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_exp4_no" value="Tidak" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="pool_expense" source="dec_approve" target="act_revise">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_exp5_yes" value="Ya" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="pool_expense" source="dec_approve" target="act_process_fund">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_exp6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="pool_expense" source="act_process_fund" target="act_upload_proof">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_exp7" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="pool_expense" source="act_upload_proof" target="end_exp">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Loop back after revision if needed, but keeping it simple as 'End' or 'Retry' flow not specified.
+             Connecting Revise back to Create Req for simplicity. -->
+        <mxCell id="e_exp8" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="pool_expense" source="act_revise" target="act_create_req">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="40" y="430" />
+              <mxPoint x="40" y="150" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
