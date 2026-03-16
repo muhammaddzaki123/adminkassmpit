@@ -370,7 +370,7 @@ export default function NewStudentDashboard() {
               Selamat! Pendaftaran Anda Diterima
             </h3>
             <p className="text-emerald-700 mb-4">
-              Anda telah resmi menjadi siswa SMPIT. Admin akan menghubungi Anda untuk informasi lebih lanjut mengenai orientasi dan jadwal masuk.
+              Anda telah resmi menjadi siswa SMP IT ANAK SOLEH MATARAM. Admin akan menghubungi Anda untuk informasi lebih lanjut mengenai orientasi dan jadwal masuk.
             </p>
             <p className="text-sm text-emerald-600">
               Silakan tunggu informasi lebih lanjut dari pihak sekolah.
@@ -381,3 +381,4 @@ export default function NewStudentDashboard() {
     </div>
   );
 }
+

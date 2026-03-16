@@ -10,7 +10,7 @@ const emailTemplates = {
     subject: '📝 Pendaftaran Berhasil - Menunggu Pembayaran',
     html: (data: { nama: string; nisn: string; vaNumber: string; amount: number; expiredAt: string }) => `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #2563eb;">Selamat Datang di SMP IT KASSMPIT!</h2>
+        <h2 style="color: #2563eb;">Selamat Datang di SMP IT ANAK SOLEH MATARAM!</h2>
         <p>Halo <strong>${data.nama}</strong>,</p>
         <p>Pendaftaran siswa baru dengan NISN <strong>${data.nisn}</strong> telah berhasil dibuat.</p>
         
@@ -33,7 +33,7 @@ const emailTemplates = {
         
         <p style="color: #ef4444;"><strong>Penting:</strong> Pembayaran akan otomatis diverifikasi dan akun Anda akan aktif setelah pembayaran berhasil.</p>
         
-        <p>Terima kasih,<br><strong>Tim SMP IT KASSMPIT</strong></p>
+        <p>Terima kasih,<br><strong>Tim SMP IT ANAK SOLEH MATARAM</strong></p>
       </div>
     `
   },
@@ -64,7 +64,7 @@ const emailTemplates = {
         
         <p>Jika ada pertanyaan, silakan hubungi admin sekolah.</p>
         
-        <p>Selamat bergabung!<br><strong>Tim SMP IT KASSMPIT</strong></p>
+        <p>Selamat bergabung!<br><strong>Tim SMP IT ANAK SOLEH MATARAM</strong></p>
       </div>
     `
   },
@@ -87,7 +87,7 @@ const emailTemplates = {
         
         <p>Bukti pembayaran dapat Anda unduh dari portal siswa.</p>
         
-        <p>Terima kasih,<br><strong>Tim SMP IT KASSMPIT</strong></p>
+        <p>Terima kasih,<br><strong>Tim SMP IT ANAK SOLEH MATARAM</strong></p>
       </div>
     `
   },
@@ -109,7 +109,7 @@ const emailTemplates = {
         
         <p>Silakan lakukan pembayaran melalui portal siswa atau Virtual Account yang telah disediakan.</p>
         
-        <p>Terima kasih,<br><strong>Tim SMP IT KASSMPIT</strong></p>
+        <p>Terima kasih,<br><strong>Tim SMP IT ANAK SOLEH MATARAM</strong></p>
       </div>
     `
   },
@@ -120,7 +120,7 @@ const emailTemplates = {
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <h2 style="color: #2563eb;">Pengumuman Daftar Ulang</h2>
         <p>Halo <strong>${data.nama}</strong>,</p>
-        <p>Tahun ajaran baru <strong>${data.academicYear}</strong> akan segera dimulai. Silakan lakukan daftar ulang untuk melanjutkan pendidikan di SMP IT KASSMPIT.</p>
+        <p>Tahun ajaran baru <strong>${data.academicYear}</strong> akan segera dimulai. Silakan lakukan daftar ulang untuk melanjutkan pendidikan di SMP IT ANAK SOLEH MATARAM.</p>
         
         <div style="background-color: #eff6ff; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #2563eb;">
           <h3 style="margin-top: 0; color: #1e40af;">Informasi Daftar Ulang</h3>
@@ -139,7 +139,7 @@ const emailTemplates = {
         
         <p style="color: #ef4444;"><strong>Penting:</strong> Siswa yang tidak melakukan daftar ulang sebelum batas waktu tidak dapat mengikuti kegiatan pembelajaran.</p>
         
-        <p>Terima kasih,<br><strong>Tim SMP IT KASSMPIT</strong></p>
+        <p>Terima kasih,<br><strong>Tim SMP IT ANAK SOLEH MATARAM</strong></p>
       </div>
     `
   }
@@ -151,19 +151,19 @@ const emailTemplates = {
 
 const whatsappTemplates = {
   'registration-pending': (data: { nama: string; vaNumber: string; amount: number }) => 
-    `*PENDAFTARAN BERHASIL* ✅\n\nHalo *${data.nama}*,\n\nPendaftaran siswa baru Anda telah berhasil dibuat.\n\n*Detail Pembayaran:*\nVA Number: ${data.vaNumber}\nTotal: Rp ${data.amount.toLocaleString('id-ID')}\n\nSegera lakukan pembayaran melalui Virtual Account. Akun akan aktif otomatis setelah pembayaran berhasil.\n\n_SMP IT KASSMPIT_`,
+    `*PENDAFTARAN BERHASIL* ✅\n\nHalo *${data.nama}*,\n\nPendaftaran siswa baru Anda telah berhasil dibuat.\n\n*Detail Pembayaran:*\nVA Number: ${data.vaNumber}\nTotal: Rp ${data.amount.toLocaleString('id-ID')}\n\nSegera lakukan pembayaran melalui Virtual Account. Akun akan aktif otomatis setelah pembayaran berhasil.\n\n_SMP IT ANAK SOLEH MATARAM_`,
   
   'registration-approved': (data: { nama: string; username: string; kelas: string }) => 
-    `*PENDAFTARAN DISETUJUI* 🎉\n\nSelamat *${data.nama}*!\n\nPembayaran pendaftaran Anda telah diterima. Akun Anda sekarang AKTIF.\n\n*Info Akun:*\nUsername: ${data.username}\nKelas: ${data.kelas}\n\nSilakan login ke portal siswa untuk melanjutkan.\n\n_SMP IT KASSMPIT_`,
+    `*PENDAFTARAN DISETUJUI* 🎉\n\nSelamat *${data.nama}*!\n\nPembayaran pendaftaran Anda telah diterima. Akun Anda sekarang AKTIF.\n\n*Info Akun:*\nUsername: ${data.username}\nKelas: ${data.kelas}\n\nSilakan login ke portal siswa untuk melanjutkan.\n\n_SMP IT ANAK SOLEH MATARAM_`,
   
   'payment-success': (data: { nama: string; paymentType: string; amount: number }) => 
-    `*PEMBAYARAN BERHASIL* ✅\n\nHalo *${data.nama}*,\n\nPembayaran ${data.paymentType} sebesar Rp ${data.amount.toLocaleString('id-ID')} telah berhasil diterima.\n\nTerima kasih!\n\n_SMP IT KASSMPIT_`,
+    `*PEMBAYARAN BERHASIL* ✅\n\nHalo *${data.nama}*,\n\nPembayaran ${data.paymentType} sebesar Rp ${data.amount.toLocaleString('id-ID')} telah berhasil diterima.\n\nTerima kasih!\n\n_SMP IT ANAK SOLEH MATARAM_`,
   
   'payment-reminder': (data: { nama: string; bulan: string; amount: number; dueDate: string }) => 
-    `*PENGINGAT PEMBAYARAN SPP* ⏰\n\nHalo *${data.nama}*,\n\nPembayaran SPP bulan *${data.bulan}* akan jatuh tempo:\n\nJumlah: Rp ${data.amount.toLocaleString('id-ID')}\nJatuh Tempo: ${data.dueDate}\n\nSilakan lakukan pembayaran melalui portal siswa.\n\n_SMP IT KASSMPIT_`,
+    `*PENGINGAT PEMBAYARAN SPP* ⏰\n\nHalo *${data.nama}*,\n\nPembayaran SPP bulan *${data.bulan}* akan jatuh tempo:\n\nJumlah: Rp ${data.amount.toLocaleString('id-ID')}\nJatuh Tempo: ${data.dueDate}\n\nSilakan lakukan pembayaran melalui portal siswa.\n\n_SMP IT ANAK SOLEH MATARAM_`,
   
   'rereg-reminder': (data: { nama: string; academicYear: string; amount: number; deadline: string }) => 
-    `*PENGUMUMAN DAFTAR ULANG* 🔄\n\nHalo *${data.nama}*,\n\nSilakan lakukan daftar ulang untuk tahun ajaran ${data.academicYear}.\n\n*Detail:*\nBiaya: Rp ${data.amount.toLocaleString('id-ID')}\nBatas: ${data.deadline}\n\nLakukan pembayaran melalui portal siswa.\n\n_SMP IT KASSMPIT_`
+    `*PENGUMUMAN DAFTAR ULANG* 🔄\n\nHalo *${data.nama}*,\n\nSilakan lakukan daftar ulang untuk tahun ajaran ${data.academicYear}.\n\n*Detail:*\nBiaya: Rp ${data.amount.toLocaleString('id-ID')}\nBatas: ${data.deadline}\n\nLakukan pembayaran melalui portal siswa.\n\n_SMP IT ANAK SOLEH MATARAM_`
 };
 
 // ===========================
@@ -432,3 +432,4 @@ export async function sendNotification(
 
   return results;
 }
+

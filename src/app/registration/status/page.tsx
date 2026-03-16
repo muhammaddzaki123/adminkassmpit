@@ -79,7 +79,7 @@ export default function RegistrationStatusPage() {
             <Clock className="w-10 h-10 text-blue-600" />
           </div>
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Status Pendaftaran</h1>
-          <p className="text-gray-600">SMPiT Arrasyid - Tahun Ajaran 2024/2025</p>
+          <p className="text-gray-600">SMP IT ANAK SOLEH MATARAM - Tahun Ajaran 2024/2025</p>
         </div>
 
         {/* Student Info */}
@@ -259,3 +259,4 @@ export default function RegistrationStatusPage() {
     </div>
   );
 }
+

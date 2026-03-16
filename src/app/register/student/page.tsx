@@ -177,7 +177,7 @@ export default function StudentRegistrationPage() {
       <Card className="max-w-2xl w-full p-8">
         <div className="text-center mb-6">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Pendaftaran Siswa Baru</h1>
-          <p className="text-gray-600">SMPiT Arrasyid - Tahun Ajaran 2024/2025</p>
+          <p className="text-gray-600">SMP IT ANAK SOLEH MATARAM - Tahun Ajaran 2024/2025</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -367,3 +367,4 @@ export default function StudentRegistrationPage() {
     </div>
   );
 }
+
