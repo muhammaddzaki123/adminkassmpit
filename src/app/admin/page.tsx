@@ -80,12 +80,40 @@ export default function AdminDashboard() {
   };
 
   const fetchRecentActivities = () => {
-    // Dummy data for now - nanti bisa connect ke API activity log
-    setRecentActivities([
-      { id: '1', user: 'Admin', action: 'Menambahkan user baru: bendahara2', time: '5 menit lalu' },
-      { id: '2', user: 'Admin', action: 'Mengubah role user: john_doe', time: '15 menit lalu' },
-      { id: '3', user: 'Admin', action: 'Menonaktifkan akun: old_user', time: '1 jam lalu' },
-    ]);
+    fetchWithAuth('/api/admin/activity-logs?limit=5')
+      .then(async (response) => {
+        if (!response.ok) return;
+        const result = await response.json();
+        if (!result.success) return;
+
+        const now = Date.now();
+        const mapped = (result.data || []).map((item: {
+          id: string;
+          user: string;
+          details: string;
+          timestamp: string;
+        }) => {
+          const ts = new Date(item.timestamp).getTime();
+          const diffMinutes = Math.max(1, Math.floor((now - ts) / 60000));
+          const time = diffMinutes < 60
+            ? `${diffMinutes} menit lalu`
+            : diffMinutes < 1440
+              ? `${Math.floor(diffMinutes / 60)} jam lalu`
+              : `${Math.floor(diffMinutes / 1440)} hari lalu`;
+
+          return {
+            id: item.id,
+            user: item.user,
+            action: item.details,
+            time,
+          };
+        });
+
+        setRecentActivities(mapped);
+      })
+      .catch((error) => {
+        console.error('Failed to fetch recent activities:', error);
+      });
   };
 
   if (!user) return null;
@@ -98,12 +126,12 @@ export default function AdminDashboard() {
         
         <main className="pt-16 p-8">
           <div className="max-w-7xl mx-auto space-y-8">
-            {/* Welcome Section */}
-            <div className="animate-fade-in">
+            <div className="animate-fade-in rounded-2xl border border-neutral-200 bg-white p-6 shadow-soft">
+              <p className="text-xs uppercase tracking-[0.16em] text-neutral-500 mb-2">Pusat Kontrol Admin</p>
               <h1 className="text-3xl font-bold text-neutral-900 mb-2">
                 Selamat Datang, {user.nama}
               </h1>
-              <p className="text-neutral-600">Admin Dashboard - Kelola Akun Pengguna Sistem</p>
+              <p className="text-neutral-600">Kelola pengguna, otorisasi, dan audit aktivitas untuk SMP IT ANAK SOLEH MATARAM.</p>
             </div>
 
             {/* Stats Cards */}

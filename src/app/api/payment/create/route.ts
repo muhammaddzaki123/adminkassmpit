@@ -101,6 +101,14 @@ export async function POST(request: NextRequest) {
     }
 
     const totalPaid = amount + adminFee;
+    const externalId = method !== 'TUNAI' ? generateExternalId() : null;
+    const expiredAt = method !== 'TUNAI' ? new Date(Date.now() + 24 * 60 * 60 * 1000) : null;
+    const vaNumber = method === 'VIRTUAL_ACCOUNT'
+      ? billing.student.virtualAccount || generateVirtualAccountNumber(billing.student.nisn)
+      : null;
+    const deeplink = method === 'EWALLET' && externalId
+      ? `https://pay.smpit.local/checkout/${externalId}`
+      : null;
 
     // TUNAI must be processed by treasurer
     const paymentStatus = method === 'TUNAI' ? 'COMPLETED' : 'PENDING';
@@ -128,6 +136,10 @@ export async function POST(request: NextRequest) {
           status: paymentStatus,
           notes,
           receiptUrl,
+          externalId,
+          expiredAt,
+          vaNumber,
+          deeplink,
           paidAt: paymentStatus === 'COMPLETED' ? new Date() : null,
           ...(session.user.role === 'TREASURER' && {
             processedBy: {
@@ -179,12 +191,23 @@ export async function POST(request: NextRequest) {
         payment: {
           id: payment.id,
           paymentNumber: payment.paymentNumber,
+          externalId: payment.externalId,
           amount: payment.amount,
           adminFee: payment.adminFee,
           totalPaid: payment.totalPaid,
           status: payment.status,
           method: payment.method,
+          vaNumber: payment.vaNumber,
+          expiredAt: payment.expiredAt,
+          deeplink: payment.deeplink,
         },
+        paymentInstructions: payment.status === 'PENDING' ? {
+          method: payment.method,
+          externalId: payment.externalId,
+          ...(payment.method === 'VIRTUAL_ACCOUNT' ? { vaNumber: payment.vaNumber } : {}),
+          ...(payment.method === 'EWALLET' ? { deeplink: payment.deeplink } : {}),
+          expiredAt: payment.expiredAt,
+        } : null,
         message: payment.status === 'COMPLETED' 
           ? 'Payment completed successfully' 
           : 'Payment created. Please complete payment via your chosen method.',
@@ -221,4 +244,15 @@ async function generatePaymentNumber(): Promise<string> {
   }
 
   return `PAY/${year}/${month}/${String(sequence).padStart(4, '0')}`;
+}
+
+function generateExternalId(): string {
+  const ts = Date.now().toString(36).toUpperCase();
+  const random = Math.random().toString(36).slice(2, 8).toUpperCase();
+  return `EXT-${ts}-${random}`;
+}
+
+function generateVirtualAccountNumber(nisn: string): string {
+  const cleanNisn = (nisn || '').replace(/\D/g, '').slice(-10);
+  return `8801${cleanNisn.padStart(10, '0')}`;
 }

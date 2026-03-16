@@ -43,7 +43,7 @@ export default function NewStudentLoginPage() {
         throw new Error('Expected JSON response but got: ' + contentType);
       }
 
-      const data = await response.json();
+      await response.json();
 
       // Redirect ke dashboard calon siswa
       router.push('/calon-siswa/dashboard');

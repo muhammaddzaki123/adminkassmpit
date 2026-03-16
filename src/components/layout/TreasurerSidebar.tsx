@@ -99,7 +99,7 @@ export function TreasurerSidebar() {
           </div>
           <div>
             <h1 className="font-bold text-neutral-900 text-xl leading-none tracking-tight">T-SMART</h1>
-            <p className="text-xs text-neutral-600 mt-1 font-medium">Bendahara</p>
+            <p className="text-xs text-neutral-600 mt-1 font-medium">Bendahara - ANAK SOLEH MATARAH</p>
           </div>
         </div>
       </div>

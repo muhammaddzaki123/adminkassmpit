@@ -118,7 +118,7 @@ export default function RegisterCalonSiswaPage() {
         throw new Error('Expected JSON response but got: ' + contentType);
       }
 
-      const data = await response.json();
+      await response.json();
 
       if (response.ok) {
         alert(

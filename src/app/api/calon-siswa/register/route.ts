@@ -62,12 +62,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get current academic year (contoh: 2024/2025)
-    const now = new Date();
-    const currentYear = now.getFullYear();
-    const academicYear = now.getMonth() >= 6 
-      ? `${currentYear}/${currentYear + 1}` 
-      : `${currentYear - 1}/${currentYear}`;
+    // Resolve active academic year from database
+    const activeAcademicYear = await prisma.academicYear.findFirst({
+      where: { isActive: true },
+      select: { id: true },
+    });
+
+    if (!activeAcademicYear) {
+      return NextResponse.json(
+        { error: 'Tahun ajaran aktif belum diatur. Hubungi admin.' },
+        { status: 400 }
+      );
+    }
 
     // Get registration fee from settings (default 500000)
     const feeSettings = await prisma.systemSettings.findFirst({
@@ -98,7 +104,7 @@ export async function POST(request: NextRequest) {
           pekerjaanAyah,
           pekerjaanIbu,
           enrollmentType,
-          academicYearId: academicYear,
+          academicYearId: activeAcademicYear.id,
           kelasYangDituju,
           asalSekolah,
           registrationFee,

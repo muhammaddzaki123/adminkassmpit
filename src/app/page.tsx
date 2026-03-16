@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowRight, Shield, Wallet, TrendingUp, Users, CheckCircle } from 'lucide-react';
+import { ArrowRight, BadgeCheck, Building2, ChartPie, CircleDollarSign, LockKeyhole, Shield, Wallet } from 'lucide-react';
 
 export default function LandingPage() {
   const router = useRouter();
@@ -39,123 +39,132 @@ export default function LandingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-primary-50 via-white to-accent-50">
-      {/* Navbar */}
-      <nav className="bg-white/80 backdrop-blur-md border-b border-neutral-200 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-linear-to-br from-primary to-primary-700 rounded-xl flex items-center justify-center">
-                <Wallet className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h1 className="font-bold text-neutral-900 text-lg leading-none">T-SMART</h1>
-                <p className="text-xs text-neutral-600 font-medium">Treasury System</p>
-              </div>
+    <div className="min-h-screen bg-neutral-50">
+      <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_20%_10%,rgba(126,194,66,0.18),transparent_35%),radial-gradient(circle_at_80%_15%,rgba(242,154,46,0.16),transparent_30%)]" />
+
+      <nav className="border-b border-neutral-200/80 bg-white/90 backdrop-blur-xl sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-linear-to-br from-primary-600 to-primary-800 text-white flex items-center justify-center shadow-medium">
+              <Wallet className="w-5 h-5" />
             </div>
-            <button
-              onClick={handleGetStarted}
-              className="px-6 py-2 bg-primary hover:bg-primary-700 text-white rounded-xl font-semibold transition-all duration-200 shadow-soft hover:shadow-medium"
-            >
-              {isLoggedIn ? 'Dashboard' : 'Masuk'}
-            </button>
+            <div>
+              <p className="text-xs uppercase tracking-[0.2em] text-neutral-500">SMP IT ANAK SOLEH MATARAH</p>
+              <h1 className="text-sm sm:text-base font-bold text-neutral-900 leading-tight">T-SMART Finance Platform</h1>
+            </div>
           </div>
+          <button
+            onClick={handleGetStarted}
+            className="px-5 py-2.5 bg-neutral-900 hover:bg-neutral-800 text-white rounded-xl font-semibold transition-all duration-200 shadow-soft"
+          >
+            {isLoggedIn ? 'Ke Dashboard' : 'Masuk Sistem'}
+          </button>
         </div>
       </nav>
 
-      {/* Hero Section */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-16">
-        <div className="text-center animate-fade-in">
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary-100 text-primary-700 rounded-full text-sm font-semibold mb-6">
-            <CheckCircle className="w-4 h-4" />
-            Sistem Keuangan Sekolah Modern
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-10">
+        <div className="grid lg:grid-cols-2 gap-10 items-center">
+          <div className="animate-fade-in">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 mb-6 bg-white border border-primary-200 rounded-full text-xs font-semibold text-primary-800">
+              <BadgeCheck className="w-4 h-4" />
+              Platform Keuangan Internal Sekolah
+            </div>
+
+            <h2 className="text-4xl sm:text-5xl font-bold text-neutral-900 leading-tight">
+              Transparansi dan Kontrol Keuangan
+              <span className="block text-primary-700 mt-1">untuk SMP IT ANAK SOLEH MATARAH</span>
+            </h2>
+
+            <p className="mt-5 text-lg text-neutral-600 max-w-xl">
+              T-SMART adalah pusat operasional keuangan sekolah untuk pengelolaan tagihan, pembayaran, verifikasi, laporan, dan audit aktivitas secara terintegrasi.
+            </p>
+
+            <div className="mt-8 flex flex-wrap gap-3">
+              <button
+                onClick={handleGetStarted}
+                className="inline-flex items-center gap-2 px-6 py-3 bg-primary-700 hover:bg-primary-800 text-white rounded-xl font-semibold transition-all shadow-medium"
+              >
+                {isLoggedIn ? 'Buka Dashboard' : 'Masuk ke Portal'}
+                <ArrowRight className="w-4 h-4" />
+              </button>
+              <a
+                href="#kapabilitas"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-white hover:bg-neutral-100 text-neutral-700 border border-neutral-200 rounded-xl font-semibold transition-all"
+              >
+                Lihat Kapabilitas
+              </a>
+            </div>
           </div>
-          <h1 className="text-5xl md:text-6xl font-bold text-neutral-900 mb-6 leading-tight">
-            Kelola Keuangan Sekolah<br />
-            <span className="text-primary">Lebih Mudah & Efisien</span>
-          </h1>
-          <p className="text-xl text-neutral-600 mb-8 max-w-2xl mx-auto">
-            T-SMART membantu sekolah dalam mengelola pembayaran SPP, keuangan, dan administrasi dengan sistem yang terintegrasi dan mudah digunakan.
-          </p>
-          <button
-            onClick={handleGetStarted}
-            className="inline-flex items-center gap-2 px-8 py-4 bg-primary hover:bg-primary-700 text-white rounded-xl font-bold text-lg transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-105"
-          >
-            Mulai Sekarang
-            <ArrowRight className="w-5 h-5" />
-          </button>
+
+          <div className="relative animate-slide-up">
+            <div className="absolute -inset-2 rounded-3xl bg-linear-to-br from-primary-200/40 to-accent-200/30 blur-xl" />
+            <div className="relative bg-white border border-neutral-200 rounded-3xl p-6 sm:p-8 shadow-strong">
+              <h3 className="text-xl font-bold text-neutral-900 mb-5">Operasional yang Terkendali</h3>
+              <div className="space-y-4">
+                <div className="flex items-start gap-3 p-4 rounded-2xl border border-neutral-200 bg-neutral-50">
+                  <Shield className="w-5 h-5 text-primary-700 mt-0.5" />
+                  <div>
+                    <p className="font-semibold text-neutral-800">Akses berbasis otorisasi</p>
+                    <p className="text-sm text-neutral-600">Hak akses otomatis sesuai akun tanpa pemilihan role manual.</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3 p-4 rounded-2xl border border-neutral-200 bg-neutral-50">
+                  <CircleDollarSign className="w-5 h-5 text-primary-700 mt-0.5" />
+                  <div>
+                    <p className="font-semibold text-neutral-800">Monitoring pembayaran real-time</p>
+                    <p className="text-sm text-neutral-600">Tagihan, histori, dan status pembayaran terpantau sepanjang waktu.</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3 p-4 rounded-2xl border border-neutral-200 bg-neutral-50">
+                  <LockKeyhole className="w-5 h-5 text-primary-700 mt-0.5" />
+                  <div>
+                    <p className="font-semibold text-neutral-800">Jejak audit aktivitas</p>
+                    <p className="text-sm text-neutral-600">Perubahan data kritis tercatat untuk kebutuhan kontrol dan pelaporan.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
+      </section>
 
-        {/* Features Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-20 animate-slide-up">
-          <div className="bg-white p-6 rounded-2xl shadow-soft hover:shadow-medium transition-all duration-300 border border-neutral-200">
-            <div className="w-12 h-12 bg-primary-100 text-primary-700 rounded-xl flex items-center justify-center mb-4">
-              <Shield className="w-6 h-6" />
-            </div>
-            <h3 className="font-bold text-neutral-900 mb-2">Keamanan Terjamin</h3>
-            <p className="text-sm text-neutral-600">Data keuangan sekolah tersimpan aman dengan enkripsi tingkat tinggi</p>
+      <section id="kapabilitas" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="grid md:grid-cols-2 xl:grid-cols-4 gap-5">
+          <div className="bg-white border border-neutral-200 rounded-2xl p-5 shadow-soft">
+            <Building2 className="w-6 h-6 text-primary-700 mb-3" />
+            <h4 className="font-bold text-neutral-900 mb-2">Administrasi Terpusat</h4>
+            <p className="text-sm text-neutral-600">Kelola data pengguna, siswa, tahun ajaran, dan pengaturan sistem dari satu panel.</p>
           </div>
-
-          <div className="bg-white p-6 rounded-2xl shadow-soft hover:shadow-medium transition-all duration-300 border border-neutral-200">
-            <div className="w-12 h-12 bg-accent-100 text-accent-700 rounded-xl flex items-center justify-center mb-4">
-              <TrendingUp className="w-6 h-6" />
-            </div>
-            <h3 className="font-bold text-neutral-900 mb-2">Laporan Real-time</h3>
-            <p className="text-sm text-neutral-600">Pantau pemasukan dan pengeluaran sekolah secara real-time</p>
+          <div className="bg-white border border-neutral-200 rounded-2xl p-5 shadow-soft">
+            <Wallet className="w-6 h-6 text-primary-700 mb-3" />
+            <h4 className="font-bold text-neutral-900 mb-2">Tagihan dan Pembayaran</h4>
+            <p className="text-sm text-neutral-600">Proses pembayaran manual maupun online dengan status transaksi yang konsisten.</p>
           </div>
-
-          <div className="bg-white p-6 rounded-2xl shadow-soft hover:shadow-medium transition-all duration-300 border border-neutral-200">
-            <div className="w-12 h-12 bg-blue-100 text-blue-700 rounded-xl flex items-center justify-center mb-4">
-              <Users className="w-6 h-6" />
-            </div>
-            <h3 className="font-bold text-neutral-900 mb-2">Multi-User Role</h3>
-            <p className="text-sm text-neutral-600">Akses berbeda untuk Admin, Bendahara, Kepsek, dan Orang Tua</p>
+          <div className="bg-white border border-neutral-200 rounded-2xl p-5 shadow-soft">
+            <ChartPie className="w-6 h-6 text-primary-700 mb-3" />
+            <h4 className="font-bold text-neutral-900 mb-2">Laporan Keuangan</h4>
+            <p className="text-sm text-neutral-600">Ringkasan pemasukan, tunggakan, dan realisasi untuk monitoring pimpinan sekolah.</p>
           </div>
-
-          <div className="bg-white p-6 rounded-2xl shadow-soft hover:shadow-medium transition-all duration-300 border border-neutral-200">
-            <div className="w-12 h-12 bg-green-100 text-green-700 rounded-xl flex items-center justify-center mb-4">
-              <Wallet className="w-6 h-6" />
-            </div>
-            <h3 className="font-bold text-neutral-900 mb-2">Pembayaran Mudah</h3>
-            <p className="text-sm text-neutral-600">Sistem pembayaran SPP yang praktis dengan notifikasi otomatis</p>
+          <div className="bg-white border border-neutral-200 rounded-2xl p-5 shadow-soft">
+            <Shield className="w-6 h-6 text-primary-700 mb-3" />
+            <h4 className="font-bold text-neutral-900 mb-2">Data Integrity</h4>
+            <p className="text-sm text-neutral-600">Kontrol validasi, jejak aktivitas, dan otorisasi untuk area data finansial yang krusial.</p>
           </div>
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className="bg-linear-to-r from-primary to-primary-700 rounded-3xl p-12 text-center shadow-xl">
-          <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-            Siap Modernisasi Sistem Keuangan Sekolah?
-          </h2>
-          <p className="text-xl text-primary-100 mb-8">
-            Bergabunglah dengan sekolah-sekolah yang telah mempercayai T-SMART
-          </p>
-          <button
-            onClick={handleGetStarted}
-            className="inline-flex items-center gap-2 px-8 py-4 bg-white hover:bg-neutral-100 text-primary rounded-xl font-bold text-lg transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-105"
-          >
-            Coba Gratis Sekarang
-            <ArrowRight className="w-5 h-5" />
-          </button>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="bg-neutral-900 text-white py-8 mt-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <div className="w-10 h-10 bg-linear-to-br from-primary to-primary-700 rounded-xl flex items-center justify-center">
-              <Wallet className="w-6 h-6 text-white" />
+      <footer className="mt-8 border-t border-neutral-200 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-lg bg-linear-to-br from-primary-600 to-primary-800 text-white flex items-center justify-center">
+              <Wallet className="w-5 h-5" />
             </div>
-            <div className="text-left">
-              <h3 className="font-bold text-lg leading-none">T-SMART</h3>
-              <p className="text-xs text-neutral-400 font-medium">Treasury System</p>
+            <div>
+              <p className="font-semibold text-neutral-900">T-SMART Finance Platform</p>
+              <p className="text-sm text-neutral-500">SMP IT ANAK SOLEH MATARAH</p>
             </div>
           </div>
-          <p className="text-neutral-400 text-sm">
-            © 2024 T-SMART. Sistem Manajemen Keuangan Sekolah.
-          </p>
+          <p className="text-sm text-neutral-500">© 2026 Internal Financial Information System</p>
         </div>
       </footer>
     </div>

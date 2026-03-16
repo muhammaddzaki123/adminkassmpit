@@ -1,20 +1,22 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { getServerSession } from '@/lib/auth';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    // TODO: Get from session/auth
-    // For now, get from query or session
-    // const { userId } = await getSession();
-    
-    // Example: Get student data
-    // Replace with actual auth logic
-    const user = await prisma.user.findFirst({
-      where: { role: 'NEW_STUDENT' },
-      include: { student: true },
+    const session = await getServerSession(request);
+    if (!session || session.user.role !== 'NEW_STUDENT' || !session.user.newStudentId) {
+      return NextResponse.json(
+        { message: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    const newStudent = await prisma.newStudent.findUnique({
+      where: { id: session.user.newStudentId },
     });
 
-    if (!user || !user.student) {
+    if (!newStudent) {
       return NextResponse.json(
         { message: 'Data pendaftaran tidak ditemukan' },
         { status: 404 }
@@ -22,10 +24,11 @@ export async function GET() {
     }
 
     return NextResponse.json({
-      nisn: user.student.nisn,
-      nama: user.student.nama,
-      status: user.student.status,
-      virtualAccount: user.student.virtualAccount || '-',
+      nisn: newStudent.nisn,
+      nama: newStudent.nama,
+      status: newStudent.approvalStatus,
+      virtualAccount: newStudent.virtualAccount || '-',
+      registrationPaid: newStudent.registrationPaid,
     });
   } catch (error) {
     console.error('Error fetching registration status:', error);

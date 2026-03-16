@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import * as bcrypt from 'bcryptjs';
 import { requireAdmin } from '@/lib/auth-helpers';
+import { logActivity } from '@/lib/activity-log';
 
 // GET - Fetch all users (ADMIN ONLY)
 export async function GET(request: NextRequest) {
@@ -38,6 +39,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const authResult = await requireAdmin(request);
   if (authResult instanceof NextResponse) return authResult;
+  const adminSession = authResult.session;
 
   try {
     const body = await request.json();
@@ -98,6 +100,18 @@ export async function POST(request: NextRequest) {
         role: true,
         isActive: true,
         createdAt: true,
+      },
+    });
+
+    await logActivity({
+      userId: adminSession.user.id,
+      action: 'CREATE_USER',
+      entity: 'User',
+      entityId: newUser.id,
+      details: {
+        target: newUser.username,
+        message: `Membuat user ${newUser.username} dengan role ${newUser.role}`,
+        status: 'success',
       },
     });
 

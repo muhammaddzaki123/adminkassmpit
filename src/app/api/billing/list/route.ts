@@ -135,8 +135,11 @@ export async function GET(request: NextRequest) {
       student: {
         id: billing.student?.id || '',
         nis: billing.student?.nisn || '',
+        nisn: billing.student?.nisn || '',
         fullName: billing.student?.nama || '',
+        nama: billing.student?.nama || '',
         className: billing.student?.studentClasses?.[0]?.class?.name || '-',
+        class: billing.student?.studentClasses?.[0]?.class?.name || '-',
       },
       type: billing.type,
       month: billing.month,

@@ -63,6 +63,33 @@ export default function AdminStudentsPage() {
 
   const uniqueKelas = Array.from(new Set(students.map(s => s.kelas).filter(k => k && k.trim()))).sort();
 
+  const handleArchiveStudent = async (student: Student) => {
+    const confirmed = confirm(`Arsipkan siswa ${student.nama}?`);
+    if (!confirmed) return;
+
+    try {
+      const response = await fetchWithAuth(`/api/admin/students/${student.id}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          status: 'ARCHIVED',
+          reason: 'Diarsipkan dari halaman data siswa oleh admin',
+        }),
+      });
+
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result.error || 'Gagal mengarsipkan siswa');
+      }
+
+      alert('Siswa berhasil diarsipkan');
+      fetchStudents();
+    } catch (error) {
+      console.error('Failed to archive student:', error);
+      alert(error instanceof Error ? error.message : 'Gagal mengarsipkan siswa');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-neutral-50">
       <AdminSidebar />
@@ -236,12 +263,7 @@ export default function AdminStudentsPage() {
                                 variant="ghost"
                                 size="sm"
                                 icon={<Trash2 className="w-4 h-4 text-red-600" />}
-                                onClick={() => {
-                                  if (confirm(`Hapus siswa ${student.nama}?`)) {
-                                    // TODO: Implement delete
-                                    alert('Fitur hapus akan segera tersedia');
-                                  }
-                                }}
+                                onClick={() => handleArchiveStudent(student)}
                               >
                               </Button>
                             </div>

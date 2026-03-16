@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { fetchWithAuth } from '@/lib/api-client';
 import { AdminHeader } from '@/components/layout/AdminHeader';
 import { AdminSidebar } from '@/components/layout/AdminSidebar';
 import { Card } from '@/components/ui/Card';
@@ -22,6 +23,7 @@ interface ActivityLog {
 export default function ActivityLog() {
   const router = useRouter();
   const [logs, setLogs] = useState<ActivityLog[]>([]);
+  const [loading, setLoading] = useState(true);
   const [filterType, setFilterType] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
 
@@ -38,55 +40,33 @@ export default function ActivityLog() {
       return;
     }
 
-    // Load dummy data
-    setLogs([
-      {
-        id: '1',
-        user: 'superadmin',
-        action: 'CREATE_USER',
-        target: 'bendahara2',
-        status: 'success',
-        timestamp: new Date().toISOString(),
-        details: 'Membuat user baru dengan role TREASURER'
-      },
-      {
-        id: '2',
-        user: 'superadmin',
-        action: 'UPDATE_USER',
-        target: 'bendahara',
-        status: 'success',
-        timestamp: new Date(Date.now() - 3600000).toISOString(),
-        details: 'Mengubah email user'
-      },
-      {
-        id: '3',
-        user: 'superadmin',
-        action: 'DELETE_USER',
-        target: 'old_user',
-        status: 'success',
-        timestamp: new Date(Date.now() - 7200000).toISOString(),
-        details: 'Menghapus user dari sistem'
-      },
-      {
-        id: '4',
-        user: 'superadmin',
-        action: 'TOGGLE_STATUS',
-        target: 'inactive_user',
-        status: 'success',
-        timestamp: new Date(Date.now() - 10800000).toISOString(),
-        details: 'Menonaktifkan akun user'
-      },
-      {
-        id: '5',
-        user: 'superadmin',
-        action: 'UPDATE_ROLE',
-        target: 'john_doe',
-        status: 'failed',
-        timestamp: new Date(Date.now() - 14400000).toISOString(),
-        details: 'Gagal mengubah role user - permission denied'
-      },
-    ]);
-  }, [router]);
+    const fetchLogs = async () => {
+      setLoading(true);
+      try {
+        const params = new URLSearchParams();
+        if (filterType !== 'all') params.append('action', filterType);
+        if (filterStatus !== 'all') params.append('status', filterStatus);
+        params.append('limit', '200');
+
+        const response = await fetchWithAuth(`/api/admin/activity-logs?${params.toString()}`);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch activity logs: ${response.status}`);
+        }
+
+        const result = await response.json();
+        if (result.success) {
+          setLogs(result.data || []);
+        }
+      } catch (error) {
+        console.error('Error fetching activity logs:', error);
+        setLogs([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchLogs();
+  }, [router, filterType, filterStatus]);
 
   const getActionBadge = (action: string) => {
     const actionMap: Record<string, { label: string; color: 'primary' | 'success' | 'warning' | 'error' }> = {
@@ -113,11 +93,7 @@ export default function ActivityLog() {
     return `${days} hari lalu`;
   };
 
-  const filteredLogs = logs.filter(log => {
-    if (filterType !== 'all' && log.action !== filterType) return false;
-    if (filterStatus !== 'all' && log.status !== filterStatus) return false;
-    return true;
-  });
+  const filteredLogs = logs;
 
   return (
     <div className="min-h-screen bg-neutral-50">
@@ -171,8 +147,14 @@ export default function ActivityLog() {
             </Card>
 
             {/* Activity List */}
-            <div className="space-y-3">
-              {filteredLogs.map((log) => {
+            {loading ? (
+              <Card className="text-center py-12">
+                <div className="inline-block animate-spin rounded-full h-10 w-10 border-b-2 border-primary-600"></div>
+                <p className="text-neutral-600 mt-3">Memuat activity log...</p>
+              </Card>
+            ) : (
+              <div className="space-y-3">
+                {filteredLogs.map((log) => {
                 const actionBadge = getActionBadge(log.action);
                 return (
                   <Card key={log.id} className="hover:shadow-md transition-shadow">
@@ -206,8 +188,9 @@ export default function ActivityLog() {
                     </div>
                   </Card>
                 );
-              })}
-            </div>
+                })}
+              </div>
+            )}
 
             {filteredLogs.length === 0 && (
               <Card className="text-center py-12">

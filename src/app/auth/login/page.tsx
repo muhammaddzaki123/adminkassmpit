@@ -5,52 +5,14 @@ import { useRouter } from 'next/navigation';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { CreditCard, Lock, User, GraduationCap, UserCog, Users, AlertCircle } from 'lucide-react';
-
-type UserRole = 'TREASURER' | 'HEADMASTER' | 'ADMIN' | 'STUDENT';
+import { CreditCard, Lock, User, AlertCircle, ShieldCheck } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
-  const [selectedRole, setSelectedRole] = useState<UserRole | null>(null);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-
-  const roles = [
-    {
-      id: 'TREASURER' as UserRole,
-      name: 'Bendahara',
-      icon: CreditCard,
-      color: 'bg-primary',
-      hoverColor: 'hover:bg-primary-600',
-      description: 'Kelola keuangan sekolah'
-    },
-    {
-      id: 'HEADMASTER' as UserRole,
-      name: 'Kepala Sekolah',
-      icon: GraduationCap,
-      color: 'bg-accent',
-      hoverColor: 'hover:bg-accent-600',
-      description: 'Lihat laporan & analytics'
-    },
-    {
-      id: 'ADMIN' as UserRole,
-      name: 'Admin',
-      icon: UserCog,
-      color: 'bg-primary-700',
-      hoverColor: 'hover:bg-primary-800',
-      description: 'Kelola sistem & data'
-    },
-    {
-      id: 'STUDENT' as UserRole,
-      name: 'Siswa',
-      icon: Users,
-      color: 'bg-blue-500',
-      hoverColor: 'hover:bg-blue-600',
-      description: 'Bayar SPP & lihat riwayat'
-    },
-  ];
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,7 +28,6 @@ export default function LoginPage() {
         body: JSON.stringify({
           username,
           password,
-          role: selectedRole,
         }),
       });
 
@@ -110,6 +71,7 @@ export default function LoginPage() {
     } catch (err) {
       console.error('Login error:', err);
       setError('Terjadi kesalahan. Silakan coba lagi.');
+    } finally {
       setIsLoading(false);
     }
   };
@@ -122,53 +84,54 @@ export default function LoginPage() {
         <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-accent/10 rounded-full blur-3xl"></div>
       </div>
 
-      <div className="max-w-4xl w-full relative z-10">
+      <div className="max-w-5xl w-full relative z-10">
         {/* Logo & Title */}
-        <div className="text-center mb-10">
+        <div className="text-center mb-8">
           <div className="w-20 h-20 bg-linear-to-br from-primary to-primary-700 rounded-2xl flex items-center justify-center text-white mx-auto mb-5 shadow-lg shadow-primary/30 animate-fade-in">
             <CreditCard className="w-10 h-10" />
           </div>
           <h1 className="text-4xl font-bold text-neutral-900 mb-2">T-SMART</h1>
-          <p className="text-lg text-neutral-600 font-medium">Treasury Smart System</p>
-          <p className="text-sm text-neutral-500 mt-2">Digitalisasi Keuangan Sekolah — Cepat, Akurat, dan Real-Time</p>
+          <p className="text-lg text-neutral-700 font-medium">Portal Keuangan SMP IT ANAK SOLEH MATARAM</p>
+          <p className="text-sm text-neutral-500 mt-2">Sistem akses tunggal untuk operasional keuangan yang aman dan terkontrol.</p>
         </div>
 
-        {!selectedRole ? (
-          /* Role Selection */
-          <div className="animate-slide-up">
-            <h2 className="text-2xl font-bold text-neutral-900 text-center mb-8">Pilih Role Anda</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {roles.map((role) => (
-                <button
-                  key={role.id}
-                  onClick={() => setSelectedRole(role.id)}
-                  className={`${role.color} ${role.hoverColor} text-white p-6 rounded-2xl shadow-medium hover:shadow-lg transition-all duration-300 hover:scale-105 active:scale-95 card-hover group`}
-                >
-                  <role.icon className="w-12 h-12 mx-auto mb-4 group-hover:scale-110 transition-transform" />
-                  <h3 className="font-bold text-lg mb-2">{role.name}</h3>
-                  <p className="text-sm opacity-90">{role.description}</p>
-                </button>
-              ))}
-            </div>
-          </div>
-        ) : (
-          /* Login Form */
-          <div className="max-w-md mx-auto animate-slide-up">
-            <Card padding="lg" className="shadow-2xl border-2 border-neutral-100">
-              <div className="text-center mb-6">
-                <button
-                  onClick={() => setSelectedRole(null)}
-                  className="text-sm text-neutral-600 hover:text-neutral-900 mb-4 inline-flex items-center gap-1"
-                >
-                  ← Kembali ke pilihan role
-                </button>
-                <div className={`w-16 h-16 ${roles.find(r => r.id === selectedRole)?.color} rounded-xl flex items-center justify-center text-white mx-auto mb-4 shadow-md`}>
-                  {(() => {
-                    const RoleIcon = roles.find(r => r.id === selectedRole)?.icon;
-                    return RoleIcon ? <RoleIcon className="w-8 h-8" /> : null;
-                  })()}
+        <div className="grid lg:grid-cols-5 gap-6 animate-slide-up">
+          <Card className="lg:col-span-2 bg-neutral-900 text-white border-neutral-800 shadow-2xl">
+            <div className="space-y-5">
+              <h2 className="text-2xl font-bold leading-tight">Akses Profesional Tanpa Pilih Role</h2>
+              <p className="text-neutral-200 text-sm">
+                Cukup masukkan kredensial akun. Sistem akan mendeteksi otorisasi secara otomatis sesuai profil Anda.
+              </p>
+
+              <div className="space-y-3 text-sm">
+                <div className="flex items-start gap-2">
+                  <ShieldCheck className="w-4 h-4 mt-0.5 text-primary-300" />
+                  <span>Role ditentukan otomatis dari data akun tervalidasi.</span>
                 </div>
-                <h2 className="text-2xl font-bold text-neutral-900">Login sebagai {roles.find(r => r.id === selectedRole)?.name}</h2>
+                <div className="flex items-start gap-2">
+                  <ShieldCheck className="w-4 h-4 mt-0.5 text-primary-300" />
+                  <span>Semua aktivitas kritis tercatat untuk audit internal.</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <ShieldCheck className="w-4 h-4 mt-0.5 text-primary-300" />
+                  <span>Perlindungan sesi dan validasi akses untuk data finansial.</span>
+                </div>
+              </div>
+
+              <div className="rounded-xl bg-white/10 border border-white/20 p-3 text-xs text-neutral-100">
+                Halaman ini khusus pengguna resmi SMP IT ANAK SOLEH MATARAM.
+              </div>
+            </div>
+          </Card>
+
+          <div className="lg:col-span-3">
+            <Card padding="lg" className="shadow-2xl border-2 border-neutral-100 bg-white">
+              <div className="text-center mb-6">
+                <div className="w-16 h-16 bg-primary rounded-xl flex items-center justify-center text-white mx-auto mb-4 shadow-md">
+                  <Lock className="w-8 h-8" />
+                </div>
+                <h2 className="text-2xl font-bold text-neutral-900">Masuk ke Sistem</h2>
+                <p className="text-sm text-neutral-500 mt-1">Gunakan username dan password resmi Anda</p>
               </div>
 
               <form onSubmit={handleLogin} className="space-y-5">
@@ -210,7 +173,7 @@ export default function LoginPage() {
                   <button 
                     type="button" 
                     className="text-primary hover:text-primary-700 font-semibold hover:underline"
-                    onClick={() => alert('Hubungi admin untuk reset password')}
+                    onClick={() => router.push('/auth/forgot-password')}
                   >
                     Lupa password?
                   </button>
@@ -227,16 +190,16 @@ export default function LoginPage() {
                 </Button>
 
                 <p className="text-center text-sm text-neutral-500 mt-4">
-                  Akun default: <code className="bg-neutral-100 px-2 py-1 rounded text-xs">superadmin / admin123</code>
+                  Role akses akan dipetakan otomatis setelah login berhasil.
                 </p>
               </form>
             </Card>
 
             <p className="text-center mt-6 text-sm text-neutral-600">
-              Belum punya akun? <a href="#" className="text-primary font-semibold hover:underline">Hubungi Admin</a>
+              Butuh bantuan akun? <a href="#" className="text-primary font-semibold hover:underline">Hubungi Admin Sekolah</a>
             </p>
           </div>
-        )}
+        </div>
       </div>
     </div>
   );

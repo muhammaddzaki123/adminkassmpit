@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import bcrypt from 'bcryptjs';
 
 export async function POST(request: NextRequest) {
   try {
@@ -40,26 +41,73 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create new student registration
-    const newStudent = await prisma.newStudent.create({
-      data: {
-        nisn,
-        nama: fullName,
-        email,
-        noTelp: phone,
-        jenisKelamin: gender,
-        tanggalLahir: birthDate ? new Date(birthDate) : null,
-        tempatLahir: birthPlace,
-        alamat: address,
-        namaAyah: parentName,
-        noTelpOrtu: parentPhone,
-        asalSekolah: previousSchool,
-        kelasYangDituju: gradeApplied,
-        academicYearId: 'current-academic-year-id', // TODO: Get from active academic year
-        enrollmentType: 'NEW',
-        approvalStatus: 'PENDING',
-        registrationPaid: false,
+    const existingUser = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { username: nisn },
+          ...(email ? [{ email }] : []),
+        ],
       },
+      select: { id: true },
+    });
+
+    if (existingUser) {
+      return NextResponse.json(
+        { success: false, error: 'Akun dengan NISN/email tersebut sudah ada' },
+        { status: 400 }
+      );
+    }
+
+    const activeAcademicYear = await prisma.academicYear.findFirst({
+      where: { isActive: true },
+      select: { id: true },
+    });
+
+    if (!activeAcademicYear) {
+      return NextResponse.json(
+        { success: false, error: 'Tahun ajaran aktif belum diatur' },
+        { status: 400 }
+      );
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Create new student + login account transactionally
+    const newStudent = await prisma.$transaction(async (tx) => {
+      const created = await tx.newStudent.create({
+        data: {
+          nisn,
+          nama: fullName,
+          email,
+          noTelp: phone,
+          jenisKelamin: gender,
+          tanggalLahir: birthDate ? new Date(birthDate) : null,
+          tempatLahir: birthPlace,
+          alamat: address,
+          namaAyah: parentName,
+          noTelpOrtu: parentPhone,
+          asalSekolah: previousSchool,
+          kelasYangDituju: gradeApplied,
+          academicYearId: activeAcademicYear.id,
+          enrollmentType: 'NEW',
+          approvalStatus: 'PENDING',
+          registrationPaid: false,
+        },
+      });
+
+      await tx.user.create({
+        data: {
+          username: nisn,
+          email,
+          password: hashedPassword,
+          nama: fullName,
+          role: 'NEW_STUDENT',
+          newStudentId: created.id,
+          isActive: true,
+        },
+      });
+
+      return created;
     });
 
     // Generate virtual account for registration payment

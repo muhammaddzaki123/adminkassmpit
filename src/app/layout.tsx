@@ -18,7 +18,7 @@ const poppins = Poppins({
 
 export const metadata: Metadata = {
   title: 'T-SMART - Treasury Smart System',
-  description: 'Sistem Manajemen Keuangan Sekolah SMPIT',
+  description: 'Sistem Manajemen Keuangan SMP IT ANAK SOLEH MATARAM',
 };
 
 export default function RootLayout({

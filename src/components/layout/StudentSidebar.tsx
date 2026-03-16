@@ -34,16 +34,16 @@ export function StudentSidebar() {
   };
 
   return (
-    <aside className="fixed left-0 top-0 h-screen w-64 bg-white border-r border-neutral-200 flex flex-col z-30">
+    <aside className="fixed left-0 top-0 h-screen w-64 bg-white border-r border-neutral-200 flex flex-col z-30 shadow-soft">
       {/* Logo */}
       <div className="p-6 border-b border-neutral-200">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-linear-to-br from-primary-500 to-primary-600 flex items-center justify-center">
-            <span className="text-white font-bold text-lg">S</span>
+          <div className="w-10 h-10 rounded-xl bg-linear-to-br from-primary to-primary-700 flex items-center justify-center shadow-soft">
+            <span className="text-white font-bold text-sm">TS</span>
           </div>
           <div>
-            <h1 className="font-bold text-lg text-neutral-900">Portal Siswa</h1>
-            <p className="text-xs text-neutral-600">SMP IT Annajah</p>
+            <h1 className="font-bold text-lg text-neutral-900">T-SMART Siswa</h1>
+            <p className="text-xs text-neutral-600">ANAK SOLEH MATARAH</p>
           </div>
         </div>
       </div>

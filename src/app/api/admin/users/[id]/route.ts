@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import * as bcrypt from 'bcryptjs';
 import { requireAdmin } from '@/lib/auth-helpers';
+import { logActivity } from '@/lib/activity-log';
 
 // PUT - Update user (ADMIN ONLY)
 export async function PUT(
@@ -10,6 +11,7 @@ export async function PUT(
 ) {
   const authResult = await requireAdmin(request);
   if (authResult instanceof NextResponse) return authResult;
+  const adminSession = authResult.session;
 
   try {
     const { id } = await context.params;
@@ -82,6 +84,18 @@ export async function PUT(
       },
     });
 
+    await logActivity({
+      userId: adminSession.user.id,
+      action: 'UPDATE_USER',
+      entity: 'User',
+      entityId: updatedUser.id,
+      details: {
+        target: updatedUser.username,
+        message: `Memperbarui data user ${updatedUser.username}`,
+        status: 'success',
+      },
+    });
+
     return NextResponse.json({
       success: true,
       message: 'User berhasil diupdate',
@@ -104,6 +118,7 @@ export async function DELETE(
 ) {
   const authResult = await requireAdmin(request);
   if (authResult instanceof NextResponse) return authResult;
+  const adminSession = authResult.session;
 
   try {
     const { id } = await context.params;
@@ -124,6 +139,18 @@ export async function DELETE(
     // Hapus user
     await prisma.user.delete({
       where: { id: userId },
+    });
+
+    await logActivity({
+      userId: adminSession.user.id,
+      action: 'DELETE_USER',
+      entity: 'User',
+      entityId: userId,
+      details: {
+        target: existingUser.username,
+        message: `Menghapus user ${existingUser.username}`,
+        status: 'success',
+      },
     });
 
     return NextResponse.json({

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireAdmin } from '@/lib/auth-helpers';
+import { logActivity } from '@/lib/activity-log';
 
 // PATCH - Toggle user status (active/inactive) - ADMIN ONLY
 export async function PATCH(
@@ -9,6 +10,7 @@ export async function PATCH(
 ) {
   const authResult = await requireAdmin(request);
   if (authResult instanceof NextResponse) return authResult;
+  const adminSession = authResult.session;
 
   try {
     const { id } = await context.params;
@@ -32,6 +34,18 @@ export async function PATCH(
         username: true,
         nama: true,
         isActive: true,
+      },
+    });
+
+    await logActivity({
+      userId: adminSession.user.id,
+      action: 'TOGGLE_STATUS',
+      entity: 'User',
+      entityId: updatedUser.id,
+      details: {
+        target: updatedUser.username,
+        message: `Mengubah status user ${updatedUser.username} menjadi ${isActive ? 'aktif' : 'non-aktif'}`,
+        status: 'success',
       },
     });
 

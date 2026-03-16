@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import { fetchWithAuth } from '@/lib/api-client';
 import { TreasurerSidebar } from '@/components/layout/TreasurerSidebar';
 import { TreasurerHeader } from '@/components/layout/TreasurerHeader';
 import { Card } from '@/components/ui/Card';
@@ -24,6 +25,50 @@ export default function BackupPage() {
   const [isCreatingBackup, setIsCreatingBackup] = useState(false);
   const [lastBackup, setLastBackup] = useState<string>('Belum ada backup');
 
+  const formatDate = (value: string) => {
+    return new Date(value).toLocaleDateString('id-ID', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+
+  const fetchBackupHistory = useCallback(async () => {
+    try {
+      const response = await fetchWithAuth('/api/treasurer/backup');
+      if (!response.ok) {
+        throw new Error(`Failed to fetch backup history: ${response.status}`);
+      }
+      const result = await response.json();
+      if (!result.success) {
+        throw new Error(result.error || 'Gagal mengambil riwayat backup');
+      }
+
+      const history = (result.data.history || []).map((item: {
+        id: string;
+        date: string;
+        type: string;
+        sizeLabel: string;
+        status: string;
+      }) => ({
+        id: item.id,
+        date: formatDate(item.date),
+        type: item.type,
+        size: item.sizeLabel,
+        status: item.status,
+      }));
+
+      setBackupHistory(history);
+      setLastBackup(history.length > 0 ? history[0].date : 'Belum ada backup');
+    } catch (error) {
+      console.error('Error fetching backup history:', error);
+      setBackupHistory([]);
+      setLastBackup('Belum ada backup');
+    }
+  }, []);
+
   useEffect(() => {
     const userData = localStorage.getItem('user');
     if (!userData) {
@@ -37,28 +82,44 @@ export default function BackupPage() {
       return;
     }
 
-    // Initialize last backup date
-    const now = new Date();
-    setLastBackup(now.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }));
-  }, [router]);
+    fetchBackupHistory();
+  }, [router, fetchBackupHistory]);
 
-  const handleBackup = () => {
+  const handleBackup = async () => {
     setIsCreatingBackup(true);
-    // Simulate backup creation
-    setTimeout(() => {
-      const now = new Date();
-      const newBackup: BackupRecord = {
-        id: Date.now().toString(),
-        date: now.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
-        type: 'Manual',
-        size: `${(Math.random() * 10 + 20).toFixed(1)} MB`,
-        status: 'success'
-      };
-      setBackupHistory([newBackup, ...backupHistory]);
-      setLastBackup(newBackup.date);
+    try {
+      const response = await fetchWithAuth('/api/treasurer/backup', {
+        method: 'POST',
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to create backup: ${response.status}`);
+      }
+
+      const result = await response.json();
+      if (!result.success) {
+        throw new Error(result.error || 'Gagal membuat backup');
+      }
+
+      const content = result.data.content as string;
+      const fileName = result.data.fileName as string;
+
+      const blob = new Blob([content], { type: 'application/json' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      a.click();
+      window.URL.revokeObjectURL(url);
+
+      await fetchBackupHistory();
+      alert('Backup berhasil dibuat dan diunduh.');
+    } catch (error) {
+      console.error('Error creating backup:', error);
+      alert('Gagal membuat backup. Silakan coba lagi.');
+    } finally {
       setIsCreatingBackup(false);
-      alert('Backup berhasil dibuat!');
-    }, 2000);
+    }
   };
 
   return (

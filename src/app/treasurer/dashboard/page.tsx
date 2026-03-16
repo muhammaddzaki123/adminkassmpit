@@ -207,9 +207,10 @@ export default function TreasurerDashboard() {
 
         <main className="flex-1 p-4 md:p-6 lg:p-8 overflow-auto mt-16">
           <div className="max-w-7xl mx-auto space-y-8">
-            <div className="animate-fade-in">
+            <div className="animate-fade-in rounded-2xl border border-neutral-200 bg-white p-6 shadow-soft">
+              <p className="text-xs uppercase tracking-[0.16em] text-neutral-500 mb-2">Pusat Operasional Bendahara</p>
               <h1 className="text-3xl font-bold text-neutral-900 mb-2">Dashboard Bendahara</h1>
-              <p className="text-neutral-600">Ringkasan keuangan sekolah secara real-time</p>
+              <p className="text-neutral-600">Ringkasan pemasukan, pengeluaran, dan verifikasi pembayaran sekolah secara real-time.</p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 animate-slide-up">

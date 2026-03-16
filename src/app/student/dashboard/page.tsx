@@ -215,8 +215,8 @@ export default function StudentDashboard() {
         <StudentHeader onMenuClick={() => setIsMobileMenuOpen(true)} />
         <main className="flex-1 p-4 md:p-6 lg:p-8 overflow-auto mt-16">
           <div className="max-w-7xl mx-auto space-y-6">
-            {/* Welcome Section */}
-            <div>
+            <div className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-soft">
+              <p className="text-xs uppercase tracking-[0.16em] text-neutral-500 mb-2">Portal Siswa</p>
               <h1 className="text-3xl font-bold text-neutral-900">
                 Selamat Datang, {studentInfo.fullName}!
               </h1>

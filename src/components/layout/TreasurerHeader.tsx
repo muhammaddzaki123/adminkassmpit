@@ -79,7 +79,7 @@ export function TreasurerHeader({ onMenuClick }: TreasurerHeaderProps) {
   };
 
   return (
-    <header className="h-16 bg-white border-b border-neutral-200 fixed top-0 left-64 right-0 z-40 shadow-soft">
+    <header className="h-16 bg-white/95 backdrop-blur-xl border-b border-neutral-200 fixed top-0 left-64 right-0 z-40 shadow-soft">
       <div className="h-full px-6 flex items-center justify-between">
         {/* Mobile Menu Button */}
         <button
@@ -89,8 +89,12 @@ export function TreasurerHeader({ onMenuClick }: TreasurerHeaderProps) {
           <Menu className="w-6 h-6 text-neutral-700" />
         </button>
 
-        {/* Quick Stats */}
-        <div className="hidden md:flex items-center gap-6">
+        <div className="hidden md:flex items-center gap-3">
+          <div className="rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-2.5 leading-tight">
+            <p className="text-[11px] uppercase tracking-[0.14em] text-neutral-500">Operasional Bendahara</p>
+            <p className="text-sm font-semibold text-neutral-800">SMP IT ANAK SOLEH MATARAH</p>
+          </div>
+
           <div className="flex items-center gap-3 px-4 py-2 bg-green-50 rounded-lg">
             <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
               <DollarSign className="w-4 h-4 text-green-600" />
