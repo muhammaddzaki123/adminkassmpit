@@ -1,5 +1,6 @@
 // src/lib/notification.ts
 import prisma from './prisma';
+import { sendTransactionalEmail } from './email';
 
 // ===========================
 // EMAIL TEMPLATES
@@ -191,28 +192,35 @@ export async function sendEmail(
       throw new Error(`Email template '${template}' not found`);
     }
 
-    // TODO: Implement actual email sending with Nodemailer/Resend
-    // For now, we'll just log and simulate success
-    console.log('📧 Sending email to:', to);
-    console.log('Subject:', emailTemplate.subject);
-    console.log('Template:', template);
-    
-    // Simulate email sending
-    const messageId = `email_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const deliveryResult = await sendTransactionalEmail({
+      to,
+      subject: emailTemplate.subject,
+      text: undefined,
+      html: emailTemplate.html(data as never),
+    });
     
     // Log notification
     await createNotificationLog({
       recipient: to,
       type: 'EMAIL',
-      status: 'SENT',
+      status: deliveryResult.success ? 'SENT' : 'FAILED',
       subject: emailTemplate.subject,
       content: emailTemplate.html(data as never),
       template,
-      metadata: JSON.stringify(data),
-      sentAt: new Date()
+      metadata: JSON.stringify({
+        ...data,
+        provider: deliveryResult.provider,
+        messageId: deliveryResult.messageId,
+        error: deliveryResult.error,
+      }),
+      sentAt: deliveryResult.success ? new Date() : undefined
     });
 
-    return { success: true, messageId };
+    return {
+      success: deliveryResult.success,
+      messageId: deliveryResult.messageId,
+      error: deliveryResult.error,
+    };
   } catch (error) {
     console.error('Error sending email:', error);
     

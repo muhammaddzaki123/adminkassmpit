@@ -43,7 +43,7 @@ export function StudentSidebar() {
           </div>
           <div>
             <h1 className="font-bold text-lg text-neutral-900">T-SMART Siswa</h1>
-            <p className="text-xs text-neutral-600">ANAK SOLEH MATARAH</p>
+            <p className="text-xs text-neutral-600">ANAK SOLEH MATARAM</p>
           </div>
         </div>
       </div>

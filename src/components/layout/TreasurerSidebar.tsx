@@ -1,88 +1,159 @@
 'use client';
 
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { 
   LayoutDashboard, 
   Users, 
   CreditCard, 
   TrendingDown, 
-  FileText, 
-  MessageSquare, 
-  Database, 
-  RefreshCcw,
-  DollarSign,
-  History,
+  ChevronDown,
+  ChevronRight,
+  Circle,
   LogOut,
-  Wallet,
-  CheckCircle
+  Wallet
 } from 'lucide-react';
+
+interface MenuItem {
+  label: string;
+  path: string;
+  matchPrefixes?: string[];
+}
+
+interface MenuGroup {
+  id: string;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  items: MenuItem[];
+}
 
 export function TreasurerSidebar() {
   const pathname = usePathname();
   const router = useRouter();
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
 
-  const menuItems = [
-    {
-      icon: LayoutDashboard,
-      label: 'Dashboard',
-      path: '/treasurer/dashboard',
-    },
-    {
-      icon: Users,
-      label: 'Data Siswa',
-      path: '/treasurer/students',
-    },
-    {
-      icon: Wallet,
-      label: 'Kelola Tagihan',
-      path: '/treasurer/billing',
-    },
-    {
-      icon: CreditCard,
-      label: 'Pembayaran SPP',
-      path: '/treasurer/spp',
-    },
-    {
-      icon: DollarSign,
-      label: 'Input Pembayaran',
-      path: '/treasurer/payment',
-    },
-    {
-      icon: CheckCircle,
-      label: 'Verifikasi Pembayaran',
-      path: '/treasurer/payment/manual',
-    },
-    {
-      icon: TrendingDown,
-      label: 'Pengeluaran',
-      path: '/treasurer/expenses',
-    },
-    {
-      icon: FileText,
-      label: 'Laporan',
-      path: '/treasurer/reports',
-    },
-    {
-      icon: History,
-      label: 'Riwayat Transaksi',
-      path: '/treasurer/history',
-    },
-    {
-      icon: RefreshCcw,
-      label: 'Daftar Ulang',
-      path: '/treasurer/re-registration',
-    },
-    {
-      icon: MessageSquare,
-      label: 'Reminder WA',
-      path: '/treasurer/wa-reminder',
-    },
-    {
-      icon: Database,
-      label: 'Backup Data',
-      path: '/treasurer/backup',
-    },
-  ];
+  const menuGroups = useMemo<MenuGroup[]>(
+    () => [
+      {
+        id: 'dashboard',
+        label: 'Dashboard',
+        icon: LayoutDashboard,
+        items: [
+          {
+            label: 'Dashboard Utama',
+            path: '/treasurer/dashboard',
+          },
+        ],
+      },
+      {
+        id: 'students',
+        label: 'Kelola Data Siswa',
+        icon: Users,
+        items: [
+          {
+            label: 'Data Siswa',
+            path: '/treasurer/students',
+          },
+        ],
+      },
+      {
+        id: 'payments',
+        label: 'Kelola Pembayaran',
+        icon: CreditCard,
+        items: [
+          {
+            label: 'Lihat Semua Tagihan',
+            path: '/treasurer/billing/list',
+            matchPrefixes: ['/treasurer/billing'],
+          },
+          {
+            label: 'Pembayaran SPP',
+            path: '/treasurer/spp',
+          },
+          {
+            label: 'Input Pembayaran',
+            path: '/treasurer/payment',
+          },
+          {
+            label: 'Verifikasi Pembayaran',
+            path: '/treasurer/payment/manual',
+          },
+        ],
+      },
+      {
+        id: 'expenses',
+        label: 'Kelola Pengeluaran',
+        icon: TrendingDown,
+        items: [
+          {
+            label: 'Pengeluaran',
+            path: '/treasurer/expenses',
+          },
+        ],
+      },
+      {
+        id: 'others',
+        label: 'Lainnya',
+        icon: Wallet,
+        items: [
+          {
+            label: 'Laporan',
+            path: '/treasurer/reports',
+          },
+          {
+            label: 'Riwayat Transaksi',
+            path: '/treasurer/history',
+          },
+          {
+            label: 'Daftar Ulang',
+            path: '/treasurer/re-registration',
+          },
+          {
+            label: 'Reminder WA',
+            path: '/treasurer/wa-reminder',
+          },
+          {
+            label: 'Backup Data',
+            path: '/treasurer/backup',
+          },
+        ],
+      },
+    ],
+    []
+  );
+
+  const isItemActive = useCallback((item: MenuItem) => {
+    if (pathname === item.path) return true;
+    if (item.matchPrefixes?.some((prefix) => pathname.startsWith(prefix))) return true;
+    return false;
+  }, [pathname]);
+
+  const isGroupActive = useCallback(
+    (group: MenuGroup) => group.items.some((item) => isItemActive(item)),
+    [isItemActive]
+  );
+
+  useEffect(() => {
+    setOpenGroups((prev) => {
+      const next = { ...prev };
+      for (const group of menuGroups) {
+        if (next[group.id] === undefined) {
+          next[group.id] = group.id === 'dashboard';
+        }
+        if (isGroupActive(group)) {
+          next[group.id] = true;
+        }
+      }
+      return next;
+    });
+  }, [pathname, menuGroups, isGroupActive]);
+
+  const toggleGroup = (groupId: string) => {
+    setOpenGroups((prev) => ({
+      ...prev,
+      [groupId]: !prev[groupId],
+    }));
+  };
 
   const handleLogout = () => {
     localStorage.removeItem('user');
@@ -99,28 +170,54 @@ export function TreasurerSidebar() {
           </div>
           <div>
             <h1 className="font-bold text-neutral-900 text-xl leading-none tracking-tight">T-SMART</h1>
-            <p className="text-xs text-neutral-600 mt-1 font-medium">Bendahara - ANAK SOLEH MATARAH</p>
+            <p className="text-xs text-neutral-600 mt-1 font-medium">Bendahara - ANAK SOLEH MATARAM</p>
           </div>
         </div>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 px-4 py-4 space-y-1 overflow-y-auto">
-        {menuItems.map((item) => {
-          const isActive = pathname === item.path;
+      <nav className="flex-1 px-3 py-4 space-y-2 overflow-y-auto">
+        {menuGroups.map((group) => {
+          const isExpanded = !!openGroups[group.id];
+          const groupActive = isGroupActive(group);
+
           return (
-            <button
-              key={item.path}
-              onClick={() => router.push(item.path)}
-              className={`flex items-center gap-3 px-4 py-3 w-full rounded-xl transition-all duration-200 font-semibold text-sm ${
-                isActive
-                  ? 'bg-primary text-white shadow-soft'
-                  : 'text-neutral-700 hover:bg-neutral-100 hover:text-primary'
-              }`}
-            >
-              <item.icon className="w-5 h-5" />
-              <span>{item.label}</span>
-            </button>
+            <div key={group.id} className="rounded-xl border border-neutral-200/80 bg-white/60 overflow-hidden">
+              <button
+                onClick={() => toggleGroup(group.id)}
+                className={`w-full flex items-center justify-between px-3 py-2.5 transition-colors ${
+                  groupActive ? 'bg-primary-50 text-primary-700' : 'text-neutral-700 hover:bg-neutral-100'
+                }`}
+              >
+                <div className="flex items-center gap-2.5">
+                  <group.icon className="w-5 h-5" />
+                  <span className="text-sm font-semibold">{group.label}</span>
+                </div>
+                {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+              </button>
+
+              {isExpanded && (
+                <div className="px-2 pb-2 space-y-1 border-t border-neutral-200/70 bg-neutral-50/60">
+                  {group.items.map((item) => {
+                    const activeItem = isItemActive(item);
+                    return (
+                      <button
+                        key={item.path}
+                        onClick={() => router.push(item.path)}
+                        className={`w-full flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-medium transition-colors ${
+                          activeItem
+                            ? 'bg-primary text-white shadow-soft'
+                            : 'text-neutral-700 hover:bg-neutral-100 hover:text-primary-700'
+                        }`}
+                      >
+                        <Circle className="w-2.5 h-2.5 fill-current" />
+                        <span>{item.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           );
         })}
       </nav>

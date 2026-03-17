@@ -32,7 +32,7 @@ export function StudentHeader({ onMenuClick }: StudentHeaderProps) {
         <div className="hidden md:flex rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-2.5 leading-tight">
           <div>
             <p className="text-[11px] uppercase tracking-[0.14em] text-neutral-500">Portal Siswa</p>
-            <p className="text-sm font-semibold text-neutral-800">SMP IT ANAK SOLEH MATARAH</p>
+            <p className="text-sm font-semibold text-neutral-800">SMP IT ANAK SOLEH MATARAM</p>
           </div>
         </div>
 

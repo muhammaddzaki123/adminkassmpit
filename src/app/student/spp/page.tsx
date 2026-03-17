@@ -8,7 +8,7 @@ import { StudentHeader } from '@/components/layout/StudentHeader';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
-import { CreditCard, Building, Smartphone, CheckCircle, Clock, Copy, ArrowLeft, AlertTriangle } from 'lucide-react';
+import { CreditCard, Building, Smartphone, CheckCircle, Clock, Copy, ArrowLeft, AlertTriangle, Landmark, Sparkles } from 'lucide-react';
 
 interface Billing {
   id: string;
@@ -426,6 +426,18 @@ function SPPPaymentContent() {
                 <h1 className="text-2xl font-bold text-neutral-900">Pilih Metode Pembayaran</h1>
               </div>
 
+              <Card className="bg-linear-to-r from-white via-primary-50 to-accent-50 border-primary-100 shadow-sm">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-primary text-white flex items-center justify-center">
+                    <Landmark className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-neutral-900">Transaksi Aman</p>
+                    <p className="text-xs text-neutral-600">Pilih kanal pembayaran resmi agar status tagihan terverifikasi otomatis.</p>
+                  </div>
+                </div>
+              </Card>
+
               <Card>
                 <h3 className="font-semibold text-neutral-900 mb-4">Ringkasan Pembayaran</h3>
                 <div className="bg-neutral-50 rounded-lg p-4 space-y-2">
@@ -565,10 +577,23 @@ function SPPPaymentContent() {
         <StudentHeader onMenuClick={() => setIsMobileMenuOpen(true)} />
         <main className="flex-1 p-4 md:p-6 lg:p-8 overflow-auto mt-16">
           <div className="max-w-4xl mx-auto space-y-6">
-            <div>
-              <h1 className="text-3xl font-bold text-neutral-900">Pembayaran SPP</h1>
-              <p className="text-neutral-600 mt-1">Pilih tagihan yang ingin dibayar</p>
-            </div>
+            <Card className="bg-linear-to-r from-white via-primary-50 to-accent-50 border-primary-100 shadow-sm">
+              <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <div className="inline-flex items-center gap-2 rounded-full bg-primary-100 text-primary-800 px-3 py-1 text-xs font-semibold mb-3">
+                    <Sparkles className="w-3.5 h-3.5" />
+                    Portal Pembayaran Siswa
+                  </div>
+                  <h1 className="text-3xl font-bold text-neutral-900">Pembayaran SPP</h1>
+                  <p className="text-neutral-700 mt-1">Pilih tagihan yang ingin dibayar dan lanjutkan ke metode pembayaran resmi.</p>
+                </div>
+                <div className="rounded-xl border border-primary-200 bg-white/80 px-4 py-3 min-w-[220px]">
+                  <p className="text-[11px] uppercase tracking-[0.14em] text-neutral-500 mb-1">Tagihan Aktif</p>
+                  <p className="text-2xl font-bold text-neutral-900">{billings.length}</p>
+                  <p className="text-xs text-neutral-600">Tagihan belum lunas tersedia untuk dipilih</p>
+                </div>
+              </div>
+            </Card>
 
             {loading ? (
               <div className="text-center py-12">

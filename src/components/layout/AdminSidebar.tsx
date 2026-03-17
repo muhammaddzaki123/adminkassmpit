@@ -65,7 +65,7 @@ export function AdminSidebar() {
           </div>
           <div>
             <h1 className="font-bold text-neutral-900 text-xl leading-none tracking-tight">T-SMART</h1>
-            <p className="text-xs text-neutral-600 mt-1 font-medium">Admin Panel - ANAK SOLEH MATARAH</p>
+            <p className="text-xs text-neutral-600 mt-1 font-medium">Admin Panel - ANAK SOLEH MATARAM</p>
           </div>
         </div>
       </div>

@@ -92,7 +92,7 @@ export function TreasurerHeader({ onMenuClick }: TreasurerHeaderProps) {
         <div className="hidden md:flex items-center gap-3">
           <div className="rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-2.5 leading-tight">
             <p className="text-[11px] uppercase tracking-[0.14em] text-neutral-500">Operasional Bendahara</p>
-            <p className="text-sm font-semibold text-neutral-800">SMP IT ANAK SOLEH MATARAH</p>
+            <p className="text-sm font-semibold text-neutral-800">SMP IT ANAK SOLEH MATARAM</p>
           </div>
 
           <div className="flex items-center gap-3 px-4 py-2 bg-green-50 rounded-lg">

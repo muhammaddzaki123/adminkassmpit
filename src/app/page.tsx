@@ -49,7 +49,7 @@ export default function LandingPage() {
               <Wallet className="w-5 h-5" />
             </div>
             <div>
-              <p className="text-xs uppercase tracking-[0.2em] text-neutral-500">SMP IT ANAK SOLEH MATARAH</p>
+              <p className="text-xs uppercase tracking-[0.2em] text-neutral-500">SMP IT ANAK SOLEH MATARAM</p>
               <h1 className="text-sm sm:text-base font-bold text-neutral-900 leading-tight">T-SMART Finance Platform</h1>
             </div>
           </div>
@@ -72,7 +72,7 @@ export default function LandingPage() {
 
             <h2 className="text-4xl sm:text-5xl font-bold text-neutral-900 leading-tight">
               Transparansi dan Kontrol Keuangan
-              <span className="block text-primary-700 mt-1">untuk SMP IT ANAK SOLEH MATARAH</span>
+              <span className="block text-primary-700 mt-1">untuk SMP IT ANAK SOLEH MATARAM</span>
             </h2>
 
             <p className="mt-5 text-lg text-neutral-600 max-w-xl">
@@ -161,7 +161,7 @@ export default function LandingPage() {
             </div>
             <div>
               <p className="font-semibold text-neutral-900">T-SMART Finance Platform</p>
-              <p className="text-sm text-neutral-500">SMP IT ANAK SOLEH MATARAH</p>
+              <p className="text-sm text-neutral-500">SMP IT ANAK SOLEH MATARAM</p>
             </div>
           </div>
           <p className="text-sm text-neutral-500">© 2026 Internal Financial Information System</p>

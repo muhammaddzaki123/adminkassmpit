@@ -7,7 +7,7 @@ import { AdminHeader } from '@/components/layout/AdminHeader';
 import { AdminSidebar } from '@/components/layout/AdminSidebar';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
-import { Activity, Filter, Calendar } from 'lucide-react';
+import { Activity, Filter, Calendar, ShieldCheck, Sparkles } from 'lucide-react';
 import { Select } from '@/components/ui/Input';
 
 interface ActivityLog {
@@ -104,15 +104,30 @@ export default function ActivityLog() {
         <main className="pt-16 p-8">
           <div className="max-w-7xl mx-auto space-y-6">
             {/* Header */}
-            <div>
-              <h1 className="text-3xl font-bold text-neutral-900 mb-2">Activity Log</h1>
-              <p className="text-neutral-600">Pantau semua aktivitas pengguna dalam sistem</p>
-            </div>
+            <Card className="bg-linear-to-r from-white via-primary-50 to-accent-50 border-primary-100 shadow-sm">
+              <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <div className="inline-flex items-center gap-2 rounded-full bg-primary-100 text-primary-800 px-3 py-1 text-xs font-semibold mb-3">
+                    <ShieldCheck className="w-3.5 h-3.5" />
+                    Pusat Audit Keamanan
+                  </div>
+                  <h1 className="text-3xl font-bold text-neutral-900 mb-2">Activity Log</h1>
+                  <p className="text-neutral-700">Pantau jejak aktivitas pengguna secara real-time untuk menjaga integritas sistem keuangan.</p>
+                </div>
+                <div className="rounded-xl border border-primary-200 bg-white/70 px-4 py-3 min-w-[220px]">
+                  <p className="text-[11px] uppercase tracking-[0.14em] text-neutral-500 mb-1">Ringkasan Cepat</p>
+                  <p className="text-2xl font-bold text-neutral-900">{filteredLogs.length}</p>
+                  <p className="text-xs text-neutral-600">Aktivitas ditampilkan sesuai filter saat ini</p>
+                </div>
+              </div>
+            </Card>
 
             {/* Filters */}
-            <Card>
+            <Card className="border-neutral-200 shadow-sm">
               <div className="flex items-center gap-4">
-                <Filter className="w-5 h-5 text-neutral-600" />
+                <div className="w-9 h-9 rounded-lg bg-neutral-100 flex items-center justify-center">
+                  <Filter className="w-5 h-5 text-neutral-600" />
+                </div>
                 <div className="flex gap-4 flex-1">
                   <div className="w-48">
                     <Select
@@ -157,7 +172,7 @@ export default function ActivityLog() {
                 {filteredLogs.map((log) => {
                 const actionBadge = getActionBadge(log.action);
                 return (
-                  <Card key={log.id} className="hover:shadow-md transition-shadow">
+                  <Card key={log.id} className="hover:shadow-md transition-shadow border-neutral-200">
                     <div className="flex items-start gap-4">
                       {/* Icon */}
                       <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
@@ -194,7 +209,7 @@ export default function ActivityLog() {
 
             {filteredLogs.length === 0 && (
               <Card className="text-center py-12">
-                <Activity className="w-12 h-12 text-neutral-400 mx-auto mb-3" />
+                <Sparkles className="w-12 h-12 text-neutral-400 mx-auto mb-3" />
                 <p className="text-neutral-600">Tidak ada aktivitas yang sesuai dengan filter</p>
               </Card>
             )}

@@ -7,7 +7,7 @@ import { Sidebar } from '@/components/layout/Sidebar';
 import { Header } from '@/components/layout/Header';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
+import { Input, Select } from '@/components/ui/Input';
 import { Settings, DollarSign, Bell, Save, RefreshCw } from 'lucide-react';
 
 interface Setting {
@@ -18,6 +18,15 @@ interface Setting {
   category: string;
   description: string | null;
 }
+
+const EMAIL_PROVIDER_FALLBACK_SETTING: Setting = {
+  id: 'virtual-email-provider',
+  key: 'EMAIL_PROVIDER',
+  value: 'auto',
+  type: 'TEXT',
+  category: 'NOTIFICATION',
+  description: 'Provider email aktif untuk reset password dan notifikasi.',
+};
 
 interface GroupedSettings {
   FEES: Setting[];
@@ -60,9 +69,13 @@ export default function SettingsPage() {
 
       if (result.success && result.data) {
         const grouped = result.data.grouped || {};
+        const notificationSettings = Array.isArray(grouped.NOTIFICATION) ? grouped.NOTIFICATION : [];
+        const hasEmailProvider = notificationSettings.some((setting: Setting) => setting.key === 'EMAIL_PROVIDER');
         setSettings({
           FEES: Array.isArray(grouped.FEES) ? grouped.FEES : [],
-          NOTIFICATION: Array.isArray(grouped.NOTIFICATION) ? grouped.NOTIFICATION : [],
+          NOTIFICATION: hasEmailProvider
+            ? notificationSettings
+            : [...notificationSettings, EMAIL_PROVIDER_FALLBACK_SETTING],
           SYSTEM: Array.isArray(grouped.SYSTEM) ? grouped.SYSTEM : []
         });
       } else {
@@ -131,7 +144,13 @@ export default function SettingsPage() {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          settings: allSettings.map(s => ({ key: s.key, value: s.value })),
+          settings: allSettings.map(s => ({
+            key: s.key,
+            value: s.value,
+            type: s.type,
+            category: s.category,
+            description: s.description,
+          })),
           updatedBy: user.id
         })
       });
@@ -324,14 +343,27 @@ export default function SettingsPage() {
                             </label>
                           </div>
                         ) : (
-                          <Input
-                            type="text"
-                            value={setting.value}
-                            onChange={(e) =>
-                              updateSettingValue('NOTIFICATION', setting.key, e.target.value)
-                            }
-                            placeholder={setting.key.includes('KEY') ? 'Masukkan API key...' : 'Masukkan nilai...'}
-                          />
+                          setting.key === 'EMAIL_PROVIDER' ? (
+                            <Select
+                              value={setting.value || 'auto'}
+                              onChange={(e) => updateSettingValue('NOTIFICATION', setting.key, e.target.value)}
+                              options={[
+                                { value: 'auto', label: 'Auto (fallback berurutan)' },
+                                { value: 'smtp', label: 'SMTP' },
+                                { value: 'resend', label: 'Resend' },
+                                { value: 'sendgrid', label: 'SendGrid' },
+                              ]}
+                            />
+                          ) : (
+                            <Input
+                              type="text"
+                              value={setting.value}
+                              onChange={(e) =>
+                                updateSettingValue('NOTIFICATION', setting.key, e.target.value)
+                              }
+                              placeholder={setting.key.includes('KEY') ? 'Masukkan API key...' : 'Masukkan nilai...'}
+                            />
+                          )
                         )}
                       </div>
                     </div>

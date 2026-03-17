@@ -8,7 +8,7 @@ import { TreasurerHeader } from '@/components/layout/TreasurerHeader';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input, Select } from '@/components/ui/Input';
-import { Plus, Search, Calendar, Download, CheckCircle, AlertCircle } from 'lucide-react';
+import { Plus, Search, Calendar, Download, CheckCircle, AlertCircle, Wallet, FileClock } from 'lucide-react';
 
 interface Student {
   id: string;
@@ -250,13 +250,26 @@ export default function PaymentPage() {
         <TreasurerHeader onMenuClick={() => setIsMobileMenuOpen(true)} />
         <main className="flex-1 p-4 md:p-6 lg:p-8 overflow-auto mt-16">
           <div className="max-w-7xl mx-auto space-y-6">
-            <div className="flex justify-between items-center">
-              <div>
-                <h1 className="text-3xl font-bold text-neutral-900">Input Pembayaran</h1>
-                <p className="text-neutral-600 mt-1">Input pembayaran SPP siswa</p>
-              </div>
-              <Button 
-                icon={<Download className="w-4 h-4" />} 
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <Card className="flex-1 bg-linear-to-r from-white via-primary-50 to-accent-50 border-primary-100 shadow-sm">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <div className="inline-flex items-center gap-2 rounded-full bg-primary-100 text-primary-800 px-3 py-1 text-xs font-semibold mb-3">
+                      <Wallet className="w-3.5 h-3.5" />
+                      Operasional Pembayaran Tunai
+                    </div>
+                    <h1 className="text-3xl font-bold text-neutral-900">Input Pembayaran</h1>
+                    <p className="text-neutral-700 mt-1">Catat pembayaran siswa dengan cepat, akurat, dan siap audit.</p>
+                  </div>
+                  <div className="hidden md:block rounded-xl border border-primary-200 bg-white/80 px-4 py-3 min-w-[220px]">
+                    <p className="text-[11px] uppercase tracking-[0.14em] text-neutral-500 mb-1">Transaksi Terkini</p>
+                    <p className="text-2xl font-bold text-neutral-900">{recentPayments.length}</p>
+                    <p className="text-xs text-neutral-600">Data pembayaran terbaru ditampilkan di bawah</p>
+                  </div>
+                </div>
+              </Card>
+              <Button
+                icon={<Download className="w-4 h-4" />}
                 variant="outline"
                 onClick={handleExport}
                 disabled={recentPayments.length === 0}
@@ -280,7 +293,7 @@ export default function PaymentPage() {
               </Card>
             )}
 
-            <Card>
+            <Card className="border-neutral-200 shadow-sm">
               <h2 className="text-xl font-semibold text-neutral-900 mb-4">Form Pembayaran</h2>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -417,10 +430,11 @@ export default function PaymentPage() {
               </form>
             </Card>
 
-            <Card>
+            <Card className="border-neutral-200 shadow-sm">
               <h2 className="text-xl font-semibold text-neutral-900 mb-4">Pembayaran Terakhir</h2>
               {recentPayments.length === 0 ? (
                 <div className="text-center py-8 text-neutral-500">
+                  <FileClock className="w-9 h-9 mx-auto mb-3 text-neutral-400" />
                   <p>Belum ada pembayaran yang diinput</p>
                   <p className="text-sm mt-2">Pembayaran yang ditambahkan akan muncul di sini</p>
                 </div>

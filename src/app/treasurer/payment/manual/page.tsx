@@ -203,10 +203,10 @@ export default function ManualPaymentPage() {
         </>
       )}
 
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col min-w-0 lg:ml-64">
         <TreasurerHeader onMenuClick={() => setIsMobileMenuOpen(true)} />
         <main className="flex-1 p-4 md:p-6 lg:p-8 overflow-auto mt-16">
-          <div className="max-w-7xl mx-auto space-y-6">
+          <div className="max-w-6xl xl:max-w-7xl mx-auto space-y-6">
             {/* Header */}
             <div>
               <h1 className="text-3xl font-bold text-neutral-900">Verifikasi Pembayaran Manual</h1>
@@ -215,7 +215,7 @@ export default function ManualPaymentPage() {
 
             {/* Search */}
             <Card>
-              <div className="flex gap-4">
+              <div className="flex flex-col sm:flex-row gap-4">
                 <div className="flex-1">
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400" />
@@ -228,7 +228,7 @@ export default function ManualPaymentPage() {
                     />
                   </div>
                 </div>
-                <Button variant="primary" onClick={fetchBillings}>
+                <Button variant="primary" onClick={fetchBillings} className="sm:w-auto w-full">
                   Cari
                 </Button>
               </div>
@@ -252,7 +252,7 @@ export default function ManualPaymentPage() {
                       key={billing.id}
                       className="p-4 border border-neutral-200 rounded-lg hover:border-primary-300 transition-colors"
                     >
-                      <div className="flex items-start justify-between">
+                      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                         <div className="flex-1">
                           <div className="flex items-center gap-3 mb-2">
                             <h3 className="font-medium text-neutral-900">{billing.student.nama}</h3>
@@ -285,6 +285,7 @@ export default function ManualPaymentPage() {
                         <Button
                           variant="primary"
                           size="sm"
+                          className="w-full lg:w-auto"
                           onClick={() => openPaymentModal(billing)}
                         >
                           <Plus className="w-4 h-4 mr-1" />

@@ -222,12 +222,12 @@ export default function BillingListPage() {
         </>
       )}
 
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col min-w-0 lg:ml-64">
         <TreasurerHeader onMenuClick={() => setIsMobileMenuOpen(true)} />
         <main className="flex-1 p-4 md:p-6 lg:p-8 overflow-auto mt-16">
-          <div className="max-w-7xl mx-auto space-y-6">
+          <div className="max-w-6xl xl:max-w-7xl mx-auto space-y-6">
             {/* Header */}
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
               <div>
                 <h1 className="text-3xl font-bold text-neutral-900">Daftar Tagihan</h1>
                 <p className="text-neutral-600 mt-1">Kelola semua tagihan siswa</p>
@@ -242,8 +242,8 @@ export default function BillingListPage() {
             </div>
 
             {/* Filters */}
-            <Card>
-              <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+            <Card className="overflow-hidden">
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-neutral-700 mb-2">
                     <Filter className="w-4 h-4 inline mr-1" />
@@ -329,7 +329,7 @@ export default function BillingListPage() {
             </Card>
 
             {/* Table */}
-            <Card>
+            <Card className="overflow-hidden">
               {loading ? (
                 <div className="text-center py-12">
                   <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
@@ -341,10 +341,12 @@ export default function BillingListPage() {
                   <p className="text-neutral-600">Tidak ada tagihan ditemukan</p>
                 </div>
               ) : (
-                <Table
-                  columns={columns}
-                  data={billings}
-                />
+                <div className="overflow-x-auto">
+                  <Table
+                    columns={columns}
+                    data={billings}
+                  />
+                </div>
               )}
             </Card>
           </div>

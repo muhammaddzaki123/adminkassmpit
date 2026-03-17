@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import * as bcrypt from 'bcryptjs';
 import prisma from '@/lib/prisma';
 import { getPasswordFingerprint, verifyPasswordResetToken } from '@/lib/password-reset';
+import { sendTransactionalEmail } from '@/lib/email';
+import { createPasswordResetSuccessEmailTemplate } from '@/lib/password-reset-email';
 
 export async function POST(request: NextRequest) {
   try {
@@ -45,6 +47,7 @@ export async function POST(request: NextRequest) {
       where: { id: decoded.userId },
       select: {
         id: true,
+        nama: true,
         password: true,
         isActive: true,
         email: true,
@@ -74,16 +77,29 @@ export async function POST(request: NextRequest) {
       data: { password: hashedPassword },
     });
 
+    const successEmail = createPasswordResetSuccessEmailTemplate(user.nama);
+    const emailResult = await sendTransactionalEmail({
+      to: user.email || user.username,
+      subject: successEmail.subject,
+      text: successEmail.text,
+      html: successEmail.html,
+    });
+
     await prisma.notificationLog.create({
       data: {
         userId: user.id,
         recipient: user.email || user.username,
         type: 'EMAIL',
-        status: 'SENT',
-        subject: 'Password Berhasil Diperbarui',
-        content: 'Password akun Anda telah berhasil diperbarui melalui fitur lupa password.',
+        status: emailResult.success ? 'SENT' : 'FAILED',
+        subject: successEmail.subject,
+        content: successEmail.text,
         template: 'password-reset-success',
-        sentAt: new Date(),
+        metadata: JSON.stringify({
+          provider: emailResult.provider,
+          messageId: emailResult.messageId,
+          error: emailResult.error,
+        }),
+        sentAt: emailResult.success ? new Date() : undefined,
       },
     });
 

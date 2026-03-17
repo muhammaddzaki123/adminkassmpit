@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { createPasswordResetToken, getPasswordResetTtlMinutes } from '@/lib/password-reset';
+import { sendTransactionalEmail } from '@/lib/email';
+import { createPasswordResetEmailTemplate } from '@/lib/password-reset-email';
 
 export async function POST(request: NextRequest) {
   try {
@@ -45,21 +47,36 @@ export async function POST(request: NextRequest) {
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || request.nextUrl.origin;
     const resetUrl = `${appUrl}${resetPath}`;
 
+    const emailTemplate = createPasswordResetEmailTemplate({
+      nama: user.nama,
+      resetUrl,
+    });
+
+    const emailResult = await sendTransactionalEmail({
+      to: user.email || user.username,
+      subject: emailTemplate.subject,
+      text: emailTemplate.text,
+      html: emailTemplate.html,
+    });
+
     await prisma.notificationLog.create({
       data: {
         userId: user.id,
         recipient: user.email || user.username,
         type: 'EMAIL',
-        status: 'SENT',
-        subject: 'Reset Password T-SMART',
-        content: `Halo ${user.nama},\n\nSilakan reset password akun Anda melalui tautan berikut:\n${resetUrl}\n\nTautan berlaku ${getPasswordResetTtlMinutes()} menit.\n\nJika Anda tidak meminta reset password, abaikan pesan ini.`,
+        status: emailResult.success ? 'SENT' : 'FAILED',
+        subject: emailTemplate.subject,
+        content: emailTemplate.text,
         template: 'password-reset',
         metadata: JSON.stringify({
           resetUrl,
           username: user.username,
           expiresInMinutes: getPasswordResetTtlMinutes(),
+          provider: emailResult.provider,
+          messageId: emailResult.messageId,
+          error: emailResult.error,
         }),
-        sentAt: new Date(),
+        sentAt: emailResult.success ? new Date() : undefined,
       },
     });
 
@@ -68,6 +85,12 @@ export async function POST(request: NextRequest) {
         success: true,
         message: 'Tautan reset dibuat (mode pengembangan).',
         debugResetUrl: resetUrl,
+        emailDelivery: {
+          success: emailResult.success,
+          provider: emailResult.provider,
+          messageId: emailResult.messageId,
+          error: emailResult.error,
+        },
       });
     }
 

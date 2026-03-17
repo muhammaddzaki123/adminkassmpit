@@ -56,19 +56,29 @@ export async function PUT(request: NextRequest) {
     }
 
     // Update settings in transaction
-    const updatePromises = settings.map((setting: { key: string; value: string }) =>
+    const updatePromises = settings.map((setting: {
+      key: string;
+      value: string;
+      type?: string;
+      category?: string;
+      description?: string | null;
+    }) =>
       prisma.systemSettings.upsert({
         where: { key: setting.key },
         update: {
           value: setting.value,
+          ...(setting.type ? { type: setting.type } : {}),
+          ...(setting.category ? { category: setting.category } : {}),
+          ...(typeof setting.description !== 'undefined' ? { description: setting.description } : {}),
           updatedBy,
           updatedAt: new Date()
         },
         create: {
           key: setting.key,
           value: setting.value,
-          type: 'TEXT',
-          category: 'SYSTEM',
+          type: setting.type || 'TEXT',
+          category: setting.category || 'SYSTEM',
+          description: setting.description || null,
           updatedBy
         }
       })
@@ -100,6 +110,7 @@ export async function POST() {
       
       // Notification
       { key: 'EMAIL_ENABLED', value: 'true', type: 'BOOLEAN', category: 'NOTIFICATION', description: 'Enable email notifications' },
+      { key: 'EMAIL_PROVIDER', value: 'auto', type: 'TEXT', category: 'NOTIFICATION', description: 'Active email provider: auto/smtp/resend/sendgrid' },
       { key: 'WA_ENABLED', value: 'false', type: 'BOOLEAN', category: 'NOTIFICATION', description: 'Enable WhatsApp notifications' },
       { key: 'WA_API_KEY', value: '', type: 'TEXT', category: 'NOTIFICATION', description: 'WhatsApp API key (Fonnte/Wablas)' },
       { key: 'WA_DEVICE', value: '', type: 'TEXT', category: 'NOTIFICATION', description: 'WhatsApp device ID' },
