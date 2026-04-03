@@ -37,11 +37,16 @@ function SPPPaymentContent() {
   const [payment, setPayment] = useState<{
     id: string;
     paymentNumber: string;
+    externalId?: string;
     amount: number;
     adminFee: number;
     totalPaid: number;
     status: string;
     method: string;
+    vaNumber?: string;
+    qrCode?: string;
+    deeplink?: string;
+    expiredAt?: string;
   } | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -339,6 +344,62 @@ function SPPPaymentContent() {
                       <Copy className="w-5 h-5" />
                     </button>
                   </div>
+
+                  {payment.externalId && (
+                    <>
+                      <p className="text-sm text-neutral-600 mb-2">Order ID Midtrans</p>
+                      <div className="flex items-center justify-between bg-white rounded-lg p-4 mb-4">
+                        <p className="font-mono text-sm font-semibold break-all">{payment.externalId}</p>
+                        <button onClick={() => copyToClipboard(payment.externalId || '')} className="text-primary-600">
+                          <Copy className="w-5 h-5" />
+                        </button>
+                      </div>
+                    </>
+                  )}
+
+                  {payment.vaNumber && (
+                    <>
+                      <p className="text-sm text-neutral-600 mb-2">Virtual Account</p>
+                      <div className="flex items-center justify-between bg-white rounded-lg p-4 mb-4">
+                        <p className="font-mono text-base font-bold">{payment.vaNumber}</p>
+                        <button onClick={() => copyToClipboard(payment.vaNumber || '')} className="text-primary-600">
+                          <Copy className="w-5 h-5" />
+                        </button>
+                      </div>
+                    </>
+                  )}
+
+                  {(payment.qrCode || payment.deeplink) && (
+                    <div className="bg-white rounded-lg p-4 mb-4 space-y-3">
+                      <p className="text-sm font-semibold text-neutral-900">Aksi Pembayaran</p>
+                      {payment.qrCode && (
+                        <a
+                          href={payment.qrCode}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center justify-center w-full rounded-lg bg-primary-600 hover:bg-primary-700 text-white font-semibold px-4 py-2.5"
+                        >
+                          Buka QR Pembayaran
+                        </a>
+                      )}
+                      {payment.deeplink && (
+                        <a
+                          href={payment.deeplink}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center justify-center w-full rounded-lg border border-primary-300 text-primary-700 hover:bg-primary-50 font-semibold px-4 py-2.5"
+                        >
+                          Buka Aplikasi E-Wallet
+                        </a>
+                      )}
+                    </div>
+                  )}
+
+                  {payment.expiredAt && (
+                    <p className="text-xs text-neutral-500 mb-4">
+                      Berlaku sampai: {new Date(payment.expiredAt).toLocaleString('id-ID')}
+                    </p>
+                  )}
 
                   <p className="text-sm text-neutral-600 mb-2">Total yang Harus Dibayar</p>
                   <div className="bg-primary-600 text-white rounded-lg p-4">

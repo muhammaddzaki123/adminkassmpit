@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getServerSession } from '@/lib/auth';
+import { createMidtransCharge } from '@/lib/midtrans';
 
 // POST /api/payment/create - Create payment for a billing (PROPER FLOW)
 export async function POST(request: NextRequest) {
@@ -101,14 +102,6 @@ export async function POST(request: NextRequest) {
     }
 
     const totalPaid = amount + adminFee;
-    const externalId = method !== 'TUNAI' ? generateExternalId() : null;
-    const expiredAt = method !== 'TUNAI' ? new Date(Date.now() + 24 * 60 * 60 * 1000) : null;
-    const vaNumber = method === 'VIRTUAL_ACCOUNT'
-      ? billing.student.virtualAccount || generateVirtualAccountNumber(billing.student.nisn)
-      : null;
-    const deeplink = method === 'EWALLET' && externalId
-      ? `https://pay.smpit.local/checkout/${externalId}`
-      : null;
 
     // TUNAI must be processed by treasurer
     const paymentStatus = method === 'TUNAI' ? 'COMPLETED' : 'PENDING';
@@ -118,6 +111,68 @@ export async function POST(request: NextRequest) {
         { error: 'Cash payments must be processed by treasurer' },
         { status: 403 }
       );
+    }
+
+    const orderId = method !== 'TUNAI' ? generateMidtransOrderId(paymentNumber) : null;
+
+    let gatewayResult: {
+      orderId: string;
+      status: string;
+      expiredAt: Date | null;
+      vaNumber: string | null;
+      deeplink: string | null;
+      qrCode: string | null;
+      raw: unknown;
+    } | null = null;
+
+    if (method !== 'TUNAI') {
+      try {
+        const midtrans = await createMidtransCharge({
+          orderId: orderId!,
+          grossAmount: totalPaid,
+          channel: method,
+          customer: {
+            firstName: billing.student?.nama || 'Siswa',
+            email: billing.student?.email,
+            phone: billing.student?.noTelp,
+          },
+          itemDetails: [
+            {
+              id: billing.id,
+              name: billing.description || `Pembayaran ${billing.type}`,
+              price: amount,
+              quantity: 1,
+            },
+            ...(adminFee > 0
+              ? [
+                  {
+                    id: 'ADMIN_FEE',
+                    name: 'Biaya Admin',
+                    price: adminFee,
+                    quantity: 1,
+                  },
+                ]
+              : []),
+          ],
+          customExpiryMinutes: 24 * 60,
+        });
+
+        gatewayResult = {
+          orderId: midtrans.orderId,
+          status: midtrans.transactionStatus,
+          expiredAt: midtrans.expiryTime ? new Date(midtrans.expiryTime) : null,
+          vaNumber: midtrans.vaNumber || null,
+          deeplink: midtrans.deeplinkUrl || null,
+          qrCode: midtrans.qrCodeUrl || null,
+          raw: midtrans.raw,
+        };
+      } catch (gatewayError) {
+        const gatewayMessage = gatewayError instanceof Error ? gatewayError.message : 'Unknown Midtrans error';
+        return NextResponse.json(
+          { error: `Failed to create Midtrans transaction: ${gatewayMessage}` },
+          { status: 502 }
+        );
+      }
     }
 
     // Create payment in transaction
@@ -136,11 +191,19 @@ export async function POST(request: NextRequest) {
           status: paymentStatus,
           notes,
           receiptUrl,
-          externalId,
-          expiredAt,
-          vaNumber,
-          deeplink,
+          externalId: gatewayResult?.orderId || null,
+          expiredAt: gatewayResult?.expiredAt || null,
+          vaNumber: gatewayResult?.vaNumber || null,
+          qrCode: gatewayResult?.qrCode || null,
+          deeplink: gatewayResult?.deeplink || null,
           paidAt: paymentStatus === 'COMPLETED' ? new Date() : null,
+          ...(gatewayResult && {
+            notes: [
+              notes || '',
+              `Midtrans Status: ${gatewayResult.status}`,
+              `Midtrans Payload: ${JSON.stringify(gatewayResult.raw)}`,
+            ].filter(Boolean).join('\n'),
+          }),
           ...(session.user.role === 'TREASURER' && {
             processedBy: {
               connect: { id: session.user.id }
@@ -198,6 +261,7 @@ export async function POST(request: NextRequest) {
           status: payment.status,
           method: payment.method,
           vaNumber: payment.vaNumber,
+          qrCode: payment.qrCode,
           expiredAt: payment.expiredAt,
           deeplink: payment.deeplink,
         },
@@ -205,7 +269,7 @@ export async function POST(request: NextRequest) {
           method: payment.method,
           externalId: payment.externalId,
           ...(payment.method === 'VIRTUAL_ACCOUNT' ? { vaNumber: payment.vaNumber } : {}),
-          ...(payment.method === 'EWALLET' ? { deeplink: payment.deeplink } : {}),
+          ...(payment.method === 'EWALLET' ? { deeplink: payment.deeplink, qrCode: payment.qrCode } : {}),
           expiredAt: payment.expiredAt,
         } : null,
         message: payment.status === 'COMPLETED' 
@@ -246,13 +310,6 @@ async function generatePaymentNumber(): Promise<string> {
   return `PAY/${year}/${month}/${String(sequence).padStart(4, '0')}`;
 }
 
-function generateExternalId(): string {
-  const ts = Date.now().toString(36).toUpperCase();
-  const random = Math.random().toString(36).slice(2, 8).toUpperCase();
-  return `EXT-${ts}-${random}`;
-}
-
-function generateVirtualAccountNumber(nisn: string): string {
-  const cleanNisn = (nisn || '').replace(/\D/g, '').slice(-10);
-  return `8801${cleanNisn.padStart(10, '0')}`;
+function generateMidtransOrderId(paymentNumber: string): string {
+  return `MID-${paymentNumber.replace(/[^a-zA-Z0-9]/g, '-')}`;
 }

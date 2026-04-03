@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { sendNotification } from '@/lib/notification';
+import { normalizeMidtransStatus, verifyMidtransSignature } from '@/lib/midtrans';
 
-type IncomingWebhookStatus = 'PENDING' | 'PROCESSING' | 'PAID' | 'SUCCESS' | 'FAILED' | 'EXPIRED';
-
-function normalizeStatus(status: string): 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED' | 'EXPIRED' {
-  const value = status.toUpperCase() as IncomingWebhookStatus;
+function normalizeLegacyStatus(status: string): 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED' | 'EXPIRED' {
+  const value = status.toUpperCase();
   if (value === 'PAID' || value === 'SUCCESS') return 'COMPLETED';
   if (value === 'FAILED') return 'FAILED';
   if (value === 'EXPIRED') return 'EXPIRED';
@@ -19,10 +18,14 @@ function resolveBillingStatus(totalAmount: number, paidAmount: number): 'PAID' |
 
 export async function POST(request: NextRequest) {
   try {
-    const secret = process.env.PAYMENT_WEBHOOK_SECRET;
-    if (secret) {
+    const body = await request.json();
+
+    const isMidtransPayload = typeof body?.order_id === 'string' && typeof body?.transaction_status === 'string';
+    const legacySecret = process.env.PAYMENT_WEBHOOK_SECRET;
+
+    if (!isMidtransPayload && legacySecret) {
       const incomingSecret = request.headers.get('x-webhook-secret');
-      if (!incomingSecret || incomingSecret !== secret) {
+      if (!incomingSecret || incomingSecret !== legacySecret) {
         return NextResponse.json(
           { success: false, error: 'Invalid webhook signature' },
           { status: 401 }
@@ -30,10 +33,29 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const body = await request.json();
-    const externalId = body.externalId as string | undefined;
-    const rawStatus = body.status as string | undefined;
-    const paidAt = body.paidAt as string | undefined;
+    if (isMidtransPayload) {
+      const isValidSignature = verifyMidtransSignature({
+        orderId: body.order_id,
+        statusCode: body.status_code,
+        grossAmount: body.gross_amount,
+        signatureKey: body.signature_key,
+      });
+
+      if (!isValidSignature) {
+        return NextResponse.json(
+          { success: false, error: 'Invalid Midtrans signature' },
+          { status: 401 }
+        );
+      }
+    }
+
+    const externalId = isMidtransPayload
+      ? (body.order_id as string | undefined)
+      : (body.externalId as string | undefined);
+    const rawStatus = isMidtransPayload
+      ? (body.transaction_status as string | undefined)
+      : (body.status as string | undefined);
+    const paidAt = (body.settlement_time as string | undefined) || (body.paidAt as string | undefined);
 
     if (!externalId || !rawStatus) {
       return NextResponse.json(
@@ -42,7 +64,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const normalizedStatus = normalizeStatus(rawStatus);
+    const normalizedStatus = isMidtransPayload
+      ? normalizeMidtransStatus(rawStatus, body.fraud_status as string | undefined)
+      : normalizeLegacyStatus(rawStatus);
 
     const payment = await prisma.payment.findUnique({
       where: { externalId },
@@ -64,6 +88,18 @@ export async function POST(request: NextRequest) {
         { success: false, error: 'Payment not found' },
         { status: 404 }
       );
+    }
+
+    if (payment.status === 'COMPLETED' && normalizedStatus !== 'REFUNDED') {
+      return NextResponse.json({
+        success: true,
+        data: {
+          paymentId: payment.id,
+          paymentNumber: payment.paymentNumber,
+          status: payment.status,
+          idempotent: true,
+        },
+      });
     }
 
     const isTerminal = ['COMPLETED', 'FAILED', 'EXPIRED', 'REFUNDED'].includes(payment.status);
@@ -89,7 +125,7 @@ export async function POST(request: NextRequest) {
             : payment.paidAt,
           notes: body.message
             ? `${payment.notes ? `${payment.notes}\n` : ''}Webhook: ${String(body.message)}`
-            : payment.notes,
+            : `${payment.notes ? `${payment.notes}\n` : ''}${isMidtransPayload ? `Midtrans: ${JSON.stringify(body)}` : ''}`.trim() || payment.notes,
         },
       });
 
