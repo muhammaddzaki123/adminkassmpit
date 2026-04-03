@@ -80,7 +80,7 @@ export async function GET(req: NextRequest) {
       ],
     })
 
-    // Transform data
+    // Transform data in the shape expected by the student pages
     const result = billings.map((billing) => ({
       id: billing.id,
       billNumber: billing.billNumber,
@@ -102,19 +102,52 @@ export async function GET(req: NextRequest) {
     }))
 
     // Calculate summary
+    const unpaidBillings = result.filter((b) => ['BILLED', 'OVERDUE', 'PARTIAL'].includes(b.status))
     const summary = {
-      total: result.length,
-      unpaid: result.filter((b) => ['BILLED', 'OVERDUE', 'PARTIAL'].includes(b.status)).length,
-      overdue: result.filter((b) => b.status === 'OVERDUE').length,
-      paid: result.filter((b) => b.status === 'PAID').length,
+      totalBillings: result.length,
+      unpaidBillings: unpaidBillings.length,
+      overdueBillings: result.filter((b) => b.status === 'OVERDUE').length,
+      paidBillings: result.filter((b) => b.status === 'PAID').length,
+      totalAmount: result.reduce((sum, b) => sum + b.totalAmount, 0),
+      paidAmount: result.reduce((sum, b) => sum + b.paidAmount, 0),
       remainingAmount: result
         .filter((b) => ['BILLED', 'OVERDUE', 'PARTIAL'].includes(b.status))
         .reduce((sum: number, b) => sum + b.remainingAmount, 0),
     }
 
+    const student = (user.student as
+      | {
+          id: string
+          nama: string
+          nisn: string
+          noTelp: string | null
+          enrollmentType: string | null
+          email: string | null
+        }
+      | null) ?? {
+      id: user.studentId,
+      nama: user.nama,
+      nisn: user.username,
+      noTelp: null,
+      enrollmentType: '-',
+      email: user.email,
+    }
+
     return NextResponse.json({
       success: true,
-      data: result,
+      data: {
+        student: {
+          id: student.id,
+          fullName: student.nama,
+          nis: student.nisn,
+          nisn: student.nisn,
+          email: student.email,
+          phone: student.noTelp,
+          className: student.enrollmentType || '-',
+        },
+        billings: result,
+        summary,
+      },
       summary,
     })
   } catch (error) {

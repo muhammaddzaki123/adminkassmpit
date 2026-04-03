@@ -1,6 +1,7 @@
 'use client';
 
 import { usePathname, useRouter } from 'next/navigation';
+import { clearClientAuthSession } from '@/lib/client-auth';
 import {
   LayoutDashboard,
   CreditCard,
@@ -28,8 +29,8 @@ export function StudentSidebar() {
   const pathname = usePathname();
   const router = useRouter();
 
-  const handleLogout = () => {
-    localStorage.removeItem('user');
+  const handleLogout = async () => {
+    await clearClientAuthSession();
     router.push('/auth/login');
   };
 

@@ -2,6 +2,7 @@
 
 import { usePathname, useRouter } from 'next/navigation';
 import { Users, Shield, Activity, Settings, LogOut, LayoutDashboard, UserCog, UserPlus, GraduationCap } from 'lucide-react';
+import { clearClientAuthSession } from '@/lib/client-auth';
 
 export function AdminSidebar() {
   const pathname = usePathname();
@@ -50,8 +51,8 @@ export function AdminSidebar() {
     },
   ];
 
-  const handleLogout = () => {
-    localStorage.removeItem('user');
+  const handleLogout = async () => {
+    await clearClientAuthSession();
     router.push('/auth/login');
   };
 

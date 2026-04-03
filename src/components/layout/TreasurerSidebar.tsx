@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
+import { clearClientAuthSession } from '@/lib/client-auth';
 import { 
   LayoutDashboard, 
   Users, 
@@ -155,8 +156,8 @@ export function TreasurerSidebar() {
     }));
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('user');
+  const handleLogout = async () => {
+    await clearClientAuthSession();
     router.push('/auth/login');
   };
 

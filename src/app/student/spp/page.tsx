@@ -662,10 +662,22 @@ function SPPPaymentContent() {
                 <p className="mt-4 text-neutral-600">Memuat tagihan...</p>
               </div>
             ) : billings.length === 0 ? (
-              <Card className="text-center py-12">
-                <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-neutral-900">Tidak Ada Tagihan</h3>
-                <p className="text-neutral-600 mt-2">Semua tagihan Anda sudah lunas!</p>
+              <Card className="text-center py-12 border-dashed border-neutral-200 bg-white">
+                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-green-100 flex items-center justify-center">
+                  <CheckCircle className="w-8 h-8 text-green-600" />
+                </div>
+                <h3 className="text-lg font-semibold text-neutral-900">Tidak Ada Tagihan Aktif</h3>
+                <p className="text-neutral-600 mt-2 max-w-lg mx-auto">
+                  Akun ini belum memiliki tagihan yang menunggu pembayaran. Jika sekolah membuat tagihan baru, halaman ini akan menampilkannya secara otomatis.
+                </p>
+                <div className="mt-6 flex flex-col sm:flex-row gap-3 justify-center">
+                  <Button variant="primary" onClick={() => router.push('/student/dashboard')}>
+                    Kembali ke Dashboard
+                  </Button>
+                  <Button variant="secondary" onClick={fetchBillings}>
+                    Refresh Data
+                  </Button>
+                </div>
               </Card>
             ) : (
               <>

@@ -320,9 +320,20 @@ export default function StudentDashboard() {
               </div>
               <div className="space-y-3">
                 {recentBillings.length === 0 ? (
-                  <div className="text-center py-8 text-neutral-500">
-                    <FileText className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                    <p>Belum ada tagihan</p>
+                  <div className="text-center py-10 px-4 border border-dashed border-neutral-200 rounded-2xl bg-neutral-50/70">
+                    <div className="w-14 h-14 mx-auto mb-4 rounded-full bg-green-100 flex items-center justify-center">
+                      <CheckCircle className="w-7 h-7 text-green-600" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-neutral-900">Belum Ada Tagihan Aktif</h3>
+                    <p className="text-sm text-neutral-600 mt-2 max-w-md mx-auto">
+                      Saat ini akun Anda belum memiliki tagihan yang perlu dibayar. Jika sekolah menambahkan tagihan baru, data akan muncul otomatis di sini.
+                    </p>
+                    <button
+                      onClick={() => router.push('/student/history')}
+                      className="mt-5 inline-flex items-center justify-center rounded-xl border border-neutral-200 bg-white px-4 py-2.5 text-sm font-semibold text-neutral-700 hover:bg-neutral-100 transition-colors"
+                    >
+                      Lihat Riwayat Pembayaran
+                    </button>
                   </div>
                 ) : (
                   recentBillings.map((billing) => (

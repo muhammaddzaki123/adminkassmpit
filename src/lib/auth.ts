@@ -26,15 +26,17 @@ export async function getServerSession(request?: NextRequest): Promise<Session |
   }
 
   try {
-    // Try to get token from Authorization header first
+    // Prefer cookie token to avoid stale Authorization header from old localStorage values.
+    const cookieToken = request.cookies.get('token')?.value || null;
+
+    // Fallback token from Authorization header.
     const authHeader = request.headers.get('authorization');
     let token: string | null = null;
 
-    if (authHeader && authHeader.startsWith('Bearer ')) {
+    if (cookieToken) {
+      token = cookieToken;
+    } else if (authHeader && authHeader.startsWith('Bearer ')) {
       token = authHeader.substring(7);
-    } else {
-      // Fallback: Try to get token from cookies
-      token = request.cookies.get('token')?.value || null;
     }
 
     if (!token) {
@@ -48,6 +50,15 @@ export async function getServerSession(request?: NextRequest): Promise<Session |
       user: decoded,
     };
   } catch (error) {
+    // Stale/invalid token is expected after secret changes or expired sessions.
+    if (
+      error instanceof Error &&
+      ((error as { name?: string }).name === 'JsonWebTokenError' ||
+        (error as { name?: string }).name === 'TokenExpiredError')
+    ) {
+      return null;
+    }
+
     console.error('Auth error:', error);
     return null;
   }

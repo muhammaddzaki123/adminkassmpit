@@ -2,13 +2,13 @@ import { NextResponse } from 'next/server';
 
 export async function POST() {
   try {
-    // Clear session/cookie logic here
     const response = NextResponse.json({
       success: true,
       message: 'Logout berhasil',
     });
 
-    // Clear any auth cookies
+    // Clear current and legacy auth cookie names.
+    response.cookies.delete('token');
     response.cookies.delete('auth-token');
     response.cookies.delete('user-session');
 

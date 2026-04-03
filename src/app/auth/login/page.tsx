@@ -1,11 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { CreditCard, Lock, User, AlertCircle, ShieldCheck } from 'lucide-react';
+import { clearClientAuthSession } from '@/lib/client-auth';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -13,6 +14,10 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    void clearClientAuthSession();
+  }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,11 +55,8 @@ export default function LoginPage() {
 
       const data = await response.json();
 
-      // Simpan user data dan token ke localStorage
+      // Simpan data user di localStorage. Token session disimpan via httpOnly cookie.
       localStorage.setItem('user', JSON.stringify(data.user));
-      if (data.token) {
-        localStorage.setItem('token', data.token);
-      }
       
       // Redirect berdasarkan role
       if (data.user.role === 'ADMIN') {

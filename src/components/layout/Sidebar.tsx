@@ -3,6 +3,7 @@
 import React from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
+import { clearClientAuthSession } from '@/lib/client-auth';
 import { 
   LayoutDashboard, 
   Users, 
@@ -64,10 +65,8 @@ export function Sidebar({ userRole = 'treasurer' }: SidebarProps) {
     }
   };
 
-  const handleLogout = () => {
-    // Clear user data from localStorage
-    localStorage.removeItem('user');
-    // Redirect to login
+  const handleLogout = async () => {
+    await clearClientAuthSession();
     router.push('/auth/login');
   };
 

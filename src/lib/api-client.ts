@@ -7,19 +7,13 @@ interface FetchOptions extends RequestInit {
 }
 
 /**
- * Authenticated fetch wrapper that automatically includes JWT token
+ * Authenticated fetch wrapper that uses httpOnly cookie session.
  */
 export async function fetchWithAuth(url: string, options: FetchOptions = {}) {
-  const token = localStorage.getItem('token');
-  
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     ...options.headers,
   };
-
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
 
   const response = await fetch(url, {
     ...options,
