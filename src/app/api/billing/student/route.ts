@@ -22,10 +22,21 @@ export async function GET(req: NextRequest) {
     // Get student ID from session
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
-      include: { student: true },
+      include: {
+        student: {
+          select: {
+            id: true,
+            nama: true,
+            nisn: true,
+            noTelp: true,
+            enrollmentType: true,
+            email: true,
+          },
+        },
+      },
     })
 
-    if (!user || !user.studentId) {
+    if (!user || !user.studentId || !user.student) {
       return NextResponse.json(
         { error: 'Student not found' },
         { status: 404 }
@@ -115,23 +126,7 @@ export async function GET(req: NextRequest) {
         .reduce((sum: number, b) => sum + b.remainingAmount, 0),
     }
 
-    const student = (user.student as
-      | {
-          id: string
-          nama: string
-          nisn: string
-          noTelp: string | null
-          enrollmentType: string | null
-          email: string | null
-        }
-      | null) ?? {
-      id: user.studentId,
-      nama: user.nama,
-      nisn: user.username,
-      noTelp: null,
-      enrollmentType: '-',
-      email: user.email,
-    }
+    const student = user.student
 
     return NextResponse.json({
       success: true,

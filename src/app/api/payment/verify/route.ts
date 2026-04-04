@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getServerSession } from '@/lib/auth';
+import { 
+  getPaymentSuccessMessage, 
+  sendWhatsAppMessage 
+} from '@/lib/whatsapp';
 
 // POST /api/payment/verify - Treasurer verifies payment (approve/reject)
 export async function POST(request: NextRequest) {
@@ -156,6 +160,45 @@ export async function POST(request: NextRequest) {
       return updatedPayment;
     });
 
+    // Get updated billing info with student
+    const updatedBilling = await prisma.billing.findUnique({
+      where: { id: payment.billing.id },
+      include: {
+        student: {
+          select: {
+            id: true,
+            nama: true,
+            noTelp: true,
+          },
+        },
+      },
+    });
+
+    // Send WhatsApp notification if payment approved
+    if (action === 'APPROVE' && updatedBilling?.student?.noTelp) {
+      const phoneNumber = updatedBilling.student.noTelp.startsWith('+')
+        ? updatedBilling.student.noTelp
+        : `+62${updatedBilling.student.noTelp.replace(/^0/, '')}`;
+
+      const message = getPaymentSuccessMessage({
+        studentName: updatedBilling.student.nama,
+        amount: result.amount,
+        billingType: payment.billing.type,
+        paymentMethod: result.method,
+        transactionId: result.paymentNumber,
+      });
+
+      // Send WA asynchronously (don't wait)
+      sendWhatsAppMessage({
+        to: phoneNumber,
+        body: message,
+        template: 'payment_success',
+      }).catch((err) => {
+        console.warn('Failed to send WhatsApp notification:', err);
+        // Log but don't fail the payment verification
+      });
+    }
+
     return NextResponse.json({
       success: true,
       data: {
@@ -163,6 +206,7 @@ export async function POST(request: NextRequest) {
         status: result.status,
         action,
         paidAt: result.paidAt,
+        whatsappSent: action === 'APPROVE' && updatedBilling?.student?.noTelp ? true : false,
       },
       message: action === 'APPROVE' 
         ? 'Payment verified and approved successfully' 

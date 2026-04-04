@@ -98,7 +98,7 @@ export async function POST(
           username: studentUsername,
           password: hashedPassword,
           nama: newStudent.nama,
-          email: newStudent.email,
+          email: null,
           role: 'STUDENT',
           studentId: student.id,
           isActive: true,

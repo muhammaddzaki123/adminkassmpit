@@ -10,10 +10,16 @@ export async function POST(request: NextRequest) {
       nisn,
       nama,
       kelas,
+      tempatLahir,
+      tanggalLahir,
+      jenisKelamin,
       email,
       noTelp,
       alamat,
       namaOrangTua,
+      namaAyah,
+      namaIbu,
+      noTelpOrtu,
       // Account settings
       username, // Optional, default = NISN
       password, // Optional, default = NISN
@@ -58,6 +64,22 @@ export async function POST(request: NextRequest) {
 
     // Create Student and User in transaction
     const result = await prisma.$transaction(async (tx) => {
+      const activeAcademicYear = await tx.academicYear.findFirst({
+        where: { isActive: true },
+      });
+
+      const matchedClass = kelas
+        ? await tx.class.findFirst({
+            where: {
+              name: kelas,
+              isActive: true,
+            },
+          })
+        : null;
+
+      const resolvedParentName =
+        namaOrangTua || [namaAyah, namaIbu].filter(Boolean).join(' / ') || null;
+
       // Create Student
       const student = await tx.student.create({
         data: {
@@ -66,11 +88,26 @@ export async function POST(request: NextRequest) {
           email,
           noTelp,
           alamat,
-          namaOrangTua,
+          namaOrangTua: resolvedParentName,
+          noTelpOrangTua: noTelpOrtu || null,
           status: 'ACTIVE',
           enrollmentType: 'NEW',
+          birthPlace: tempatLahir || null,
+          birthDate: tanggalLahir ? new Date(tanggalLahir) : null,
+          gender: jenisKelamin || null,
         },
       });
+
+      if (matchedClass && activeAcademicYear) {
+        await tx.studentClass.create({
+          data: {
+            studentId: student.id,
+            classId: matchedClass.id,
+            academicYearId: activeAcademicYear.id,
+            isActive: true,
+          },
+        });
+      }
 
       // Create User account
       const user = await tx.user.create({
@@ -78,7 +115,7 @@ export async function POST(request: NextRequest) {
           username: finalUsername,
           password: hashedPassword,
           nama,
-          email,
+          email: null,
           role: 'STUDENT',
           studentId: student.id,
           isActive: true,
@@ -102,6 +139,7 @@ export async function POST(request: NextRequest) {
           password: result.plainPassword,
           note: 'Password default adalah NISN siswa. Harap diubah setelah login pertama.',
         },
+        classAssigned: kelas || null,
       },
     });
   } catch (error) {

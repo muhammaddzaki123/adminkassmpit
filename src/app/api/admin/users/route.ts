@@ -22,10 +22,30 @@ export async function GET(request: NextRequest) {
         role: true,
         isActive: true,
         createdAt: true,
+        student: {
+          select: {
+            email: true,
+            nama: true,
+          },
+        },
+        newStudent: {
+          select: {
+            email: true,
+            nama: true,
+          },
+        },
       },
     });
 
-    return NextResponse.json(users);
+    return NextResponse.json(users.map((user) => ({
+      id: user.id,
+      username: user.username,
+      email: user.role === 'STUDENT' ? user.student?.email || null : user.role === 'NEW_STUDENT' ? user.newStudent?.email || null : user.email,
+      nama: user.role === 'STUDENT' ? user.student?.nama || user.nama : user.role === 'NEW_STUDENT' ? user.newStudent?.nama || user.nama : user.nama,
+      role: user.role,
+      isActive: user.isActive,
+      createdAt: user.createdAt,
+    })));
   } catch (error) {
     console.error('Error fetching users:', error);
     return NextResponse.json(
@@ -65,8 +85,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Cek email sudah ada (jika diisi)
-    if (email) {
+    const isStudentAccount = role === 'STUDENT' || role === 'NEW_STUDENT';
+
+    // Cek email sudah ada (jika diisi dan bukan akun siswa)
+    if (email && !isStudentAccount) {
       const existingEmail = await prisma.user.findUnique({
         where: { email },
       });
@@ -86,7 +108,7 @@ export async function POST(request: NextRequest) {
     const newUser = await prisma.user.create({
       data: {
         username,
-        email: email || null,
+        email: isStudentAccount ? null : email || null,
         password: hashedPassword,
         nama,
         role,

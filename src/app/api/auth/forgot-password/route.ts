@@ -30,6 +30,12 @@ export async function POST(request: NextRequest) {
         nama: true,
         password: true,
         isActive: true,
+        role: true,
+        student: {
+          select: {
+            email: true,
+          },
+        },
       },
     });
 
@@ -47,13 +53,15 @@ export async function POST(request: NextRequest) {
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || request.nextUrl.origin;
     const resetUrl = `${appUrl}${resetPath}`;
 
+    const recipientEmail = user.role === 'STUDENT' ? user.student?.email || user.email : user.email;
+
     const emailTemplate = createPasswordResetEmailTemplate({
       nama: user.nama,
       resetUrl,
     });
 
     const emailResult = await sendTransactionalEmail({
-      to: user.email || user.username,
+      to: recipientEmail || user.username,
       subject: emailTemplate.subject,
       text: emailTemplate.text,
       html: emailTemplate.html,
@@ -62,7 +70,7 @@ export async function POST(request: NextRequest) {
     await prisma.notificationLog.create({
       data: {
         userId: user.id,
-        recipient: user.email || user.username,
+        recipient: recipientEmail || user.username,
         type: 'EMAIL',
         status: emailResult.success ? 'SENT' : 'FAILED',
         subject: emailTemplate.subject,

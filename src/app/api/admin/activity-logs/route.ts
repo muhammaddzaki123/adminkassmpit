@@ -21,25 +21,35 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const action = searchParams.get('action');
     const status = searchParams.get('status');
-    const limit = Math.min(parseInt(searchParams.get('limit') || '50', 10), 200);
+    const page = Math.max(parseInt(searchParams.get('page') || '1', 10), 1);
+    const limit = Math.min(Math.max(parseInt(searchParams.get('limit') || '50', 10), 1), 200);
+    const skip = (page - 1) * limit;
 
-    const logs = await prisma.activityLog.findMany({
-      where: {
-        ...(action && action !== 'all' ? { action } : {}),
-      },
-      include: {
-        user: {
-          select: {
-            username: true,
-            nama: true,
+    const [logs, total] = await Promise.all([
+      prisma.activityLog.findMany({
+        where: {
+          ...(action && action !== 'all' ? { action } : {}),
+        },
+        include: {
+          user: {
+            select: {
+              username: true,
+              nama: true,
+            },
           },
         },
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-      take: limit,
-    });
+        orderBy: {
+          createdAt: 'desc',
+        },
+        skip,
+        take: limit,
+      }),
+      prisma.activityLog.count({
+        where: {
+          ...(action && action !== 'all' ? { action } : {}),
+        },
+      }),
+    ]);
 
     const normalized = logs
       .map((log) => {
@@ -64,7 +74,16 @@ export async function GET(request: NextRequest) {
       })
       .filter((log) => (status && status !== 'all' ? log.status === status : true));
 
-    return NextResponse.json({ success: true, data: normalized });
+    return NextResponse.json({
+      success: true,
+      data: normalized,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    });
   } catch (error) {
     console.error('Error fetching activity logs:', error);
     return NextResponse.json(

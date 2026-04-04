@@ -2,48 +2,116 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { fetchWithAuth } from '@/lib/api-client';
 import { StudentSidebar } from '@/components/layout/StudentSidebar';
 import { StudentHeader } from '@/components/layout/StudentHeader';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { User, Mail, Phone, MapPin, School, CreditCard, Edit } from 'lucide-react';
+import { User, Mail, Phone, MapPin, School, CreditCard, Edit, AlertCircle } from 'lucide-react';
+
+interface StudentProfile {
+  id: string;
+  nama: string;
+  nisn: string;
+  kelas: string;
+  email: string | null;
+  noTelp: string | null;
+  alamat: string | null;
+  namaOrangTua: string | null;
+  noTelpOrangTua: string | null;
+  virtualAccount: string | null;
+  academicYear: string;
+  grade: number | null;
+  status: string;
+}
 
 export default function ProfilePage() {
   const router = useRouter();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [profile, setProfile] = useState({
-    nama: 'Ahmad Zaki',
-    nisn: '001234567',
-    kelas: '8A',
-    email: 'ahmad.zaki@student.school.id',
-    noTelp: '08123456789',
-    alamat: 'Jl. Pendidikan No. 123, Jakarta',
-    namaOrangTua: 'Bapak Ahmad',
-    noTelpOrangTua: '08198765432',
-    virtualAccount: '8888812345678901',
-  });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [profile, setProfile] = useState<StudentProfile | null>(null);
 
   useEffect(() => {
-    const userData = localStorage.getItem('user');
-    if (!userData) {
-      router.push('/auth/login');
-      return;
-    }
+    const loadProfile = async () => {
+      try {
+        setLoading(true);
+        const response = await fetchWithAuth('/api/student/profile');
 
-    const user = JSON.parse(userData);
-    if (user.role !== 'STUDENT') {
-      router.push('/auth/login');
-      return;
-    }
+        if (!response.ok) {
+          if (response.status === 401) {
+            router.push('/auth/login');
+            return;
+          }
+          throw new Error('Gagal memuat profil');
+        }
+
+        const result = await response.json();
+        setProfile(result.data);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Terjadi kesalahan');
+        console.error('Failed to load profile:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    void loadProfile();
   }, [router]);
 
   const handleSave = () => {
-    // Save profile changes
     alert('Profil berhasil diperbarui!');
     setIsEditing(false);
   };
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen bg-neutral-50">
+        <div className="hidden lg:block">
+          <StudentSidebar />
+        </div>
+        <div className="flex-1 flex flex-col min-w-0 lg:ml-64">
+          <StudentHeader onMenuClick={() => setIsMobileMenuOpen(true)} />
+          <main className="flex-1 p-4 md:p-6 lg:p-8 overflow-auto mt-16 flex items-center justify-center">
+            <Card className="text-center">
+              <p className="text-neutral-600">Memuat profil...</p>
+            </Card>
+          </main>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !profile) {
+    return (
+      <div className="flex min-h-screen bg-neutral-50">
+        <div className="hidden lg:block">
+          <StudentSidebar />
+        </div>
+        <div className="flex-1 flex flex-col min-w-0 lg:ml-64">
+          <StudentHeader onMenuClick={() => setIsMobileMenuOpen(true)} />
+          <main className="flex-1 p-4 md:p-6 lg:p-8 overflow-auto mt-16">
+            <div className="max-w-4xl mx-auto">
+              <Card className="bg-red-50 border border-red-200">
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="w-5 h-5 text-red-600 mt-0.5 shrink-0" />
+                  <div>
+                    <h3 className="font-semibold text-red-900">Gagal Memuat Profil</h3>
+                    <p className="text-red-700 text-sm mt-1">{error || 'Data profil tidak ditemukan'}</p>
+                    <Button onClick={() => window.location.reload()} size="sm" className="mt-3">
+                      Coba Lagi
+                    </Button>
+                  </div>
+                </div>
+              </Card>
+            </div>
+          </main>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen bg-neutral-50">
@@ -142,7 +210,7 @@ export default function ProfilePage() {
                   </label>
                   <Input
                     type="email"
-                    value={profile.email}
+                    value={profile.email || ''}
                     onChange={(e) => setProfile({ ...profile, email: e.target.value })}
                     disabled={!isEditing}
                   />
@@ -156,7 +224,7 @@ export default function ProfilePage() {
                     </div>
                   </label>
                   <Input
-                    value={profile.noTelp}
+                    value={profile.noTelp || ''}
                     onChange={(e) => setProfile({ ...profile, noTelp: e.target.value })}
                     disabled={!isEditing}
                   />
@@ -170,7 +238,7 @@ export default function ProfilePage() {
                     </div>
                   </label>
                   <Input
-                    value={profile.alamat}
+                    value={profile.alamat || ''}
                     onChange={(e) => setProfile({ ...profile, alamat: e.target.value })}
                     disabled={!isEditing}
                   />
@@ -190,7 +258,7 @@ export default function ProfilePage() {
                     </div>
                   </label>
                   <Input
-                    value={profile.namaOrangTua}
+                    value={profile.namaOrangTua || ''}
                     onChange={(e) => setProfile({ ...profile, namaOrangTua: e.target.value })}
                     disabled={!isEditing}
                   />
@@ -204,7 +272,7 @@ export default function ProfilePage() {
                     </div>
                   </label>
                   <Input
-                    value={profile.noTelpOrangTua}
+                    value={profile.noTelpOrangTua || ''}
                     onChange={(e) => setProfile({ ...profile, noTelpOrangTua: e.target.value })}
                     disabled={!isEditing}
                   />
@@ -222,19 +290,23 @@ export default function ProfilePage() {
                     Virtual Account Number
                   </div>
                 </label>
-                <div className="flex items-center gap-3">
-                  <Input value={profile.virtualAccount} disabled />
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      navigator.clipboard.writeText(profile.virtualAccount);
-                      alert('Nomor VA berhasil disalin!');
-                    }}
-                  >
-                    Salin
-                  </Button>
-                </div>
+                {profile.virtualAccount ? (
+                  <div className="flex items-center gap-3">
+                    <Input value={profile.virtualAccount} disabled />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        navigator.clipboard.writeText(profile.virtualAccount!);
+                        alert('Nomor VA berhasil disalin!');
+                      }}
+                    >
+                      Salin
+                    </Button>
+                  </div>
+                ) : (
+                  <p className="text-neutral-600 text-sm">Virtual Account belum tersedia</p>
+                )}
                 <p className="text-xs text-neutral-600 mt-2">
                   Gunakan nomor ini untuk pembayaran via Virtual Account
                 </p>

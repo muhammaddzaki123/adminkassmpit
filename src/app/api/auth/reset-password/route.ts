@@ -52,6 +52,12 @@ export async function POST(request: NextRequest) {
         isActive: true,
         email: true,
         username: true,
+        role: true,
+        student: {
+          select: {
+            email: true,
+          },
+        },
       },
     });
 
@@ -77,9 +83,10 @@ export async function POST(request: NextRequest) {
       data: { password: hashedPassword },
     });
 
+    const recipientEmail = user.role === 'STUDENT' ? user.student?.email || user.email : user.email;
     const successEmail = createPasswordResetSuccessEmailTemplate(user.nama);
     const emailResult = await sendTransactionalEmail({
-      to: user.email || user.username,
+      to: recipientEmail || user.username,
       subject: successEmail.subject,
       text: successEmail.text,
       html: successEmail.html,
@@ -88,7 +95,7 @@ export async function POST(request: NextRequest) {
     await prisma.notificationLog.create({
       data: {
         userId: user.id,
-        recipient: user.email || user.username,
+        recipient: recipientEmail || user.username,
         type: 'EMAIL',
         status: emailResult.success ? 'SENT' : 'FAILED',
         subject: successEmail.subject,

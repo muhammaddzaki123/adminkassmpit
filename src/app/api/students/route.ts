@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import { StudentStatus } from '@prisma/client';
+import { Prisma, StudentStatus } from '@prisma/client';
 import { requireDashboardAccess } from '@/lib/auth-helpers';
 
 export async function GET(request: NextRequest) {
@@ -13,10 +13,17 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get('status');
     const search = searchParams.get('search');
 
-    const where: Record<string, unknown> = {};
+    const where: Prisma.StudentWhereInput = {};
 
     if (kelas && kelas !== 'all') {
-      where.kelas = kelas;
+      where.studentClasses = {
+        some: {
+          isActive: true,
+          class: {
+            name: kelas,
+          },
+        },
+      };
     }
 
     if (status && status !== 'all') {
@@ -32,12 +39,43 @@ export async function GET(request: NextRequest) {
 
     const students = await prisma.student.findMany({
       where,
+      include: {
+        studentClasses: {
+          where: {
+            isActive: true,
+          },
+          orderBy: {
+            enrollmentDate: 'desc',
+          },
+          take: 1,
+          include: {
+            class: true,
+            academicYear: true,
+          },
+        },
+      },
       orderBy: { nama: 'asc' },
+    });
+
+    const data = students.map((student) => {
+      const currentClass = student.studentClasses[0];
+
+      return {
+        id: student.id,
+        nama: student.nama,
+        nisn: student.nisn,
+        kelas: currentClass ? `${currentClass.class.name}` : '-',
+        academicYear: currentClass ? currentClass.academicYear.year : '-',
+        status: student.status,
+        email: student.email,
+        noTelp: student.noTelp,
+        enrollmentType: student.enrollmentType,
+      };
     });
 
     return NextResponse.json({
       success: true,
-      data: students,
+      data,
     });
   } catch (error) {
     console.error('Error fetching students:', error);

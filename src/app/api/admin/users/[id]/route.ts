@@ -39,8 +39,10 @@ export async function PUT(
       );
     }
 
-    // Cek email conflict (jika diubah)
-    if (email && email !== existingUser.email) {
+    const isStudentAccount = role === 'STUDENT' || existingUser.role === 'STUDENT';
+
+    // Cek email conflict (jika diubah) - hanya untuk akun non-siswa
+    if (email && !isStudentAccount && email !== existingUser.email) {
       const emailConflict = await prisma.user.findUnique({
         where: { email },
       });
@@ -60,13 +62,35 @@ export async function PUT(
       isActive: isActive ?? true,
     };
 
-    if (email) {
+    if (!isStudentAccount && email) {
       updateData.email = email;
+    } else if (isStudentAccount) {
+      updateData.email = null;
     }
 
     // Hash password baru jika diisi
     if (password && password.trim() !== '') {
       updateData.password = await bcrypt.hash(password, 10);
+    }
+
+    // If this is a student account, keep profile email on Student record instead of User
+    if (isStudentAccount && email && existingUser.studentId) {
+      await prisma.student.update({
+        where: { id: existingUser.studentId },
+        data: {
+          email,
+          nama,
+        },
+      });
+    }
+
+    if (isStudentAccount && !email && existingUser.studentId) {
+      await prisma.student.update({
+        where: { id: existingUser.studentId },
+        data: {
+          nama,
+        },
+      });
     }
 
     // Update user
@@ -81,6 +105,18 @@ export async function PUT(
         role: true,
         isActive: true,
         createdAt: true,
+        student: {
+          select: {
+            email: true,
+            nama: true,
+          },
+        },
+        newStudent: {
+          select: {
+            email: true,
+            nama: true,
+          },
+        },
       },
     });
 

@@ -115,7 +115,7 @@ export async function POST(req: NextRequest) {
           await tx.user.create({
             data: {
               username: student.nisn,
-              email: student.email,
+              email: null,
               password: hashedPassword,
               nama: student.nama,
               role: 'STUDENT',

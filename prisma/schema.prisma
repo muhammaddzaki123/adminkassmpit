@@ -107,6 +107,8 @@ model User {
   createdTemplates     BillingTemplate[] @relation("TemplateCreator")
   updatedSettings      SystemSettings[]  @relation("SettingsUpdater")
 
+  @@index([role, isActive])
+  @@index([nama])
   @@map("users")
 }
 
@@ -149,6 +151,11 @@ model Student {
   // Relasi one-to-one
   user User? // One-to-one relation
 
+  @@index([status])
+  @@index([enrollmentType])
+  @@index([createdAt])
+  @@index([nama])
+  @@index([email])
   @@map("students")
 }
 
@@ -205,6 +212,12 @@ model NewStudent {
   user         User? // One-to-one relation
   transactions NewStudentTransaction[]
 
+  @@index([approvalStatus])
+  @@index([approvalStatus, registrationDate])
+  @@index([registrationDate])
+  @@index([academicYearId])
+  @@index([nama])
+  @@index([email])
   @@map("new_students")
 }
 
@@ -303,6 +316,7 @@ model AcademicYear {
   registrations    NewStudent[]
   billingTemplates BillingTemplate[]
 
+  @@index([isActive])
   @@map("academic_years")
 }
 
@@ -326,6 +340,7 @@ model Class {
   studentClasses   StudentClass[]
   billingTemplates BillingTemplate[]
 
+  @@index([isActive])
   @@unique([name, grade])
   @@map("classes")
 }
@@ -461,12 +476,16 @@ model Billing {
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
+  // WhatsApp Reminders
+  lastReminderSentAt DateTime? @map("last_reminder_sent_at") // Track last reminder sent time
+
   // Relasi
   payments     Payment[]
   installments Installment[]
 
   @@index([studentId, academicYearId])
   @@index([status])
+  @@index([status, year])
   @@index([dueDate])
   @@map("billings")
 }
@@ -514,6 +533,7 @@ model Payment {
 
   @@index([billingId])
   @@index([status])
+  @@index([status, createdAt])
   @@map("payments")
 }
 
@@ -576,6 +596,7 @@ model ActivityLog {
 
   @@index([userId])
   @@index([entity, entityId])
+  @@index([action, createdAt])
   @@index([createdAt])
   @@map("activity_logs")
 }
