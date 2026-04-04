@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { fetchWithAuth } from '@/lib/api-client';
 import { AdminHeader } from '@/components/layout/AdminHeader';
@@ -8,15 +8,30 @@ import { AdminSidebar } from '@/components/layout/AdminSidebar';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input, Select } from '@/components/ui/Input';
-import { ArrowLeft, Save } from 'lucide-react';
+import { ArrowLeft, Save, School, CalendarRange } from 'lucide-react';
+
+interface ClassOption {
+  id: string;
+  name: string;
+  grade: number;
+}
+
+interface AcademicYearOption {
+  id: string;
+  year: string;
+  isActive: boolean;
+}
 
 export default function CreateStudentPage() {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [classes, setClasses] = useState<ClassOption[]>([]);
+  const [academicYears, setAcademicYears] = useState<AcademicYearOption[]>([]);
   const [formData, setFormData] = useState({
     nama: '',
     nisn: '',
-    kelas: '',
+    classId: '',
+    academicYearId: '',
     tempatLahir: '',
     tanggalLahir: '',
     jenisKelamin: 'L',
@@ -26,6 +41,46 @@ export default function CreateStudentPage() {
     noTelpOrtu: '',
   });
 
+  const activeAcademicYearId = useMemo(
+    () => academicYears.find((item) => item.isActive)?.id || academicYears[0]?.id || '',
+    [academicYears]
+  );
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const [classesRes, yearsRes] = await Promise.all([
+          fetchWithAuth('/api/admin/classes'),
+          fetchWithAuth('/api/admin/academic-years'),
+        ]);
+
+        if (classesRes.ok) {
+          const classesJson = await classesRes.json();
+          setClasses(classesJson.data || []);
+        }
+
+        if (yearsRes.ok) {
+          const yearsJson = await yearsRes.json();
+          setAcademicYears(yearsJson.data || []);
+          const activeYear = (yearsJson.data || []).find((item: AcademicYearOption) => item.isActive);
+          if (activeYear) {
+            setFormData((prev) => ({ ...prev, academicYearId: activeYear.id }));
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load class/year options:', error);
+      }
+    };
+
+    void load();
+  }, []);
+
+  useEffect(() => {
+    if (!formData.academicYearId && activeAcademicYearId) {
+      setFormData((prev) => ({ ...prev, academicYearId: activeAcademicYearId }));
+    }
+  }, [activeAcademicYearId, formData.academicYearId]);
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -34,8 +89,8 @@ export default function CreateStudentPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.nama || !formData.nisn || !formData.kelas) {
-      alert('Nama, NISN, dan Kelas harus diisi');
+    if (!formData.nama || !formData.nisn || !formData.classId || !formData.academicYearId) {
+      alert('Nama, NISN, Kelas, dan Tahun Ajaran harus diisi');
       return;
     }
 
@@ -121,15 +176,57 @@ export default function CreateStudentPage() {
                       maxLength={10}
                       required
                     />
-                    <Input
-                      label="Kelas"
-                      name="kelas"
-                      placeholder="Contoh: 7A, 8B"
-                      value={formData.kelas}
-                      onChange={handleInputChange}
-                      required
-                    />
+                      <div className="grid grid-cols-1 gap-4">
+                        <Select
+                          label="Tahun Ajaran"
+                          name="academicYearId"
+                          value={formData.academicYearId}
+                          onChange={handleInputChange}
+                          options={[
+                            { value: '', label: 'Pilih Tahun Ajaran' },
+                            ...academicYears.map((year) => ({
+                              value: year.id,
+                              label: `${year.year}${year.isActive ? ' (Aktif)' : ''}`,
+                            })),
+                          ]}
+                          required
+                        />
+                        <Select
+                          label="Kelas"
+                          name="classId"
+                          value={formData.classId}
+                          onChange={handleInputChange}
+                          options={[
+                            { value: '', label: 'Pilih Kelas' },
+                            ...classes.map((item) => ({
+                              value: item.id,
+                              label: `Kelas ${item.grade} - ${item.name}`,
+                            })),
+                          ]}
+                          required
+                        />
+                      </div>
                   </div>
+
+                    <div className="rounded-lg border border-neutral-200 bg-neutral-50 px-4 py-3 flex items-start gap-3">
+                      <School className="w-5 h-5 text-primary-600 mt-0.5" />
+                      <div>
+                        <p className="text-sm font-medium text-neutral-900">Assignment cepat</p>
+                        <p className="text-xs text-neutral-600 mt-1">
+                          Pilih tahun ajaran aktif dan kelas untuk langsung membuat relasi siswa ke kelas+tahun ajaran.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="rounded-lg border border-neutral-200 bg-primary-50 px-4 py-3 flex items-start gap-3">
+                      <CalendarRange className="w-5 h-5 text-primary-600 mt-0.5" />
+                      <div>
+                        <p className="text-sm font-medium text-neutral-900">Default tahun ajaran</p>
+                        <p className="text-xs text-neutral-600 mt-1">
+                          Sistem otomatis mengisi tahun ajaran aktif jika belum dipilih manual.
+                        </p>
+                      </div>
+                    </div>
 
                   <div className="grid grid-cols-2 gap-4">
                     <Input

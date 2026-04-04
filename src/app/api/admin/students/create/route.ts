@@ -10,6 +10,8 @@ export async function POST(request: NextRequest) {
       nisn,
       nama,
       kelas,
+      classId,
+      academicYearId,
       tempatLahir,
       tanggalLahir,
       jenisKelamin,
@@ -26,9 +28,9 @@ export async function POST(request: NextRequest) {
     } = body;
 
     // Validasi
-    if (!nisn || !nama || !kelas) {
+    if (!nisn || !nama) {
       return NextResponse.json(
-        { error: 'NISN, nama, dan kelas wajib diisi' },
+        { error: 'NISN dan nama wajib diisi' },
         { status: 400 }
       );
     }
@@ -68,14 +70,31 @@ export async function POST(request: NextRequest) {
         where: { isActive: true },
       });
 
-      const matchedClass = kelas
+      const matchedClass = classId
         ? await tx.class.findFirst({
             where: {
-              name: kelas,
+              id: classId,
               isActive: true,
             },
           })
-        : null;
+        : kelas
+          ? await tx.class.findFirst({
+              where: {
+                name: kelas,
+                isActive: true,
+              },
+            })
+          : null;
+
+      const matchedAcademicYear = academicYearId
+        ? await tx.academicYear.findFirst({
+            where: {
+              id: academicYearId,
+            },
+          })
+        : await tx.academicYear.findFirst({
+            where: { isActive: true },
+          });
 
       const resolvedParentName =
         namaOrangTua || [namaAyah, namaIbu].filter(Boolean).join(' / ') || null;
@@ -98,12 +117,12 @@ export async function POST(request: NextRequest) {
         },
       });
 
-      if (matchedClass && activeAcademicYear) {
+      if (matchedClass && matchedAcademicYear) {
         await tx.studentClass.create({
           data: {
             studentId: student.id,
             classId: matchedClass.id,
-            academicYearId: activeAcademicYear.id,
+            academicYearId: matchedAcademicYear.id,
             isActive: true,
           },
         });
@@ -122,7 +141,13 @@ export async function POST(request: NextRequest) {
         },
       });
 
-      return { student, user, plainPassword: finalPassword };
+      return {
+        student,
+        user,
+        plainPassword: finalPassword,
+        assignedClass: matchedClass,
+        assignedAcademicYear: matchedAcademicYear || activeAcademicYear,
+      };
     });
 
     return NextResponse.json({
@@ -139,7 +164,8 @@ export async function POST(request: NextRequest) {
           password: result.plainPassword,
           note: 'Password default adalah NISN siswa. Harap diubah setelah login pertama.',
         },
-        classAssigned: kelas || null,
+        classAssigned: result.assignedClass ? `${result.assignedClass.grade}${result.assignedClass.name}` : kelas || null,
+        academicYearAssigned: result.assignedAcademicYear?.year || null,
       },
     });
   } catch (error) {
