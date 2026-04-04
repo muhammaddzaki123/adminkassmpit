@@ -1,7 +1,7 @@
 'use client';
 
 import { usePathname, useRouter } from 'next/navigation';
-import { Users, Shield, Activity, Settings, LogOut, LayoutDashboard, UserCog, UserPlus, GraduationCap } from 'lucide-react';
+import { Users, Shield, Activity, Settings, LogOut, LayoutDashboard, UserCog, UserPlus, GraduationCap, School, CalendarRange } from 'lucide-react';
 import { clearClientAuthSession } from '@/lib/client-auth';
 
 export function AdminSidebar() {
@@ -23,6 +23,16 @@ export function AdminSidebar() {
       icon: GraduationCap,
       label: 'Data Siswa',
       path: '/admin/students',
+    },
+    {
+      icon: School,
+      label: 'Kelola Kelas',
+      path: '/admin/classes',
+    },
+    {
+      icon: CalendarRange,
+      label: 'Tahun Ajaran',
+      path: '/admin/academic-years',
     },
     {
       icon: Users,

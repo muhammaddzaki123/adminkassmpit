@@ -18,6 +18,28 @@ let isReady = false;
 
 const AUTH_DIR = path.join(process.cwd(), '.wwebjs_auth');
 
+function resolveBrowserExecutablePath(): string | undefined {
+  const fromEnv = process.env.WHATSAPP_CHROME_PATH;
+  if (fromEnv && fs.existsSync(fromEnv)) {
+    return fromEnv;
+  }
+
+  const candidates = [
+    'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+    'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
+    'C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe',
+    'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe',
+  ];
+
+  for (const candidate of candidates) {
+    if (fs.existsSync(candidate)) {
+      return candidate;
+    }
+  }
+
+  return undefined;
+}
+
 // Ensure auth directory exists
 if (!fs.existsSync(AUTH_DIR)) {
   fs.mkdirSync(AUTH_DIR, { recursive: true });
@@ -39,6 +61,11 @@ export async function initializeWhatsAppClient() {
 
   try {
     console.log('Initializing WhatsApp Web client...');
+    const browserExecutablePath = resolveBrowserExecutablePath();
+
+    if (browserExecutablePath) {
+      console.log(`Using browser executable: ${browserExecutablePath}`);
+    }
     
     client = new Client({
       authStrategy: new LocalAuth({
@@ -47,6 +74,7 @@ export async function initializeWhatsAppClient() {
       }),
       puppeteer: {
         headless: true,
+        executablePath: browserExecutablePath,
         args: [
           '--no-sandbox',
           '--disable-setuid-sandbox',
@@ -90,8 +118,13 @@ export async function initializeWhatsAppClient() {
     await client.initialize();
     return client;
   } catch (error) {
+    const baseMessage =
+      error instanceof Error ? error.message : 'Unknown WhatsApp client error';
+    const guidance =
+      'Browser tidak ditemukan. Install Google Chrome/Microsoft Edge, atau set WHATSAPP_CHROME_PATH ke lokasi executable browser. Anda juga bisa install browser Puppeteer via `npx puppeteer browsers install chrome`.';
+
     console.error('Failed to initialize WhatsApp client:', error);
-    throw error;
+    throw new Error(`${baseMessage}\n${guidance}`);
   }
 }
 

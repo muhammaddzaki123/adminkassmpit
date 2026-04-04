@@ -41,3 +41,7 @@ yarn-error.log*
 next-env.d.ts
 
 /src/generated/prisma
+
+# whatsapp-web.js local session/auth cache
+.wwebjs_auth/
+qrcode.txt

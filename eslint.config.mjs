@@ -17,6 +17,8 @@ const eslintConfig = [
       ".next/**",
       "out/**",
       "build/**",
+      ".wwebjs_auth/**",
+      "qrcode.txt",
       "next-env.d.ts",
     ],
   },

@@ -76,10 +76,35 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const normalizedName = String(name).trim();
+    const parsedGrade = Number(grade);
+
+    if (!normalizedName || Number.isNaN(parsedGrade)) {
+      return NextResponse.json(
+        { error: 'Invalid class name or grade' },
+        { status: 400 }
+      );
+    }
+
+    const existingClass = await prisma.class.findFirst({
+      where: {
+        name: normalizedName,
+        grade: parsedGrade,
+        isActive: true,
+      },
+    });
+
+    if (existingClass) {
+      return NextResponse.json(
+        { error: 'Kelas dengan nama dan tingkat yang sama sudah ada' },
+        { status: 409 }
+      );
+    }
+
     const cls = await prisma.class.create({
       data: {
-        name,
-        grade: parseInt(grade),
+        name: normalizedName,
+        grade: parsedGrade,
         sppAmount: parseFloat(sppAmount || 0),
         maxCapacity: maxCapacity ? parseInt(maxCapacity) : 40,
         description,

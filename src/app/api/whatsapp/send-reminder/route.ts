@@ -64,14 +64,29 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const now = new Date();
+    const startOfToday = new Date(now);
+    startOfToday.setHours(0, 0, 0, 0);
+
     // Send reminders
     const results = await Promise.all(
       billings.map(async (billing) => {
+        if (billing.lastReminderSentAt && billing.lastReminderSentAt >= startOfToday) {
+          return {
+            billingId: billing.id,
+            studentName: billing.student?.nama,
+            sent: false,
+            skipped: true,
+            reason: 'Reminder sudah dikirim hari ini (throttle aktif)',
+          };
+        }
+
         if (!billing.student?.noTelp) {
           return {
             billingId: billing.id,
             studentName: billing.student?.nama,
             sent: false,
+            skipped: true,
             reason: 'No phone number',
           };
         }
@@ -128,26 +143,54 @@ export async function POST(request: NextRequest) {
           template,
         });
 
+        if (result.success) {
+          await prisma.billing.update({
+            where: { id: billing.id },
+            data: { lastReminderSentAt: now },
+          });
+        }
+
+        await prisma.notificationLog.create({
+          data: {
+            type: 'WHATSAPP',
+            status: result.success ? 'SENT' : 'FAILED',
+            recipient: phoneNumber,
+            subject: `Reminder ${template}`,
+            content: message.substring(0, 500),
+            template,
+            metadata: JSON.stringify({
+              source: 'treasurer_wa_reminder',
+              billingId: billing.id,
+              studentId: billing.student.id,
+              messageId: result.messageId || null,
+            }),
+            sentAt: result.success ? now : null,
+          },
+        });
+
         return {
           billingId: billing.id,
           studentName: billing.student.nama,
           sent: result.success,
+          skipped: false,
           reason: result.error || 'OK',
           messageId: result.messageId,
         };
       })
     );
 
-    // Count successful sends
+    // Count results
     const successful = results.filter((r) => r.sent).length;
-    const failed = results.length - successful;
+    const skipped = results.filter((r) => !r.sent && r.skipped).length;
+    const failed = results.filter((r) => !r.sent && !r.skipped).length;
 
     return NextResponse.json({
       success: true,
-      message: `Reminder sent to ${successful} student(s), ${failed} failed`,
+      message: `Reminder terkirim ${successful}, gagal ${failed}, skip ${skipped}`,
       total: results.length,
       successful,
       failed,
+      skipped,
       results,
     });
   } catch (error) {
@@ -175,6 +218,12 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const classIdsParam = searchParams.get('classIds');
     const status = searchParams.get('status');
+    const pageParam = Number(searchParams.get('page') || 1);
+    const pageSizeParam = Number(searchParams.get('pageSize') || 20);
+    const page = Number.isFinite(pageParam) ? Math.max(pageParam, 1) : 1;
+    const pageSize = Number.isFinite(pageSizeParam)
+      ? Math.min(Math.max(pageSizeParam, 1), 100)
+      : 20;
 
     // Build where clause
     const where: Record<string, unknown> = {
@@ -195,6 +244,10 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    const total = await prisma.billing.count({ where });
+    const totalPages = Math.max(Math.ceil(total / pageSize), 1);
+    const safePage = Math.min(page, totalPages);
+
     // Get pending billings
     const pendingReminders = await prisma.billing.findMany({
       where,
@@ -209,6 +262,8 @@ export async function GET(request: NextRequest) {
         },
       },
       orderBy: [{ status: 'asc' }, { dueDate: 'asc' }],
+      skip: (safePage - 1) * pageSize,
+      take: pageSize,
     });
 
     // Format response
@@ -225,12 +280,20 @@ export async function GET(request: NextRequest) {
       remainingAmount: billing.totalAmount - billing.paidAmount,
       status: billing.status,
       dueDate: billing.dueDate,
+      lastReminderSentAt: billing.lastReminderSentAt,
+      throttledToday:
+        !!billing.lastReminderSentAt &&
+        new Date(billing.lastReminderSentAt).setHours(0, 0, 0, 0) ===
+          new Date().setHours(0, 0, 0, 0),
       isOverdue: billing.dueDate && new Date(billing.dueDate) < new Date(),
     }));
 
     return NextResponse.json({
       success: true,
-      total: reminders.length,
+      total,
+      page: safePage,
+      pageSize,
+      totalPages,
       canSendTo: reminders.filter((r) => r.hasPhoneNumber).length,
       data: reminders,
     });
