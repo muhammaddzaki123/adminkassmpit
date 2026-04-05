@@ -8,7 +8,7 @@ import { Header } from '@/components/layout/Header';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input, Select } from '@/components/ui/Input';
-import { Settings, DollarSign, Bell, Save, RefreshCw } from 'lucide-react';
+import { Settings, DollarSign, Bell, Save, RefreshCw, AlertTriangle } from 'lucide-react';
 
 interface Setting {
   id: string;
@@ -45,6 +45,7 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [seeding, setSeeding] = useState(false);
+  const [resettingWhatsApp, setResettingWhatsApp] = useState(false);
 
   useEffect(() => {
     const userData = localStorage.getItem('user');
@@ -123,6 +124,33 @@ export default function SettingsPage() {
       alert('Terjadi kesalahan saat menginisialisasi pengaturan');
     } finally {
       setSeeding(false);
+    }
+  };
+
+  const handleResetWhatsAppSession = async () => {
+    if (!confirm('Reset sesi WhatsApp akan menghapus cache login dan menutup browser yang masih terkunci. Lanjutkan?')) {
+      return;
+    }
+
+    setResettingWhatsApp(true);
+    try {
+      const response = await fetchWithAuth('/api/whatsapp/reset-session', {
+        method: 'POST'
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        const killedCount = result.browserCleanup?.killed ?? 0;
+        alert(`Sesi WhatsApp berhasil direset. ${killedCount > 0 ? `${killedCount} proses browser dihentikan. ` : ''}Buka status WhatsApp lagi untuk scan QR code.`);
+      } else {
+        alert('Gagal mereset sesi WhatsApp: ' + (result.error || result.message || 'Unknown error'));
+      }
+    } catch (error) {
+      console.error('Error resetting WhatsApp session:', error);
+      alert('Terjadi kesalahan saat mereset sesi WhatsApp');
+    } finally {
+      setResettingWhatsApp(false);
     }
   };
 
@@ -231,7 +259,7 @@ export default function SettingsPage() {
                 </h1>
                 <p className="text-neutral-600 mt-1">Kelola konfigurasi biaya, notifikasi, dan sistem</p>
               </div>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 <Button
                   variant="outline"
                   icon={<RefreshCw className="w-4 h-4" />}
@@ -249,6 +277,33 @@ export default function SettingsPage() {
                 </Button>
               </div>
             </div>
+
+            <Card>
+              <div className="flex items-start gap-3">
+                <div className="p-2 bg-amber-100 rounded-lg">
+                  <AlertTriangle className="w-6 h-6 text-amber-600" />
+                </div>
+                <div className="flex-1">
+                  <h2 className="text-xl font-semibold text-neutral-900">Perawatan WhatsApp</h2>
+                  <p className="text-sm text-neutral-600 mt-1">
+                    Gunakan ini jika sesi WhatsApp terkunci, browser masih berjalan, atau QR login perlu diulang dari awal.
+                  </p>
+                  <div className="mt-4 flex flex-wrap items-center gap-3">
+                    <Button
+                      variant="outline"
+                      icon={<RefreshCw className="w-4 h-4" />}
+                      onClick={handleResetWhatsAppSession}
+                      disabled={resettingWhatsApp}
+                    >
+                      {resettingWhatsApp ? 'Mereset...' : 'Reset Session WhatsApp'}
+                    </Button>
+                    <span className="text-sm text-neutral-500">
+                      Setelah reset, buka status WhatsApp untuk memunculkan QR code baru.
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </Card>
 
             {/* Fees Settings */}
             <Card>

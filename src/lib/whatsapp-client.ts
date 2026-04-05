@@ -15,6 +15,7 @@ import qrcodeTerminal from 'qrcode-terminal';
 
 let client: Client | null = null;
 let isReady = false;
+let initializingPromise: Promise<Client> | null = null;
 
 const AUTH_DIR = path.join(process.cwd(), '.wwebjs_auth');
 
@@ -45,6 +46,15 @@ if (!fs.existsSync(AUTH_DIR)) {
   fs.mkdirSync(AUTH_DIR, { recursive: true });
 }
 
+async function removeAuthDirectory() {
+  if (!fs.existsSync(AUTH_DIR)) {
+    return;
+  }
+
+  await fs.promises.rm(AUTH_DIR, { recursive: true, force: true });
+  fs.mkdirSync(AUTH_DIR, { recursive: true });
+}
+
 /**
  * Initialize WhatsApp client
  */
@@ -54,78 +64,87 @@ export async function initializeWhatsAppClient() {
     return client;
   }
 
-  if (client) {
-    console.log('WhatsApp client exists but not ready');
-    return client;
+  if (initializingPromise) {
+    console.log('WhatsApp client initialization already in progress');
+    return initializingPromise;
   }
 
-  try {
-    console.log('Initializing WhatsApp Web client...');
-    const browserExecutablePath = resolveBrowserExecutablePath();
+  initializingPromise = (async () => {
+    try {
+      console.log('Initializing WhatsApp Web client...');
+      const browserExecutablePath = resolveBrowserExecutablePath();
 
-    if (browserExecutablePath) {
-      console.log(`Using browser executable: ${browserExecutablePath}`);
-    }
-    
-    client = new Client({
-      authStrategy: new LocalAuth({
-        clientId: 'kassmpit-client',
-        dataPath: AUTH_DIR,
-      }),
-      puppeteer: {
-        headless: true,
-        executablePath: browserExecutablePath,
-        args: [
-          '--no-sandbox',
-          '--disable-setuid-sandbox',
-          '--disable-dev-shm-usage', // Important untuk VPS dengan memory terbatas
-        ],
-      },
-    });
-
-    client.on('qr', (qr: string) => {
-      console.warn('\n📱 SCAN QR CODE DENGAN WHATSAPP (Linked Devices):\n');
-      qrcodeTerminal.generate(qr, { small: true });
-    });
-
-    client.on('ready', () => {
-      isReady = true;
-      console.log('✅ WhatsApp Web client adalah ready!');
-    });
-
-    client.on('authenticated', () => {
-      console.log('✅ WhatsApp authenticated! Session saved.');
-    });
-
-    client.on('auth_failure', (msg) => {
-      console.error('❌ WhatsApp authentication failed:', msg);
-      isReady = false;
-    });
-
-    client.on('disconnected', (reason) => {
-      console.warn('⚠️ WhatsApp disconnected:', reason);
-      isReady = false;
-      client = null;
-    });
-
-    client.on('message_create', (msg: WWebMessage) => {
-      // Optional: Log incoming messages
-      if (msg.from !== 'status@broadcast') {
-        console.log(`📨 Message from ${msg.from}: ${msg.body}`);
+      if (browserExecutablePath) {
+        console.log(`Using browser executable: ${browserExecutablePath}`);
       }
-    });
 
-    await client.initialize();
-    return client;
-  } catch (error) {
-    const baseMessage =
-      error instanceof Error ? error.message : 'Unknown WhatsApp client error';
-    const guidance =
-      'Browser tidak ditemukan. Install Google Chrome/Microsoft Edge, atau set WHATSAPP_CHROME_PATH ke lokasi executable browser. Anda juga bisa install browser Puppeteer via `npx puppeteer browsers install chrome`.';
+      client = new Client({
+        authStrategy: new LocalAuth({
+          clientId: 'kassmpit-client',
+          dataPath: AUTH_DIR,
+        }),
+        puppeteer: {
+          headless: true,
+          executablePath: browserExecutablePath,
+          args: [
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--disable-dev-shm-usage',
+          ],
+        },
+      });
 
-    console.error('Failed to initialize WhatsApp client:', error);
-    throw new Error(`${baseMessage}\n${guidance}`);
-  }
+      client.on('qr', (qr: string) => {
+        console.warn('\n📱 SCAN QR CODE DENGAN WHATSAPP (Linked Devices):\n');
+        qrcodeTerminal.generate(qr, { small: true });
+      });
+
+      client.on('ready', () => {
+        isReady = true;
+        console.log('✅ WhatsApp Web client adalah ready!');
+      });
+
+      client.on('authenticated', () => {
+        console.log('✅ WhatsApp authenticated! Session saved.');
+      });
+
+      client.on('auth_failure', (msg) => {
+        console.error('❌ WhatsApp authentication failed:', msg);
+        isReady = false;
+      });
+
+      client.on('disconnected', (reason) => {
+        console.warn('⚠️ WhatsApp disconnected:', reason);
+        isReady = false;
+        client = null;
+        initializingPromise = null;
+      });
+
+      client.on('message_create', (msg: WWebMessage) => {
+        if (msg.from !== 'status@broadcast') {
+          console.log(`📨 Message from ${msg.from}: ${msg.body}`);
+        }
+      });
+
+      await client.initialize();
+      return client;
+    } catch (error) {
+      client = null;
+      isReady = false;
+
+      const baseMessage =
+        error instanceof Error ? error.message : 'Unknown WhatsApp client error';
+      const guidance =
+        'Browser tidak ditemukan. Install Google Chrome/Microsoft Edge, atau set WHATSAPP_CHROME_PATH ke lokasi executable browser. Jika browser lama masih terkunci, tutup semua proses Chrome yang terkait lalu restart server.';
+
+      console.error('Failed to initialize WhatsApp client:', error);
+      throw new Error(`${baseMessage}\n${guidance}`);
+    } finally {
+      initializingPromise = null;
+    }
+  })();
+
+  return initializingPromise;
 }
 
 /**
@@ -239,6 +258,35 @@ export async function destroyClient() {
     } catch (error) {
       console.error('Error destroying client:', error);
     }
+  }
+}
+
+/**
+ * Reset WhatsApp client and clear local auth data
+ */
+export async function resetWhatsAppClient() {
+  try {
+    if (initializingPromise) {
+      console.log('Waiting for active WhatsApp initialization before reset...');
+      await initializingPromise.catch(() => null);
+    }
+
+    await destroyClient();
+    await removeAuthDirectory();
+    initializingPromise = null;
+    isReady = false;
+
+    return {
+      success: true,
+      message: 'WhatsApp session berhasil direset. Silakan scan QR code saat status WhatsApp dibuka lagi.',
+    };
+  } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    console.error('Error resetting WhatsApp client:', error);
+    return {
+      success: false,
+      message: errorMsg,
+    };
   }
 }
 
