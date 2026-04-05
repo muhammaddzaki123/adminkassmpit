@@ -11,7 +11,7 @@ import { Select } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
 import { MessageCircle, Send, Users, CheckCircle, RefreshCw, Smartphone, AlertTriangle } from 'lucide-react';
 
-type BillingStatusFilter = 'ALL' | 'BILLED' | 'PARTIAL' | 'OVERDUE';
+type ReminderMode = 'ALL_STUDENTS' | 'DUE_SOON' | 'OVERDUE_DAILY' | 'INSTALLMENT' | 'NO_PAYMENT';
 type HistoryStatusFilter = 'ALL' | 'SENT' | 'FAILED';
 
 interface ClassItem {
@@ -46,6 +46,8 @@ interface ReminderItem {
 
 interface ReminderTargetSummary {
   academicYearId: string | null;
+  mode: ReminderMode;
+  modeLabel: string;
   totalStudents: number;
   studentsWithPhone: number;
   studentsWithBilling: number;
@@ -83,7 +85,7 @@ interface WhatsAppStatusResponse {
 export default function WAReminder() {
   const router = useRouter();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [statusFilter, setStatusFilter] = useState<BillingStatusFilter>('ALL');
+  const [reminderMode, setReminderMode] = useState<ReminderMode>('ALL_STUDENTS');
   const [selectedClassId, setSelectedClassId] = useState('ALL');
   const [selectedAcademicYearId, setSelectedAcademicYearId] = useState('');
   const [classes, setClasses] = useState<ClassItem[]>([]);
@@ -162,9 +164,7 @@ export default function WAReminder() {
     setResultMessage(null);
     try {
       const params = new URLSearchParams();
-      if (statusFilter !== 'ALL') {
-        params.set('status', statusFilter);
-      }
+      params.set('mode', reminderMode);
       if (selectedClassId !== 'ALL') {
         params.set('classIds', selectedClassId);
       }
@@ -207,7 +207,7 @@ export default function WAReminder() {
     } finally {
       setLoadingPreview(false);
     }
-  }, [selectedAcademicYearId, selectedClassId, statusFilter, previewPage]);
+  }, [reminderMode, selectedAcademicYearId, selectedClassId, previewPage]);
 
   const fetchHistory = useCallback(async () => {
     setLoadingHistory(true);
@@ -260,7 +260,7 @@ export default function WAReminder() {
 
   useEffect(() => {
     setPreviewPage(1);
-  }, [selectedClassId, statusFilter]);
+  }, [reminderMode, selectedClassId]);
 
   useEffect(() => {
     setPreviewPage(1);
@@ -327,6 +327,7 @@ export default function WAReminder() {
   const billingCandidates = targetSummary?.billingCandidates ?? previewTotal;
   const dueSoonBillings = targetSummary?.dueSoonBillings ?? reminders.filter((item) => item.reminderGroup === 'DUE_SOON').length;
   const overdueBillings = targetSummary?.overdueBillings ?? reminders.filter((item) => item.reminderGroup === 'OVERDUE').length;
+  const activeModeLabel = targetSummary?.modeLabel || 'Semua siswa target';
   const selectedCount = selectedBillingIds.length;
 
   const statusBadgeVariant = (status: string): 'default' | 'warning' | 'success' | 'error' => {
@@ -537,6 +538,20 @@ export default function WAReminder() {
                   </div>
                   <div>
                     <Select
+                      label="Mode Reminder"
+                      value={reminderMode}
+                      onChange={(e) => setReminderMode(e.target.value as ReminderMode)}
+                      options={[
+                        { value: 'ALL_STUDENTS', label: 'Semua siswa target' },
+                        { value: 'DUE_SOON', label: 'Sebelum jatuh tempo' },
+                        { value: 'OVERDUE_DAILY', label: 'Overdue harian' },
+                        { value: 'INSTALLMENT', label: 'Cicilan' },
+                        { value: 'NO_PAYMENT', label: 'Tanpa pembayaran sama sekali' },
+                      ]}
+                    />
+                  </div>
+                  <div>
+                    <Select
                       label="Filter Kelas"
                       value={selectedClassId}
                       onChange={(e) => setSelectedClassId(e.target.value)}
@@ -546,19 +561,6 @@ export default function WAReminder() {
                           value: item.id,
                           label: `Kelas ${item.grade} - ${item.name}`,
                         })),
-                      ]}
-                    />
-                  </div>
-                  <div>
-                    <Select
-                      label="Status Pembayaran"
-                      value={statusFilter}
-                      onChange={(e) => setStatusFilter(e.target.value as BillingStatusFilter)}
-                      options={[
-                        { value: 'ALL', label: 'Semua Status' },
-                        { value: 'BILLED', label: 'Belum Bayar (BILLED)' },
-                        { value: 'PARTIAL', label: 'Cicilan (PARTIAL)' },
-                        { value: 'OVERDUE', label: 'Terlambat (OVERDUE)' },
                       ]}
                     />
                   </div>
@@ -581,7 +583,7 @@ export default function WAReminder() {
                 </div>
                 <div className="flex items-center justify-between pt-1">
                   <p className="text-xs text-neutral-500">
-                    Total billing preview: {previewTotal} • Target siswa: {totalReceivers} • Tidak punya billing: {targetSummary?.noBillingStudents ?? 0}
+                    Mode: {activeModeLabel} • Total billing preview: {previewTotal} • Target siswa: {totalReceivers} • Tidak punya billing: {targetSummary?.noBillingStudents ?? 0}
                   </p>
                   <div className="flex items-center gap-2">
                     <Button
@@ -611,7 +613,7 @@ export default function WAReminder() {
               {loadingPreview ? (
                 <p className="text-sm text-neutral-600">Memuat data reminder...</p>
               ) : reminders.length === 0 ? (
-                <p className="text-sm text-neutral-600">Tidak ada billing reminder untuk filter saat ini. Target siswa tetap dihitung dari tahun ajaran yang dipilih.</p>
+                <p className="text-sm text-neutral-600">Tidak ada billing reminder untuk mode ini. Target siswa tetap dihitung dari tahun ajaran yang dipilih.</p>
               ) : (
                 <div className="space-y-3">
                   {reminders.slice(0, 20).map((item) => (
@@ -657,7 +659,7 @@ export default function WAReminder() {
             <Card padding="md" className="bg-neutral-50">
               <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                 <p className="text-sm text-neutral-700">
-                  Pastikan status WhatsApp <span className="font-semibold">ready</span> sebelum menekan tombol kirim.
+                  Pastikan status WhatsApp <span className="font-semibold">ready</span> sebelum menekan tombol kirim untuk mode <span className="font-semibold">{activeModeLabel}</span>.
                 </p>
                 <div className="flex gap-3">
                   <Button variant="secondary" onClick={fetchPreview} isLoading={loadingPreview}>

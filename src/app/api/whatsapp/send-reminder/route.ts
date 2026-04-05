@@ -6,7 +6,90 @@ import {
   getPaymentOverdueMessage,
   sendWhatsAppMessage 
 } from '@/lib/whatsapp';
-import { Prisma, BillingStatus } from '@prisma/client';
+import { Prisma } from '@prisma/client';
+
+type ReminderMode = 'ALL_STUDENTS' | 'DUE_SOON' | 'OVERDUE_DAILY' | 'INSTALLMENT' | 'NO_PAYMENT';
+
+function parseReminderMode(value: string | null): ReminderMode {
+  if (value === 'DUE_SOON' || value === 'OVERDUE_DAILY' || value === 'INSTALLMENT' || value === 'NO_PAYMENT') {
+    return value;
+  }
+
+  return 'ALL_STUDENTS';
+}
+
+function buildReminderModeLabel(mode: ReminderMode) {
+  switch (mode) {
+    case 'DUE_SOON':
+      return 'Reminders sebelum jatuh tempo';
+    case 'OVERDUE_DAILY':
+      return 'Reminder overdue harian';
+    case 'INSTALLMENT':
+      return 'Reminder cicilan';
+    case 'NO_PAYMENT':
+      return 'Reminder billing tanpa pembayaran';
+    default:
+      return 'Semua siswa target';
+  }
+}
+
+function buildBillingWhere(
+  mode: ReminderMode,
+  academicYearId?: string,
+  classIds: string[] = [],
+  dueSoonWindow?: Date,
+): Prisma.BillingWhereInput {
+  const base: Prisma.BillingWhereInput = {
+    ...(academicYearId ? { academicYearId } : {}),
+    ...(classIds.length > 0
+      ? {
+          student: {
+            studentClasses: {
+              some: {
+                classId: { in: classIds },
+                isActive: true,
+                ...(academicYearId ? { academicYearId } : {}),
+              },
+            },
+          },
+        }
+      : {}),
+  };
+
+  switch (mode) {
+    case 'DUE_SOON':
+      return {
+        ...base,
+        status: { in: ['BILLED', 'PARTIAL'] },
+        ...(dueSoonWindow
+          ? {
+              dueDate: {
+                gte: new Date(new Date().setHours(0, 0, 0, 0)),
+                lte: dueSoonWindow,
+              },
+            }
+          : {}),
+      };
+    case 'OVERDUE_DAILY':
+      return {
+        ...base,
+        status: 'OVERDUE',
+      };
+    case 'INSTALLMENT':
+      return {
+        ...base,
+        status: 'PARTIAL',
+      };
+    case 'NO_PAYMENT':
+      return {
+        ...base,
+        status: 'BILLED',
+        paidAmount: 0,
+      };
+    default:
+      return base;
+  }
+}
 
 /**
  * POST /api/whatsapp/send-reminder - Send payment reminder to specific students
@@ -218,7 +301,7 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const classIdsParam = searchParams.get('classIds');
-    const status = searchParams.get('status');
+    const mode = parseReminderMode(searchParams.get('mode'));
     const academicYearId = searchParams.get('academicYearId');
     const pageParam = Number(searchParams.get('page') || 1);
     const pageSizeParam = Number(searchParams.get('pageSize') || 20);
@@ -256,27 +339,7 @@ export async function GET(request: NextRequest) {
         : {}),
     };
 
-    const billingStatusWhere = status
-      ? { status: status as BillingStatus }
-      : { status: { in: ['BILLED', 'OVERDUE', 'PARTIAL'] as BillingStatus[] } };
-
-    const billingWhereBase: Prisma.BillingWhereInput = {
-      ...(resolvedAcademicYearId ? { academicYearId: resolvedAcademicYearId } : {}),
-      ...billingStatusWhere,
-      ...(classIds.length > 0
-        ? {
-            student: {
-              studentClasses: {
-                some: {
-                  classId: { in: classIds },
-                  isActive: true,
-                  ...(resolvedAcademicYearId ? { academicYearId: resolvedAcademicYearId } : {}),
-                },
-              },
-            },
-          }
-        : {}),
-    };
+    const billingWhereBase = buildBillingWhere(mode, resolvedAcademicYearId, classIds, dueSoonWindow);
 
     const [totalStudents, studentsWithPhone, studentsWithBilling, dueSoonBillings, overdueBillings] = await Promise.all([
       prisma.student.count({ where: studentWhere }),
@@ -350,16 +413,13 @@ export async function GET(request: NextRequest) {
     const studentsWithBillingCount = new Set(studentsWithBilling.map((item) => item.studentId)).size;
     const noBillingStudents = Math.max(totalStudents - studentsWithBillingCount, 0);
 
-    // Build where clause
-    const where: Prisma.BillingWhereInput = billingWhereBase;
-
-    const total = await prisma.billing.count({ where });
+    const total = await prisma.billing.count({ where: billingWhereBase });
     const totalPages = Math.max(Math.ceil(total / pageSize), 1);
     const safePage = Math.min(page, totalPages);
 
     // Get pending billings
     const pendingReminders = await prisma.billing.findMany({
-      where,
+      where: billingWhereBase,
       include: {
         student: {
           select: {
@@ -414,6 +474,8 @@ export async function GET(request: NextRequest) {
       canSendTo: reminders.filter((r) => r.hasPhoneNumber).length,
       targetSummary: {
         academicYearId: resolvedAcademicYearId || null,
+        mode,
+        modeLabel: buildReminderModeLabel(mode),
         totalStudents,
         studentsWithPhone,
         studentsWithBilling: studentsWithBillingCount,

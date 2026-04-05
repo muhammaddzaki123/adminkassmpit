@@ -57,6 +57,11 @@ export async function GET(
         dueDate: billing.dueDate,
         discount: billing.discount,
         discountReason: billing.discountReason,
+        allowInstallments: billing.allowInstallments,
+        installmentCount: billing.installmentCount,
+        installmentAmount: billing.installmentAmount,
+        waivedAt: billing.waivedAt,
+        waivedReason: billing.waivedReason,
         createdAt: billing.createdAt,
         updatedAt: billing.updatedAt,
         student: {

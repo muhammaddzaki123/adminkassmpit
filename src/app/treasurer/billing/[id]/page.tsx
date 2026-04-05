@@ -26,6 +26,11 @@ interface BillingDetail {
   dueDate: string;
   discount: number;
   discountReason: string | null;
+  allowInstallments: boolean;
+  installmentCount: number | null;
+  installmentAmount: number | null;
+  waivedAt: string | null;
+  waivedReason: string | null;
   createdAt: string;
   student: {
     id: string;
@@ -93,12 +98,25 @@ export default function BillingDetailPage() {
   const [showManualPaymentModal, setShowManualPaymentModal] = useState(false);
   const [manualPaymentLoading, setManualPaymentLoading] = useState(false);
   const [manualPaymentMessage, setManualPaymentMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [concessionLoading, setConcessionLoading] = useState(false);
+  const [concessionMessage, setConcessionMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [paymentForm, setPaymentForm] = useState({
     amount: '',
     method: 'TUNAI',
     paidAt: new Date().toISOString().split('T')[0],
     receiptUrl: '',
     notes: '',
+  });
+  const [discountForm, setDiscountForm] = useState({
+    amount: '',
+    reason: '',
+  });
+  const [installmentForm, setInstallmentForm] = useState({
+    count: '2',
+    amount: '',
+  });
+  const [waiveForm, setWaiveForm] = useState({
+    reason: '',
   });
 
   const paymentColumns = useMemo(
@@ -244,6 +262,169 @@ export default function BillingDetailPage() {
     });
     setManualPaymentMessage(null);
     setShowManualPaymentModal(true);
+  };
+
+  const openConcessionDefaults = useCallback((currentBilling: BillingDetail) => {
+    setDiscountForm({
+      amount: '',
+      reason: currentBilling.discountReason || '',
+    });
+    setInstallmentForm({
+      count: currentBilling.installmentCount ? String(currentBilling.installmentCount) : '2',
+      amount: currentBilling.installmentAmount ? String(currentBilling.installmentAmount) : '',
+    });
+    setWaiveForm({
+      reason: currentBilling.waivedReason || '',
+    });
+  }, []);
+
+  useEffect(() => {
+    if (billing) {
+      openConcessionDefaults(billing);
+    }
+  }, [billing, openConcessionDefaults]);
+
+  const refreshBilling = async () => {
+    await loadDetail();
+  };
+
+  const handleApplyDiscount = async () => {
+    if (!billing) return;
+
+    const amount = Number(discountForm.amount);
+    if (!Number.isFinite(amount) || amount <= 0 || amount >= billing.remainingAmount) {
+      setConcessionMessage({
+        type: 'error',
+        text: `Diskon harus lebih besar dari 0 dan lebih kecil dari ${formatCurrency(billing.remainingAmount)}`,
+      });
+      return;
+    }
+
+    if (!discountForm.reason.trim()) {
+      setConcessionMessage({
+        type: 'error',
+        text: 'Alasan diskon wajib diisi.',
+      });
+      return;
+    }
+
+    setConcessionLoading(true);
+    setConcessionMessage(null);
+    try {
+      const response = await fetchWithAuth(`/api/billing/${billing.id}/discount`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          discountAmount: amount,
+          discountReason: discountForm.reason,
+        }),
+      });
+
+      const result = await response.json();
+      if (!response.ok || !result.message) {
+        throw new Error(result.error || 'Gagal menerapkan diskon');
+      }
+
+      setConcessionMessage({ type: 'success', text: 'Diskon berhasil diterapkan oleh bendahara.' });
+      await refreshBilling();
+    } catch (err) {
+      setConcessionMessage({
+        type: 'error',
+        text: err instanceof Error ? err.message : 'Terjadi kesalahan saat menerapkan diskon',
+      });
+    } finally {
+      setConcessionLoading(false);
+    }
+  };
+
+  const handleApplyInstallment = async () => {
+    if (!billing) return;
+
+    const count = Number(installmentForm.count);
+    const amount = Number(installmentForm.amount);
+
+    if (!Number.isFinite(count) || count < 1) {
+      setConcessionMessage({ type: 'error', text: 'Jumlah cicilan harus minimal 1.' });
+      return;
+    }
+
+    if (!Number.isFinite(amount) || amount <= 0 || amount > billing.remainingAmount) {
+      setConcessionMessage({
+        type: 'error',
+        text: `Nominal cicilan harus antara 1 dan ${formatCurrency(billing.remainingAmount)}`,
+      });
+      return;
+    }
+
+    if (count * amount > billing.remainingAmount * 1.1) {
+      setConcessionMessage({
+        type: 'error',
+        text: 'Total cicilan terlalu besar dibanding sisa tagihan.',
+      });
+      return;
+    }
+
+    setConcessionLoading(true);
+    setConcessionMessage(null);
+    try {
+      const response = await fetchWithAuth(`/api/billing/${billing.id}/installment`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          installmentCount: count,
+          installmentAmount: amount,
+        }),
+      });
+
+      const result = await response.json();
+      if (!response.ok || !result.message) {
+        throw new Error(result.error || 'Gagal menetapkan cicilan');
+      }
+
+      setConcessionMessage({ type: 'success', text: 'Skema cicilan berhasil disimpan.' });
+      await refreshBilling();
+    } catch (err) {
+      setConcessionMessage({
+        type: 'error',
+        text: err instanceof Error ? err.message : 'Terjadi kesalahan saat menetapkan cicilan',
+      });
+    } finally {
+      setConcessionLoading(false);
+    }
+  };
+
+  const handleWaiveBilling = async () => {
+    if (!billing) return;
+
+    if (!waiveForm.reason.trim()) {
+      setConcessionMessage({ type: 'error', text: 'Alasan pembebasan wajib diisi.' });
+      return;
+    }
+
+    setConcessionLoading(true);
+    setConcessionMessage(null);
+    try {
+      const response = await fetchWithAuth(`/api/billing/${billing.id}/waive`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ waivedReason: waiveForm.reason }),
+      });
+
+      const result = await response.json();
+      if (!response.ok || !result.message) {
+        throw new Error(result.error || 'Gagal membebaskan tagihan');
+      }
+
+      setConcessionMessage({ type: 'success', text: 'Tagihan berhasil dibebaskan.' });
+      await refreshBilling();
+    } catch (err) {
+      setConcessionMessage({
+        type: 'error',
+        text: err instanceof Error ? err.message : 'Terjadi kesalahan saat membebaskan tagihan',
+      });
+    } finally {
+      setConcessionLoading(false);
+    }
   };
 
   const handleSubmitManualPayment = async () => {
@@ -458,6 +639,102 @@ export default function BillingDetailPage() {
                     </div>
                   </Card>
                 </div>
+
+                <Card>
+                  <h2 className="text-lg font-semibold text-neutral-900 mb-4">Keputusan Keringanan Bendahara</h2>
+                  <p className="text-sm text-neutral-600 mb-4">
+                    Gunakan bagian ini untuk menentukan siswa yang berhak diskon, cicilan, atau pembebasan berdasarkan verifikasi bendahara.
+                  </p>
+
+                  {concessionMessage && (
+                    <div className={`mb-4 p-4 rounded-lg ${concessionMessage.type === 'success' ? 'bg-green-50 border border-green-200 text-green-800' : 'bg-red-50 border border-red-200 text-red-800'}`}>
+                      {concessionMessage.text}
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                    <div className="p-4 border border-neutral-200 rounded-xl bg-neutral-50 space-y-3">
+                      <div>
+                        <h3 className="font-semibold text-neutral-900">Diskon</h3>
+                        <p className="text-xs text-neutral-600">Untuk beasiswa, yatim/piatu, saudara kandung, atau kondisi khusus yang sudah diverifikasi.</p>
+                      </div>
+                      <input
+                        type="number"
+                        className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                        placeholder="Nominal diskon"
+                        value={discountForm.amount}
+                        onChange={(e) => setDiscountForm({ ...discountForm, amount: e.target.value })}
+                      />
+                      <textarea
+                        className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                        rows={3}
+                        placeholder="Alasan diskon dan catatan persetujuan"
+                        value={discountForm.reason}
+                        onChange={(e) => setDiscountForm({ ...discountForm, reason: e.target.value })}
+                      />
+                      <Button variant="secondary" onClick={handleApplyDiscount} isLoading={concessionLoading} fullWidth>
+                        Simpan Diskon
+                      </Button>
+                    </div>
+
+                    <div className="p-4 border border-neutral-200 rounded-xl bg-neutral-50 space-y-3">
+                      <div>
+                        <h3 className="font-semibold text-neutral-900">Cicilan</h3>
+                        <p className="text-xs text-neutral-600">Untuk tagihan besar atau keringanan bertahap yang disetujui bendahara/kepala sekolah.</p>
+                      </div>
+                      <input
+                        type="number"
+                        className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                        placeholder="Jumlah cicilan"
+                        min={1}
+                        value={installmentForm.count}
+                        onChange={(e) => setInstallmentForm({ ...installmentForm, count: e.target.value })}
+                      />
+                      <input
+                        type="number"
+                        className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                        placeholder="Nominal per cicilan"
+                        value={installmentForm.amount}
+                        onChange={(e) => setInstallmentForm({ ...installmentForm, amount: e.target.value })}
+                      />
+                      <Button variant="secondary" onClick={handleApplyInstallment} isLoading={concessionLoading} fullWidth>
+                        Simpan Cicilan
+                      </Button>
+                    </div>
+
+                    <div className="p-4 border border-neutral-200 rounded-xl bg-neutral-50 space-y-3">
+                      <div>
+                        <h3 className="font-semibold text-neutral-900">Pembebasan</h3>
+                        <p className="text-xs text-neutral-600">Untuk beasiswa penuh atau keputusan resmi sekolah.</p>
+                      </div>
+                      <textarea
+                        className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                        rows={6}
+                        placeholder="Alasan pembebasan penuh dan dasar persetujuan"
+                        value={waiveForm.reason}
+                        onChange={(e) => setWaiveForm({ reason: e.target.value })}
+                      />
+                      <Button variant="danger" onClick={handleWaiveBilling} isLoading={concessionLoading} fullWidth>
+                        Bebaskan Tagihan
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3 text-sm text-neutral-600">
+                    <div>
+                      Status diskon: <span className="font-medium text-neutral-900">{billing.discount > 0 ? formatCurrency(billing.discount) : 'Belum ada diskon'}</span>
+                    </div>
+                    <div>
+                      Status cicilan: <span className="font-medium text-neutral-900">{billing.allowInstallments ? `${billing.installmentCount || 0}x @ ${billing.installmentAmount ? formatCurrency(billing.installmentAmount) : '-'}` : 'Belum ada cicilan'}</span>
+                    </div>
+                    <div>
+                      Status pembebasan: <span className="font-medium text-neutral-900">{billing.waivedAt ? `Dibebaskan ${formatDate(billing.waivedAt)}` : 'Belum dibebaskan'}</span>
+                    </div>
+                    <div>
+                      Catatan terakhir: <span className="font-medium text-neutral-900">{billing.discountReason || billing.waivedReason || '-'}</span>
+                    </div>
+                  </div>
+                </Card>
 
                 <Card className="overflow-hidden">
                   <h2 className="text-lg font-semibold text-neutral-900 mb-4">Riwayat Pembayaran</h2>
