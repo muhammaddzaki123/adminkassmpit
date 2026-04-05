@@ -20,6 +20,12 @@ interface ClassItem {
   grade: number;
 }
 
+interface AcademicYearItem {
+  id: string;
+  year: string;
+  isActive: boolean;
+}
+
 interface ReminderItem {
   billingId: string;
   studentId: string;
@@ -34,6 +40,19 @@ interface ReminderItem {
   lastReminderSentAt?: string | null;
   throttledToday?: boolean;
   isOverdue: boolean;
+  daysUntilDue?: number | null;
+  reminderGroup?: 'UNPAID' | 'DUE_SOON' | 'OVERDUE';
+}
+
+interface ReminderTargetSummary {
+  academicYearId: string | null;
+  totalStudents: number;
+  studentsWithPhone: number;
+  studentsWithBilling: number;
+  noBillingStudents: number;
+  billingCandidates: number;
+  dueSoonBillings: number;
+  overdueBillings: number;
 }
 
 interface ReminderHistoryItem {
@@ -66,9 +85,12 @@ export default function WAReminder() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState<BillingStatusFilter>('ALL');
   const [selectedClassId, setSelectedClassId] = useState('ALL');
+  const [selectedAcademicYearId, setSelectedAcademicYearId] = useState('');
   const [classes, setClasses] = useState<ClassItem[]>([]);
+  const [academicYears, setAcademicYears] = useState<AcademicYearItem[]>([]);
   const [reminders, setReminders] = useState<ReminderItem[]>([]);
   const [waStatus, setWaStatus] = useState<WhatsAppStatusResponse | null>(null);
+  const [targetSummary, setTargetSummary] = useState<ReminderTargetSummary | null>(null);
   const [loadingPreview, setLoadingPreview] = useState(false);
   const [sending, setSending] = useState(false);
   const [checkingStatus, setCheckingStatus] = useState(false);
@@ -94,6 +116,25 @@ export default function WAReminder() {
       }
     } catch (error) {
       console.error('Failed to fetch classes:', error);
+    }
+  }, []);
+
+  const fetchAcademicYears = useCallback(async () => {
+    try {
+      const res = await fetchWithAuth('/api/admin/academic-years');
+      if (!res.ok) return;
+
+      const json = await res.json();
+      if (json.success && Array.isArray(json.data)) {
+        const years = json.data as AcademicYearItem[];
+        setAcademicYears(years);
+        const activeYear = years.find((item) => item.isActive) || years[0];
+        if (activeYear) {
+          setSelectedAcademicYearId((prev) => prev || activeYear.id);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to fetch academic years:', error);
     }
   }, []);
 
@@ -127,6 +168,9 @@ export default function WAReminder() {
       if (selectedClassId !== 'ALL') {
         params.set('classIds', selectedClassId);
       }
+      if (selectedAcademicYearId) {
+        params.set('academicYearId', selectedAcademicYearId);
+      }
       params.set('page', String(previewPage));
       params.set('pageSize', '20');
 
@@ -148,6 +192,7 @@ export default function WAReminder() {
       setReminders(json.data || []);
       setPreviewTotal(json.total || 0);
       setPreviewTotalPages(json.totalPages || 1);
+      setTargetSummary(json.targetSummary || null);
       setSelectedBillingIds((json.data || [])
         .filter((item: ReminderItem) => item.hasPhoneNumber && !item.throttledToday)
         .map((item: ReminderItem) => item.billingId));
@@ -157,11 +202,12 @@ export default function WAReminder() {
       setReminders([]);
       setPreviewTotal(0);
       setPreviewTotalPages(1);
+      setTargetSummary(null);
       setSelectedBillingIds([]);
     } finally {
       setLoadingPreview(false);
     }
-  }, [selectedClassId, statusFilter, previewPage]);
+  }, [selectedAcademicYearId, selectedClassId, statusFilter, previewPage]);
 
   const fetchHistory = useCallback(async () => {
     setLoadingHistory(true);
@@ -198,11 +244,11 @@ export default function WAReminder() {
         return;
       }
 
-      await Promise.all([fetchClasses(), fetchWhatsAppStatus()]);
+      await Promise.all([fetchClasses(), fetchAcademicYears(), fetchWhatsAppStatus()]);
     };
 
     init();
-  }, [router, fetchClasses, fetchWhatsAppStatus]);
+  }, [router, fetchAcademicYears, fetchClasses, fetchWhatsAppStatus]);
 
   useEffect(() => {
     fetchPreview();
@@ -215,6 +261,10 @@ export default function WAReminder() {
   useEffect(() => {
     setPreviewPage(1);
   }, [selectedClassId, statusFilter]);
+
+  useEffect(() => {
+    setPreviewPage(1);
+  }, [selectedAcademicYearId]);
 
   useEffect(() => {
     setHistoryPage(1);
@@ -272,8 +322,11 @@ export default function WAReminder() {
     }
   };
 
-  const totalReceivers = reminders.length;
-  const withPhone = reminders.filter((item) => item.hasPhoneNumber).length;
+  const totalReceivers = targetSummary?.totalStudents ?? reminders.length;
+  const withPhone = targetSummary?.studentsWithPhone ?? reminders.filter((item) => item.hasPhoneNumber).length;
+  const billingCandidates = targetSummary?.billingCandidates ?? previewTotal;
+  const dueSoonBillings = targetSummary?.dueSoonBillings ?? reminders.filter((item) => item.reminderGroup === 'DUE_SOON').length;
+  const overdueBillings = targetSummary?.overdueBillings ?? reminders.filter((item) => item.reminderGroup === 'OVERDUE').length;
   const selectedCount = selectedBillingIds.length;
 
   const statusBadgeVariant = (status: string): 'default' | 'warning' | 'success' | 'error' => {
@@ -429,21 +482,38 @@ export default function WAReminder() {
                   <Users className="w-5 h-5 text-blue-600" />
                   <p className="text-2xl font-bold text-neutral-900">{totalReceivers}</p>
                 </div>
-                <p className="text-sm text-neutral-600">Target Reminder</p>
+                <p className="text-sm text-neutral-600">Total Siswa Target</p>
               </Card>
               <Card padding="md" className="text-center">
                 <div className="flex items-center justify-center gap-2 mb-2">
                   <CheckCircle className="w-5 h-5 text-green-600" />
                   <p className="text-2xl font-bold text-neutral-900">{withPhone}</p>
                 </div>
-                <p className="text-sm text-neutral-600">Siap Dikirim (ada no WA)</p>
+                <p className="text-sm text-neutral-600">Siswa dengan No WA</p>
               </Card>
               <Card padding="md" className="text-center">
                 <div className="flex items-center justify-center gap-2 mb-2">
                   <MessageCircle className="w-5 h-5 text-yellow-600" />
-                  <p className="text-2xl font-bold text-neutral-900">{selectedCount}</p>
+                  <p className="text-2xl font-bold text-neutral-900">{billingCandidates}</p>
                 </div>
-                <p className="text-sm text-neutral-600">Dipilih Untuk Dikirim</p>
+                <p className="text-sm text-neutral-600">Billing Kandidat Reminder</p>
+              </Card>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Card padding="md" className="text-center">
+                <div className="flex items-center justify-center gap-2 mb-2">
+                  <RefreshCw className="w-5 h-5 text-amber-600" />
+                  <p className="text-2xl font-bold text-neutral-900">{dueSoonBillings}</p>
+                </div>
+                <p className="text-sm text-neutral-600">Hampir Jatuh Tempo</p>
+              </Card>
+              <Card padding="md" className="text-center">
+                <div className="flex items-center justify-center gap-2 mb-2">
+                  <AlertTriangle className="w-5 h-5 text-red-600" />
+                  <p className="text-2xl font-bold text-neutral-900">{overdueBillings}</p>
+                </div>
+                <p className="text-sm text-neutral-600">Sudah Jatuh Tempo</p>
               </Card>
             </div>
 
@@ -451,6 +521,20 @@ export default function WAReminder() {
               <h2 className="text-xl font-semibold text-neutral-900 mb-4">Filter Reminder</h2>
               <div className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Select
+                      label="Tahun Ajaran"
+                      value={selectedAcademicYearId}
+                      onChange={(e) => setSelectedAcademicYearId(e.target.value)}
+                      options={[
+                        { value: '', label: 'Aktif / Otomatis' },
+                        ...academicYears.map((item) => ({
+                          value: item.id,
+                          label: `${item.year}${item.isActive ? ' (aktif)' : ''}`,
+                        })),
+                      ]}
+                    />
+                  </div>
                   <div>
                     <Select
                       label="Filter Kelas"
@@ -496,7 +580,9 @@ export default function WAReminder() {
                   </Button>
                 </div>
                 <div className="flex items-center justify-between pt-1">
-                  <p className="text-xs text-neutral-500">Total data preview: {previewTotal}</p>
+                  <p className="text-xs text-neutral-500">
+                    Total billing preview: {previewTotal} • Target siswa: {totalReceivers} • Tidak punya billing: {targetSummary?.noBillingStudents ?? 0}
+                  </p>
                   <div className="flex items-center gap-2">
                     <Button
                       size="sm"
@@ -525,7 +611,7 @@ export default function WAReminder() {
               {loadingPreview ? (
                 <p className="text-sm text-neutral-600">Memuat data reminder...</p>
               ) : reminders.length === 0 ? (
-                <p className="text-sm text-neutral-600">Tidak ada data reminder untuk filter saat ini.</p>
+                <p className="text-sm text-neutral-600">Tidak ada billing reminder untuk filter saat ini. Target siswa tetap dihitung dari tahun ajaran yang dipilih.</p>
               ) : (
                 <div className="space-y-3">
                   {reminders.slice(0, 20).map((item) => (
@@ -550,6 +636,7 @@ export default function WAReminder() {
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
+                        {item.reminderGroup && <Badge variant={item.reminderGroup === 'OVERDUE' ? 'error' : item.reminderGroup === 'DUE_SOON' ? 'warning' : 'default'}>{item.reminderGroup}</Badge>}
                         {item.throttledToday && <Badge variant="warning">Throttle Hari Ini</Badge>}
                         <Badge variant={item.hasPhoneNumber ? 'success' : 'warning'}>
                           {item.hasPhoneNumber ? 'Ada No WA' : 'No WA Kosong'}

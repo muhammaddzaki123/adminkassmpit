@@ -6,6 +6,7 @@ import {
   getPaymentOverdueMessage,
   sendWhatsAppMessage 
 } from '@/lib/whatsapp';
+import { Prisma, BillingStatus } from '@prisma/client';
 
 /**
  * POST /api/whatsapp/send-reminder - Send payment reminder to specific students
@@ -218,6 +219,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const classIdsParam = searchParams.get('classIds');
     const status = searchParams.get('status');
+    const academicYearId = searchParams.get('academicYearId');
     const pageParam = Number(searchParams.get('page') || 1);
     const pageSizeParam = Number(searchParams.get('pageSize') || 20);
     const page = Number.isFinite(pageParam) ? Math.max(pageParam, 1) : 1;
@@ -225,24 +227,131 @@ export async function GET(request: NextRequest) {
       ? Math.min(Math.max(pageSizeParam, 1), 100)
       : 20;
 
-    // Build where clause
-    const where: Record<string, unknown> = {
-      status: status ? status : { in: ['BILLED', 'OVERDUE', 'PARTIAL'] },
+    const resolvedAcademicYearId = academicYearId || (
+      await prisma.academicYear.findFirst({
+        where: { isActive: true },
+        orderBy: { startDate: 'desc' },
+        select: { id: true },
+      })
+    )?.id || undefined;
+
+    const classIds = classIdsParam ? classIdsParam.split(',').filter(Boolean) : [];
+    const today = new Date();
+    const startOfToday = new Date(today);
+    startOfToday.setHours(0, 0, 0, 0);
+    const dueSoonWindow = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
+
+    const studentWhere: Prisma.StudentWhereInput = {
+      status: 'ACTIVE',
+      ...(resolvedAcademicYearId || classIds.length > 0
+        ? {
+            studentClasses: {
+              some: {
+                isActive: true,
+                ...(resolvedAcademicYearId ? { academicYearId: resolvedAcademicYearId } : {}),
+                ...(classIds.length > 0 ? { classId: { in: classIds } } : {}),
+              },
+            },
+          }
+        : {}),
     };
 
-    if (classIdsParam) {
-      const classIds = classIdsParam.split(',').filter(Boolean);
-      if (classIds.length > 0) {
-        where.student = {
-          studentClasses: {
-            some: {
-              classId: { in: classIds },
-              isActive: true,
+    const billingStatusWhere = status
+      ? { status: status as BillingStatus }
+      : { status: { in: ['BILLED', 'OVERDUE', 'PARTIAL'] as BillingStatus[] } };
+
+    const billingWhereBase: Prisma.BillingWhereInput = {
+      ...(resolvedAcademicYearId ? { academicYearId: resolvedAcademicYearId } : {}),
+      ...billingStatusWhere,
+      ...(classIds.length > 0
+        ? {
+            student: {
+              studentClasses: {
+                some: {
+                  classId: { in: classIds },
+                  isActive: true,
+                  ...(resolvedAcademicYearId ? { academicYearId: resolvedAcademicYearId } : {}),
+                },
+              },
             },
-          },
-        };
-      }
-    }
+          }
+        : {}),
+    };
+
+    const [totalStudents, studentsWithPhone, studentsWithBilling, dueSoonBillings, overdueBillings] = await Promise.all([
+      prisma.student.count({ where: studentWhere }),
+      prisma.student.count({
+        where: {
+          ...studentWhere,
+          noTelp: { not: null },
+        },
+      }),
+      prisma.billing.findMany({
+        where: {
+          ...(resolvedAcademicYearId ? { academicYearId: resolvedAcademicYearId } : {}),
+          ...(classIds.length > 0
+            ? {
+                student: {
+                  studentClasses: {
+                    some: {
+                      classId: { in: classIds },
+                      isActive: true,
+                      ...(resolvedAcademicYearId ? { academicYearId: resolvedAcademicYearId } : {}),
+                    },
+                  },
+                },
+              }
+            : {}),
+        },
+        select: { studentId: true },
+        distinct: ['studentId'],
+      }),
+      prisma.billing.count({
+        where: {
+          ...(resolvedAcademicYearId ? { academicYearId: resolvedAcademicYearId } : {}),
+          status: { in: ['BILLED', 'PARTIAL'] },
+          dueDate: { gte: startOfToday, lte: dueSoonWindow },
+          ...(classIds.length > 0
+            ? {
+                student: {
+                  studentClasses: {
+                    some: {
+                      classId: { in: classIds },
+                      isActive: true,
+                      ...(resolvedAcademicYearId ? { academicYearId: resolvedAcademicYearId } : {}),
+                    },
+                  },
+                },
+              }
+            : {}),
+        },
+      }),
+      prisma.billing.count({
+        where: {
+          ...(resolvedAcademicYearId ? { academicYearId: resolvedAcademicYearId } : {}),
+          status: 'OVERDUE',
+          ...(classIds.length > 0
+            ? {
+                student: {
+                  studentClasses: {
+                    some: {
+                      classId: { in: classIds },
+                      isActive: true,
+                      ...(resolvedAcademicYearId ? { academicYearId: resolvedAcademicYearId } : {}),
+                    },
+                  },
+                },
+              }
+            : {}),
+        },
+      }),
+    ]);
+
+    const studentsWithBillingCount = new Set(studentsWithBilling.map((item) => item.studentId)).size;
+    const noBillingStudents = Math.max(totalStudents - studentsWithBillingCount, 0);
+
+    // Build where clause
+    const where: Prisma.BillingWhereInput = billingWhereBase;
 
     const total = await prisma.billing.count({ where });
     const totalPages = Math.max(Math.ceil(total / pageSize), 1);
@@ -281,6 +390,14 @@ export async function GET(request: NextRequest) {
       status: billing.status,
       dueDate: billing.dueDate,
       lastReminderSentAt: billing.lastReminderSentAt,
+      daysUntilDue: billing.dueDate
+        ? Math.ceil((new Date(billing.dueDate).getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+        : null,
+      reminderGroup: billing.status === 'OVERDUE'
+        ? 'OVERDUE'
+        : billing.dueDate && new Date(billing.dueDate) <= dueSoonWindow
+          ? 'DUE_SOON'
+          : 'UNPAID',
       throttledToday:
         !!billing.lastReminderSentAt &&
         new Date(billing.lastReminderSentAt).setHours(0, 0, 0, 0) ===
@@ -295,6 +412,16 @@ export async function GET(request: NextRequest) {
       pageSize,
       totalPages,
       canSendTo: reminders.filter((r) => r.hasPhoneNumber).length,
+      targetSummary: {
+        academicYearId: resolvedAcademicYearId || null,
+        totalStudents,
+        studentsWithPhone,
+        studentsWithBilling: studentsWithBillingCount,
+        noBillingStudents,
+        billingCandidates: total,
+        dueSoonBillings,
+        overdueBillings,
+      },
       data: reminders,
     });
   } catch (error) {
