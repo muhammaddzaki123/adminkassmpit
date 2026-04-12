@@ -114,6 +114,8 @@ export async function POST() {
       { key: 'WA_ENABLED', value: 'false', type: 'BOOLEAN', category: 'NOTIFICATION', description: 'Enable WhatsApp notifications' },
       { key: 'WA_API_KEY', value: '', type: 'TEXT', category: 'NOTIFICATION', description: 'WhatsApp API key (Fonnte/Wablas)' },
       { key: 'WA_DEVICE', value: '', type: 'TEXT', category: 'NOTIFICATION', description: 'WhatsApp device ID' },
+      { key: 'WA_TEMPLATE_PAYMENT_REMINDER', value: 'Halo {{studentName}},\n\n⏰ *PENGINGAT PEMBAYARAN*\n\nAnda memiliki tagihan yang perlu dibayar segera.\n\n📋 *Detail Tagihan:*\n• Jenis: {{billingType}}\n• Jumlah: {{amount}}\n• Jatuh Tempo: {{dueDate}} ({{timeLeft}})\n• Status: ⏳ Belum dibayar\n\n📍 Silakan segera lakukan pembayaran untuk menghindari denda keterlambatan.\n\nSalam,\n*Sistem KASSMPIT*', type: 'TEXT', category: 'NOTIFICATION', description: 'Template WA reminder sebelum jatuh tempo. Placeholder: {{studentName}}, {{amount}}, {{billingType}}, {{dueDate}}, {{timeLeft}}, {{daysUntilDue}}' },
+      { key: 'WA_TEMPLATE_PAYMENT_OVERDUE', value: 'Halo {{studentName}},\n\n⚠️ *PEMBAYARAN TERLAMBAT*\n\nPembayaran Anda telah *{{daysOverdue}} hari* melewati tanggal jatuh tempo.\n\n📋 *Detail Tagihan:*\n• Jenis: {{billingType}}\n• Jumlah: {{amount}}\n• Jatuh Tempo: {{dueDate}}\n• Status: 🔴 TERLAMBAT\n\nMohon segera lakukan pembayaran atau hubungi bendahara.\n\nSalam,\n*Sistem KASSMPIT*', type: 'TEXT', category: 'NOTIFICATION', description: 'Template WA reminder overdue. Placeholder: {{studentName}}, {{amount}}, {{billingType}}, {{dueDate}}, {{daysOverdue}}' },
       
       // System
       { key: 'ACADEMIC_YEAR', value: '2024/2025', type: 'TEXT', category: 'SYSTEM', description: 'Tahun ajaran aktif' },

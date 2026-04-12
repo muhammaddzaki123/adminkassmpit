@@ -4,6 +4,7 @@
  */
 
 import { sendWhatsAppMessage as sendViaClient } from './whatsapp-client';
+import prisma from './prisma';
 
 interface WhatsAppMessageOptions {
   to: string; // Nomor tujuan (format: +62... atau 0812...)
@@ -17,6 +18,22 @@ interface WhatsAppResponse {
   error?: string;
   status?: string;
 }
+
+type ReminderTemplateType = 'payment_reminder' | 'payment_overdue';
+
+type ReminderTemplateData = {
+  studentName: string;
+  amount: number;
+  billingType: string;
+  dueDate: string;
+  daysUntilDue?: number;
+  daysOverdue?: number;
+};
+
+const TEMPLATE_SETTING_KEYS: Record<ReminderTemplateType, string> = {
+  payment_reminder: 'WA_TEMPLATE_PAYMENT_REMINDER',
+  payment_overdue: 'WA_TEMPLATE_PAYMENT_OVERDUE',
+};
 
 /**
  * Format currency to Rupiah
@@ -170,4 +187,82 @@ Mohon segera lakukan pembayaran hari ini untuk menghindari konsekuensi lebih lan
 
 Salam,
 *Sistem KASSMPIT*`;
+}
+
+function applyTemplatePlaceholders(template: string, data: ReminderTemplateData) {
+  const daysUntilDue = typeof data.daysUntilDue === 'number' ? data.daysUntilDue : null;
+  const daysOverdue = typeof data.daysOverdue === 'number' ? data.daysOverdue : null;
+  const timeLeft =
+    daysUntilDue !== null && daysUntilDue > 1
+      ? `${daysUntilDue} hari lagi`
+      : daysUntilDue === 1
+        ? 'besok'
+        : daysUntilDue === 0
+          ? 'hari ini'
+          : 'sudah lewat';
+
+  const map: Record<string, string> = {
+    '{{studentName}}': data.studentName,
+    '{{amount}}': formatRupiah(data.amount),
+    '{{billingType}}': data.billingType,
+    '{{dueDate}}': data.dueDate,
+    '{{daysUntilDue}}': daysUntilDue !== null ? String(daysUntilDue) : '-',
+    '{{daysOverdue}}': daysOverdue !== null ? String(daysOverdue) : '-',
+    '{{timeLeft}}': timeLeft,
+  };
+
+  let result = template;
+  for (const [key, value] of Object.entries(map)) {
+    result = result.split(key).join(value);
+  }
+
+  return result;
+}
+
+async function getTemplateFromSettings(type: ReminderTemplateType): Promise<string | null> {
+  try {
+    const key = TEMPLATE_SETTING_KEYS[type];
+    const setting = await prisma.systemSettings.findUnique({
+      where: { key },
+      select: { value: true },
+    });
+
+    if (!setting?.value || setting.value.trim().length === 0) {
+      return null;
+    }
+
+    return setting.value;
+  } catch (error) {
+    console.error('Failed to load WhatsApp template setting:', error);
+    return null;
+  }
+}
+
+export async function getCustomizableReminderMessage(
+  type: ReminderTemplateType,
+  data: ReminderTemplateData
+): Promise<string> {
+  const customTemplate = await getTemplateFromSettings(type);
+
+  if (customTemplate) {
+    return applyTemplatePlaceholders(customTemplate, data);
+  }
+
+  if (type === 'payment_overdue') {
+    return getPaymentOverdueMessage({
+      studentName: data.studentName,
+      amount: data.amount,
+      billingType: data.billingType,
+      dueDate: data.dueDate,
+      daysOverdue: data.daysOverdue || 0,
+    });
+  }
+
+  return getPaymentReminderMessage({
+    studentName: data.studentName,
+    amount: data.amount,
+    billingType: data.billingType,
+    dueDate: data.dueDate,
+    daysUntilDue: data.daysUntilDue,
+  });
 }

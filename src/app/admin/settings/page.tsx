@@ -3,8 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { fetchWithAuth } from '@/lib/api-client';
-import { Sidebar } from '@/components/layout/Sidebar';
-import { Header } from '@/components/layout/Header';
+import { AdminSidebar } from '@/components/layout/AdminSidebar';
+import { AdminHeader } from '@/components/layout/AdminHeader';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input, Select } from '@/components/ui/Input';
@@ -28,6 +28,24 @@ const EMAIL_PROVIDER_FALLBACK_SETTING: Setting = {
   description: 'Provider email aktif untuk reset password dan notifikasi.',
 };
 
+const WA_TEMPLATE_PAYMENT_REMINDER_FALLBACK: Setting = {
+  id: 'virtual-wa-template-payment-reminder',
+  key: 'WA_TEMPLATE_PAYMENT_REMINDER',
+  value: 'Halo {{studentName}},\n\n⏰ *PENGINGAT PEMBAYARAN*\n\nDetail tagihan:\n• Jenis: {{billingType}}\n• Jumlah: {{amount}}\n• Jatuh Tempo: {{dueDate}} ({{timeLeft}})\n\nSalam,\n*Sistem KASSMPIT*',
+  type: 'TEXT',
+  category: 'NOTIFICATION',
+  description: 'Template WA reminder sebelum jatuh tempo. Placeholder: {{studentName}}, {{amount}}, {{billingType}}, {{dueDate}}, {{timeLeft}}, {{daysUntilDue}}',
+};
+
+const WA_TEMPLATE_PAYMENT_OVERDUE_FALLBACK: Setting = {
+  id: 'virtual-wa-template-payment-overdue',
+  key: 'WA_TEMPLATE_PAYMENT_OVERDUE',
+  value: 'Halo {{studentName}},\n\n⚠️ *PEMBAYARAN TERLAMBAT*\n\nTagihan Anda terlambat {{daysOverdue}} hari.\n• Jenis: {{billingType}}\n• Jumlah: {{amount}}\n• Jatuh Tempo: {{dueDate}}\n\nSalam,\n*Sistem KASSMPIT*',
+  type: 'TEXT',
+  category: 'NOTIFICATION',
+  description: 'Template WA reminder overdue. Placeholder: {{studentName}}, {{amount}}, {{billingType}}, {{dueDate}}, {{daysOverdue}}',
+};
+
 interface GroupedSettings {
   FEES: Setting[];
   NOTIFICATION: Setting[];
@@ -36,7 +54,6 @@ interface GroupedSettings {
 
 export default function SettingsPage() {
   const router = useRouter();
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [settings, setSettings] = useState<GroupedSettings>({
     FEES: [],
     NOTIFICATION: [],
@@ -72,11 +89,18 @@ export default function SettingsPage() {
         const grouped = result.data.grouped || {};
         const notificationSettings = Array.isArray(grouped.NOTIFICATION) ? grouped.NOTIFICATION : [];
         const hasEmailProvider = notificationSettings.some((setting: Setting) => setting.key === 'EMAIL_PROVIDER');
+        const hasReminderTemplate = notificationSettings.some((setting: Setting) => setting.key === 'WA_TEMPLATE_PAYMENT_REMINDER');
+        const hasOverdueTemplate = notificationSettings.some((setting: Setting) => setting.key === 'WA_TEMPLATE_PAYMENT_OVERDUE');
+        const mergedNotificationSettings = [
+          ...notificationSettings,
+          ...(hasEmailProvider ? [] : [EMAIL_PROVIDER_FALLBACK_SETTING]),
+          ...(hasReminderTemplate ? [] : [WA_TEMPLATE_PAYMENT_REMINDER_FALLBACK]),
+          ...(hasOverdueTemplate ? [] : [WA_TEMPLATE_PAYMENT_OVERDUE_FALLBACK]),
+        ];
+
         setSettings({
           FEES: Array.isArray(grouped.FEES) ? grouped.FEES : [],
-          NOTIFICATION: hasEmailProvider
-            ? notificationSettings
-            : [...notificationSettings, EMAIL_PROVIDER_FALLBACK_SETTING],
+          NOTIFICATION: mergedNotificationSettings,
           SYSTEM: Array.isArray(grouped.SYSTEM) ? grouped.SYSTEM : []
         });
       } else {
@@ -228,27 +252,12 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="flex min-h-screen bg-neutral-50">
-      <div className="hidden lg:block">
-        <Sidebar userRole="admin" />
-      </div>
+    <div className="min-h-screen bg-neutral-50">
+      <AdminSidebar />
+      <div className="ml-64">
+        <AdminHeader />
 
-      {isMobileMenuOpen && (
-        <>
-          <div
-            className="fixed inset-0 bg-black/50 z-40 lg:hidden backdrop-blur-sm"
-            onClick={() => setIsMobileMenuOpen(false)}
-          />
-          <div className="fixed left-0 top-0 bottom-0 z-50 lg:hidden">
-            <Sidebar userRole="admin" />
-          </div>
-        </>
-      )}
-
-      <div className="flex-1 flex flex-col min-w-0">
-        <Header onMenuClick={() => setIsMobileMenuOpen(true)} />
-
-        <main className="flex-1 p-4 md:p-6 lg:p-8 overflow-auto">
+        <main className="pt-16 p-8">
           <div className="max-w-6xl mx-auto space-y-6">
             {/* Page Header */}
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
@@ -408,6 +417,14 @@ export default function SettingsPage() {
                                 { value: 'resend', label: 'Resend' },
                                 { value: 'sendgrid', label: 'SendGrid' },
                               ]}
+                            />
+                          ) : setting.key.startsWith('WA_TEMPLATE_') ? (
+                            <textarea
+                              className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
+                              rows={8}
+                              value={setting.value}
+                              onChange={(e) => updateSettingValue('NOTIFICATION', setting.key, e.target.value)}
+                              placeholder="Tulis template pesan..."
                             />
                           ) : (
                             <Input

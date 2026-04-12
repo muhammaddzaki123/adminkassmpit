@@ -2,13 +2,20 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireDashboardAccess } from '@/lib/auth-helpers';
 import { 
-  getPaymentReminderMessage, 
-  getPaymentOverdueMessage,
+  getCustomizableReminderMessage,
   sendWhatsAppMessage 
 } from '@/lib/whatsapp';
 import { Prisma } from '@prisma/client';
 
 type ReminderMode = 'ALL_STUDENTS' | 'DUE_SOON' | 'OVERDUE_DAILY' | 'INSTALLMENT' | 'NO_PAYMENT';
+
+function isNonEmptyPhoneNumber(value?: string | null) {
+  return typeof value === 'string' && value.trim().length > 0;
+}
+
+function isOverdueByDate(dueDate: Date | null | undefined, startOfToday: Date) {
+  return !!dueDate && dueDate < startOfToday;
+}
 
 function parseReminderMode(value: string | null): ReminderMode {
   if (value === 'DUE_SOON' || value === 'OVERDUE_DAILY' || value === 'INSTALLMENT' || value === 'NO_PAYMENT') {
@@ -37,6 +44,7 @@ function buildBillingWhere(
   mode: ReminderMode,
   academicYearId?: string,
   classIds: string[] = [],
+  startOfToday?: Date,
   dueSoonWindow?: Date,
 ): Prisma.BillingWhereInput {
   const base: Prisma.BillingWhereInput = {
@@ -61,10 +69,10 @@ function buildBillingWhere(
       return {
         ...base,
         status: { in: ['BILLED', 'PARTIAL'] },
-        ...(dueSoonWindow
+        ...(startOfToday && dueSoonWindow
           ? {
               dueDate: {
-                gte: new Date(new Date().setHours(0, 0, 0, 0)),
+                gte: startOfToday,
                 lte: dueSoonWindow,
               },
             }
@@ -73,7 +81,14 @@ function buildBillingWhere(
     case 'OVERDUE_DAILY':
       return {
         ...base,
-        status: 'OVERDUE',
+        status: { in: ['BILLED', 'PARTIAL', 'OVERDUE'] },
+        ...(startOfToday
+          ? {
+              dueDate: {
+                lt: startOfToday,
+              },
+            }
+          : {}),
       };
     case 'INSTALLMENT':
       return {
@@ -87,7 +102,10 @@ function buildBillingWhere(
         paidAmount: 0,
       };
     default:
-      return base;
+      return {
+        ...base,
+        status: { in: ['BILLED', 'PARTIAL', 'OVERDUE'] },
+      };
   }
 }
 
@@ -165,7 +183,7 @@ export async function POST(request: NextRequest) {
           };
         }
 
-        if (!billing.student?.noTelp) {
+        if (!billing.student?.noTelp?.trim()) {
           return {
             billingId: billing.id,
             studentName: billing.student?.nama,
@@ -175,9 +193,10 @@ export async function POST(request: NextRequest) {
           };
         }
 
-        const phoneNumber = billing.student.noTelp.startsWith('+')
-          ? billing.student.noTelp
-          : `+62${billing.student.noTelp.replace(/^0/, '')}`;
+        const phoneValue = billing.student.noTelp.trim();
+        const phoneNumber = phoneValue.startsWith('+')
+          ? phoneValue
+          : `+62${phoneValue.replace(/^0/, '')}`;
 
         const dueDate = billing.dueDate
           ? new Date(billing.dueDate).toLocaleDateString('id-ID', {
@@ -187,16 +206,18 @@ export async function POST(request: NextRequest) {
             })
           : 'TBD';
 
+        const isOverdueBilling = !!billing.dueDate && billing.dueDate < startOfToday;
+        const shouldUseOverdueTemplate = billing.status === 'OVERDUE' || isOverdueBilling;
+
         let message = '';
         let template: 'payment_reminder' | 'payment_overdue' = 'payment_reminder';
 
-        if (billing.status === 'OVERDUE') {
-          const now = new Date();
+        if (shouldUseOverdueTemplate) {
           const daysOverdue = Math.floor(
             (now.getTime() - (billing.dueDate?.getTime() || 0)) / (1000 * 60 * 60 * 24)
           );
 
-          message = getPaymentOverdueMessage({
+          message = await getCustomizableReminderMessage('payment_overdue', {
             studentName: billing.student.nama,
             amount: billing.totalAmount - billing.paidAmount,
             billingType: billing.type,
@@ -212,7 +233,7 @@ export async function POST(request: NextRequest) {
               )
             : undefined;
 
-          message = getPaymentReminderMessage({
+          message = await getCustomizableReminderMessage('payment_reminder', {
             studentName: billing.student.nama,
             amount: billing.totalAmount - billing.paidAmount,
             billingType: billing.type,
@@ -230,7 +251,12 @@ export async function POST(request: NextRequest) {
         if (result.success) {
           await prisma.billing.update({
             where: { id: billing.id },
-            data: { lastReminderSentAt: now },
+            data: {
+              lastReminderSentAt: now,
+              ...(isOverdueBilling && billing.status !== 'OVERDUE'
+                ? { status: 'OVERDUE' }
+                : {}),
+            },
           });
         }
 
@@ -339,14 +365,17 @@ export async function GET(request: NextRequest) {
         : {}),
     };
 
-    const billingWhereBase = buildBillingWhere(mode, resolvedAcademicYearId, classIds, dueSoonWindow);
+    const billingWhereBase = buildBillingWhere(mode, resolvedAcademicYearId, classIds, startOfToday, dueSoonWindow);
 
     const [totalStudents, studentsWithPhone, studentsWithBilling, dueSoonBillings, overdueBillings] = await Promise.all([
       prisma.student.count({ where: studentWhere }),
       prisma.student.count({
         where: {
           ...studentWhere,
-          noTelp: { not: null },
+          AND: [
+            { noTelp: { not: null } },
+            { noTelp: { not: '' } },
+          ],
         },
       }),
       prisma.billing.findMany({
@@ -392,7 +421,8 @@ export async function GET(request: NextRequest) {
       prisma.billing.count({
         where: {
           ...(resolvedAcademicYearId ? { academicYearId: resolvedAcademicYearId } : {}),
-          status: 'OVERDUE',
+          status: { in: ['BILLED', 'PARTIAL', 'OVERDUE'] },
+          dueDate: { lt: startOfToday },
           ...(classIds.length > 0
             ? {
                 student: {
@@ -441,8 +471,10 @@ export async function GET(request: NextRequest) {
       studentId: billing.studentId,
       studentName: billing.student?.nama,
       nisn: billing.student?.nisn,
-      hasPhoneNumber: !!billing.student?.noTelp,
-      phoneNumber: billing.student?.noTelp ? billing.student.noTelp.replace(/^62/, '0') : null,
+      hasPhoneNumber: isNonEmptyPhoneNumber(billing.student?.noTelp),
+      phoneNumber: isNonEmptyPhoneNumber(billing.student?.noTelp)
+        ? billing.student!.noTelp!.trim().replace(/^62/, '0')
+        : null,
       billingType: billing.type,
       totalAmount: billing.totalAmount,
       paidAmount: billing.paidAmount,
@@ -453,7 +485,7 @@ export async function GET(request: NextRequest) {
       daysUntilDue: billing.dueDate
         ? Math.ceil((new Date(billing.dueDate).getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
         : null,
-      reminderGroup: billing.status === 'OVERDUE'
+      reminderGroup: isOverdueByDate(billing.dueDate, startOfToday) || billing.status === 'OVERDUE'
         ? 'OVERDUE'
         : billing.dueDate && new Date(billing.dueDate) <= dueSoonWindow
           ? 'DUE_SOON'
@@ -462,7 +494,7 @@ export async function GET(request: NextRequest) {
         !!billing.lastReminderSentAt &&
         new Date(billing.lastReminderSentAt).setHours(0, 0, 0, 0) ===
           new Date().setHours(0, 0, 0, 0),
-      isOverdue: billing.dueDate && new Date(billing.dueDate) < new Date(),
+      isOverdue: !!billing.dueDate && new Date(billing.dueDate) < new Date(),
     }));
 
     return NextResponse.json({

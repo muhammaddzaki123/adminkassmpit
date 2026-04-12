@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { 
-  getPaymentReminderMessage, 
-  getPaymentOverdueMessage,
+  getCustomizableReminderMessage,
   sendWhatsAppMessage 
 } from '@/lib/whatsapp';
 
@@ -32,6 +31,8 @@ export async function POST(request: NextRequest) {
     }
 
     const now = new Date();
+    const startOfToday = new Date(now);
+    startOfToday.setHours(0, 0, 0, 0);
     const reminders = {
       fiveDaysWarning: 0,
       oneDayWarning: 0,
@@ -62,7 +63,7 @@ export async function POST(request: NextRequest) {
     });
 
     for (const billing of billedUpcoming5Days) {
-      if (!billing.student?.noTelp) continue;
+      if (!billing.student?.noTelp?.trim()) continue;
 
       const phoneNumber = billing.student.noTelp.startsWith('+')
         ? billing.student.noTelp
@@ -74,7 +75,7 @@ export async function POST(request: NextRequest) {
         day: 'numeric',
       });
 
-      const message = getPaymentReminderMessage({
+      const message = await getCustomizableReminderMessage('payment_reminder', {
         studentName: billing.student.nama,
         amount: billing.totalAmount - billing.paidAmount,
         billingType: billing.type,
@@ -118,7 +119,7 @@ export async function POST(request: NextRequest) {
     });
 
     for (const billing of billedUpcoming1Day) {
-      if (!billing.student?.noTelp) continue;
+      if (!billing.student?.noTelp?.trim()) continue;
 
       const phoneNumber = billing.student.noTelp.startsWith('+')
         ? billing.student.noTelp
@@ -130,7 +131,7 @@ export async function POST(request: NextRequest) {
         day: 'numeric',
       });
 
-      const message = getPaymentReminderMessage({
+      const message = await getCustomizableReminderMessage('payment_reminder', {
         studentName: billing.student.nama,
         amount: billing.totalAmount - billing.paidAmount,
         billingType: billing.type,
@@ -154,7 +155,10 @@ export async function POST(request: NextRequest) {
     // 3. Send overdue reminders
     const overdueReminders = await prisma.billing.findMany({
       where: {
-        status: 'OVERDUE',
+        status: { in: ['BILLED', 'PARTIAL', 'OVERDUE'] },
+        dueDate: {
+          lt: startOfToday,
+        },
         OR: [
           { lastReminderSentAt: null },
           {
@@ -176,7 +180,7 @@ export async function POST(request: NextRequest) {
     });
 
     for (const billing of overdueReminders) {
-      if (!billing.student?.noTelp) continue;
+      if (!billing.student?.noTelp?.trim()) continue;
 
       const phoneNumber = billing.student.noTelp.startsWith('+')
         ? billing.student.noTelp
@@ -193,7 +197,7 @@ export async function POST(request: NextRequest) {
           (1000 * 60 * 60 * 24)
       );
 
-      const message = getPaymentOverdueMessage({
+      const message = await getCustomizableReminderMessage('payment_overdue', {
         studentName: billing.student.nama,
         amount: billing.totalAmount - billing.paidAmount,
         billingType: billing.type,
@@ -212,7 +216,10 @@ export async function POST(request: NextRequest) {
         // Update last reminder sent timestamp
         await prisma.billing.update({
           where: { id: billing.id },
-          data: { lastReminderSentAt: now },
+          data: {
+            lastReminderSentAt: now,
+            ...(billing.status !== 'OVERDUE' ? { status: 'OVERDUE' } : {}),
+          },
         });
       } else {
         reminders.failed++;
