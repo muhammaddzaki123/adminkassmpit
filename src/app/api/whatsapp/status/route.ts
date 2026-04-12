@@ -7,18 +7,37 @@
 import { NextResponse } from 'next/server';
 import { getClientStatus, initializeWhatsAppClient } from '@/lib/whatsapp-client';
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    // If not initialized, try to initialize
-    await initializeWhatsAppClient();
+    const { searchParams } = new URL(request.url);
+    const shouldBootstrap = searchParams.get('refresh') === '1' || searchParams.get('bootstrap') === '1';
+
+    if (shouldBootstrap) {
+      await initializeWhatsAppClient();
+    }
     
     const status = getClientStatus();
+    const stateLabel = {
+      ready: 'Ready',
+      initializing: 'Memulai client',
+      needs_scan: 'Perlu scan QR',
+      session_locked: 'Session lock',
+      disconnected: 'Terputus',
+      error: 'Error',
+      idle: 'Belum dimulai',
+    }[status.state];
+
+    const isScanRequired = status.state === 'needs_scan' || (status.ready === false && status.connected === false && !status.lastError);
 
     return NextResponse.json({
       success: true,
       connected: status.connected,
       ready: status.ready,
-      qrPending: !status.ready && status.connected === false,
+      state: status.state,
+      stateLabel,
+      qrPending: isScanRequired,
+      sessionLocked: status.state === 'session_locked',
+      lastError: status.lastError ?? null,
       authenticatedAs: status.info
         ? {
             phone: status.info.wid,
@@ -27,13 +46,15 @@ export async function GET() {
         : null,
       message: status.ready
         ? `Connected as ${status.info?.pushname || 'Unknown'}`
-        : status.connected
-        ? 'Waiting for QR code scan...'
+        : status.state === 'session_locked'
+        ? 'Sesi WhatsApp terkunci oleh browser lain.'
+        : status.state === 'needs_scan'
+        ? 'Menunggu scan QR code.'
         : 'Not connected. QR code scan required.',
       instructions: !status.ready
-        ? `Open your WhatsApp app on your phone,
-           go to Settings > Linked Devices > Link a Device,
-           and scan the QR code displayed at server startup.`
+        ? status.state === 'session_locked'
+          ? 'Klik Reset WA Connection untuk menutup browser yang mengunci session, lalu refresh status.'
+          : 'Open your WhatsApp app on your phone, go to Settings > Linked Devices > Link a Device, lalu scan QR code saat diminta.'
         : undefined,
     });
   } catch (error) {
@@ -41,6 +62,7 @@ export async function GET() {
     return NextResponse.json(
       {
         success: false,
+        state: 'error',
         error: error instanceof Error ? error.message : 'Failed to check status',
       },
       { status: 500 }

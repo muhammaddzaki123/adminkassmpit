@@ -75,7 +75,10 @@ interface WhatsAppStatusResponse {
   success: boolean;
   ready: boolean;
   connected: boolean;
+  state: 'idle' | 'initializing' | 'needs_scan' | 'session_locked' | 'ready' | 'disconnected' | 'error';
+  stateLabel: string;
   message?: string;
+  lastError?: string | null;
   authenticatedAs?: {
     phone: string;
     name: string;
@@ -140,10 +143,11 @@ export default function WAReminder() {
     }
   }, []);
 
-  const fetchWhatsAppStatus = useCallback(async () => {
+  const fetchWhatsAppStatus = useCallback(async (bootstrap = false) => {
     setCheckingStatus(true);
     try {
-      const res = await fetchWithAuth('/api/whatsapp/status');
+      const url = bootstrap ? '/api/whatsapp/status?refresh=1' : '/api/whatsapp/status';
+      const res = await fetchWithAuth(url);
       const json = await res.json();
       setWaStatus(json);
     } catch (error) {
@@ -152,6 +156,8 @@ export default function WAReminder() {
         success: false,
         ready: false,
         connected: false,
+        state: 'error',
+        stateLabel: 'Error',
         message: 'Gagal memeriksa status WhatsApp',
       });
     } finally {
@@ -337,6 +343,14 @@ export default function WAReminder() {
     return 'success';
   };
 
+  const waStatusTone = waStatus?.state === 'ready'
+    ? 'bg-green-50 text-green-700 border-green-200'
+    : waStatus?.state === 'session_locked'
+    ? 'bg-amber-50 text-amber-700 border-amber-200'
+    : waStatus?.state === 'needs_scan'
+    ? 'bg-blue-50 text-blue-700 border-blue-200'
+    : 'bg-neutral-50 text-neutral-700 border-neutral-200';
+
   const toggleSelected = (billingId: string) => {
     setSelectedBillingIds((prev) =>
       prev.includes(billingId)
@@ -453,12 +467,21 @@ export default function WAReminder() {
                   <Smartphone className="w-5 h-5 mt-0.5 text-neutral-600" />
                   <div>
                     <p className="font-semibold text-neutral-900">Status WhatsApp Client</p>
-                    <p className="text-sm text-neutral-600 mt-1">
+                    <div className={`mt-2 inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium ${waStatusTone}`}>
+                      <span>{waStatus?.stateLabel || 'Belum dicek'}</span>
+                      {waStatus?.ready && waStatus.authenticatedAs?.name ? (
+                        <span>• {waStatus.authenticatedAs.name}</span>
+                      ) : null}
+                    </div>
+                    <p className="text-sm text-neutral-600 mt-2">
                       {waStatus?.ready
                         ? `Terhubung (${waStatus.authenticatedAs?.name || waStatus.authenticatedAs?.phone || 'unknown'})`
                         : waStatus?.message || 'Belum terhubung'}
                     </p>
-                    {!waStatus?.ready && (
+                    {waStatus?.lastError && waStatus.state !== 'ready' && (
+                      <p className="text-xs text-neutral-500 mt-2">Detail error: {waStatus.lastError}</p>
+                    )}
+                    {!waStatus?.ready && waStatus?.state === 'needs_scan' && (
                       <p className="text-xs text-amber-700 mt-2 flex items-center gap-1">
                         <AlertTriangle className="w-3.5 h-3.5" />
                         Pastikan server menampilkan QR di terminal, lalu scan dari WhatsApp Linked Devices.
@@ -466,14 +489,24 @@ export default function WAReminder() {
                     )}
                   </div>
                 </div>
-                <Button
-                  variant="secondary"
-                  icon={<RefreshCw className="w-4 h-4" />}
-                  onClick={fetchWhatsAppStatus}
-                  isLoading={checkingStatus}
-                >
-                  Refresh Status
-                </Button>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button
+                    variant="secondary"
+                    icon={<RefreshCw className="w-4 h-4" />}
+                    onClick={() => fetchWhatsAppStatus()}
+                    isLoading={checkingStatus}
+                  >
+                    Refresh Status
+                  </Button>
+                  <Button
+                    variant="outline"
+                    icon={<RefreshCw className="w-4 h-4" />}
+                    onClick={() => fetchWhatsAppStatus(true)}
+                    isLoading={checkingStatus}
+                  >
+                    Reconnect
+                  </Button>
+                </div>
               </div>
             </Card>
 

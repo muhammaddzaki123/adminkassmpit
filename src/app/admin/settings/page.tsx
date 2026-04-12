@@ -19,6 +19,22 @@ interface Setting {
   description: string | null;
 }
 
+interface WhatsAppStatusResponse {
+  success: boolean;
+  connected: boolean;
+  ready: boolean;
+  state: 'idle' | 'initializing' | 'needs_scan' | 'session_locked' | 'ready' | 'disconnected' | 'error';
+  stateLabel: string;
+  message?: string;
+  lastError?: string | null;
+  authenticatedAs?: {
+    phone: string;
+    name: string;
+  } | null;
+  sessionLocked?: boolean;
+  qrPending?: boolean;
+}
+
 const EMAIL_PROVIDER_FALLBACK_SETTING: Setting = {
   id: 'virtual-email-provider',
   key: 'EMAIL_PROVIDER',
@@ -63,6 +79,8 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false);
   const [seeding, setSeeding] = useState(false);
   const [resettingWhatsApp, setResettingWhatsApp] = useState(false);
+  const [refreshingWhatsApp, setRefreshingWhatsApp] = useState(false);
+  const [waStatus, setWaStatus] = useState<WhatsAppStatusResponse | null>(null);
 
   useEffect(() => {
     const userData = localStorage.getItem('user');
@@ -78,7 +96,42 @@ export default function SettingsPage() {
     }
 
     fetchSettings();
+    fetchWhatsAppStatus();
   }, [router]);
+
+  const fetchWhatsAppStatus = async (bootstrap = false) => {
+    setRefreshingWhatsApp(true);
+    try {
+      const url = bootstrap ? '/api/whatsapp/status?refresh=1' : '/api/whatsapp/status';
+      const response = await fetchWithAuth(url);
+      const result = await response.json();
+
+      if (result.success) {
+        setWaStatus(result);
+      } else {
+        setWaStatus({
+          success: false,
+          connected: false,
+          ready: false,
+          state: 'error',
+          stateLabel: 'Error',
+          message: result.error || 'Gagal memeriksa status WhatsApp',
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching WhatsApp status:', error);
+      setWaStatus({
+        success: false,
+        connected: false,
+        ready: false,
+        state: 'error',
+        stateLabel: 'Error',
+        message: 'Gagal memeriksa status WhatsApp',
+      });
+    } finally {
+      setRefreshingWhatsApp(false);
+    }
+  };
 
   const fetchSettings = async () => {
     try {
@@ -152,7 +205,7 @@ export default function SettingsPage() {
   };
 
   const handleResetWhatsAppSession = async () => {
-    if (!confirm('Reset sesi WhatsApp akan menghapus cache login dan menutup browser yang masih terkunci. Lanjutkan?')) {
+    if (!confirm('Reset WA Connection akan menghapus cache login dan menutup browser yang masih terkunci. Lanjutkan?')) {
       return;
     }
 
@@ -166,7 +219,8 @@ export default function SettingsPage() {
 
       if (result.success) {
         const killedCount = result.browserCleanup?.killed ?? 0;
-        alert(`Sesi WhatsApp berhasil direset. ${killedCount > 0 ? `${killedCount} proses browser dihentikan. ` : ''}Buka status WhatsApp lagi untuk scan QR code.`);
+        alert(`WA Connection berhasil direset. ${killedCount > 0 ? `${killedCount} proses browser dihentikan. ` : ''}Buka status WhatsApp untuk scan QR code baru.`);
+        fetchWhatsAppStatus(true);
       } else {
         alert('Gagal mereset sesi WhatsApp: ' + (result.error || result.message || 'Unknown error'));
       }
@@ -240,6 +294,14 @@ export default function SettingsPage() {
     return formatted.replace(/\D/g, '');
   };
 
+  const statusTone = waStatus?.state === 'ready'
+    ? 'bg-green-50 text-green-700 border-green-200'
+    : waStatus?.state === 'session_locked'
+    ? 'bg-amber-50 text-amber-700 border-amber-200'
+    : waStatus?.state === 'needs_scan'
+    ? 'bg-blue-50 text-blue-700 border-blue-200'
+    : 'bg-neutral-50 text-neutral-700 border-neutral-200';
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-neutral-50">
@@ -297,19 +359,40 @@ export default function SettingsPage() {
                   <p className="text-sm text-neutral-600 mt-1">
                     Gunakan ini jika sesi WhatsApp terkunci, browser masih berjalan, atau QR login perlu diulang dari awal.
                   </p>
+                  <div className={`mt-4 inline-flex items-center gap-2 rounded-full border px-3 py-1 text-sm ${statusTone}`}>
+                    <span className="font-semibold">Status:</span>
+                    <span>{waStatus?.stateLabel || 'Belum dicek'}</span>
+                    {waStatus?.ready && waStatus.authenticatedAs?.name ? (
+                      <span>• {waStatus.authenticatedAs.name}</span>
+                    ) : null}
+                  </div>
+                  {waStatus?.message && (
+                    <p className="text-sm text-neutral-600 mt-3">{waStatus.message}</p>
+                  )}
+                  {waStatus?.lastError && waStatus.state !== 'ready' && (
+                    <p className="text-xs text-neutral-500 mt-2">Detail error: {waStatus.lastError}</p>
+                  )}
                   <div className="mt-4 flex flex-wrap items-center gap-3">
                     <Button
                       variant="outline"
                       icon={<RefreshCw className="w-4 h-4" />}
+                      onClick={() => fetchWhatsAppStatus(true)}
+                      disabled={refreshingWhatsApp}
+                    >
+                      {refreshingWhatsApp ? 'Mengecek...' : 'Reconnect / Refresh Status'}
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      icon={<RefreshCw className="w-4 h-4" />}
                       onClick={handleResetWhatsAppSession}
                       disabled={resettingWhatsApp}
                     >
-                      {resettingWhatsApp ? 'Mereset...' : 'Reset Session WhatsApp'}
+                      {resettingWhatsApp ? 'Mereset...' : 'Reset WA Connection'}
                     </Button>
-                    <span className="text-sm text-neutral-500">
-                      Setelah reset, buka status WhatsApp untuk memunculkan QR code baru.
-                    </span>
                   </div>
+                  <p className="text-sm text-neutral-500 mt-3">
+                    Reconnect dipakai untuk mencoba start ulang client tanpa menghapus session. Reset dipakai kalau browser lock atau auth rusak.
+                  </p>
                 </div>
               </div>
             </Card>

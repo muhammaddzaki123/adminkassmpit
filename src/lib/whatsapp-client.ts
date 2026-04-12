@@ -11,13 +11,18 @@
 import { Client, LocalAuth, Message as WWebMessage } from 'whatsapp-web.js';
 import * as fs from 'fs';
 import * as path from 'path';
+import { execFile } from 'child_process';
+import { promisify } from 'util';
 import qrcodeTerminal from 'qrcode-terminal';
 
 let client: Client | null = null;
 let isReady = false;
 let initializingPromise: Promise<Client> | null = null;
+let connectionState: 'idle' | 'initializing' | 'needs_scan' | 'session_locked' | 'ready' | 'disconnected' | 'error' = 'idle';
+let lastInitError: string | null = null;
 
 const AUTH_DIR = path.join(process.cwd(), '.wwebjs_auth');
+const execFileAsync = promisify(execFile);
 
 function resolveBrowserExecutablePath(): string | undefined {
   const fromEnv = process.env.WHATSAPP_CHROME_PATH;
@@ -55,12 +60,72 @@ async function removeAuthDirectory() {
   fs.mkdirSync(AUTH_DIR, { recursive: true });
 }
 
+function isBrowserAlreadyRunningError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error || '');
+  return /browser is already running/i.test(message) && /userDataDir/i.test(message);
+}
+
+async function killLockedBrowserProcesses() {
+  if (process.platform !== 'win32') {
+    return { skipped: true, killed: 0 };
+  }
+
+  const sessionToken = '.wwebjs_auth\\session-kassmpit-client';
+  const script = `
+    $processes = Get-CimInstance Win32_Process | Where-Object {
+      $_.CommandLine -and $_.CommandLine -like '*${sessionToken}*' -and ($_.Name -like 'chrome*' -or $_.Name -like 'msedge*')
+    }
+
+    $count = 0
+    foreach ($process in $processes) {
+      try {
+        Stop-Process -Id $process.ProcessId -Force -ErrorAction SilentlyContinue
+        $count++
+      } catch {
+      }
+    }
+
+    Write-Output $count
+  `;
+
+  const { stdout } = await execFileAsync('powershell.exe', [
+    '-NoProfile',
+    '-NonInteractive',
+    '-ExecutionPolicy', 'Bypass',
+    '-Command',
+    script,
+  ]);
+
+  const killed = Number.parseInt(String(stdout).trim(), 10);
+
+  return {
+    skipped: false,
+    killed: Number.isNaN(killed) ? 0 : killed,
+  };
+}
+
+async function destroyCurrentClient() {
+  if (!client) {
+    return;
+  }
+
+  try {
+    await client.destroy();
+  } catch (error) {
+    console.warn('Ignoring error while destroying WhatsApp client:', error);
+  } finally {
+    client = null;
+    isReady = false;
+  }
+}
+
 /**
  * Initialize WhatsApp client
  */
 export async function initializeWhatsAppClient() {
   if (client && isReady) {
     console.log('WhatsApp client already initialized');
+    connectionState = 'ready';
     return client;
   }
 
@@ -71,71 +136,104 @@ export async function initializeWhatsAppClient() {
 
   initializingPromise = (async () => {
     try {
-      console.log('Initializing WhatsApp Web client...');
-      const browserExecutablePath = resolveBrowserExecutablePath();
+      connectionState = 'initializing';
+      lastInitError = null;
 
-      if (browserExecutablePath) {
-        console.log(`Using browser executable: ${browserExecutablePath}`);
+      for (let attempt = 1; attempt <= 2; attempt++) {
+        try {
+          console.log('Initializing WhatsApp Web client...');
+          const browserExecutablePath = resolveBrowserExecutablePath();
+
+          if (browserExecutablePath) {
+            console.log(`Using browser executable: ${browserExecutablePath}`);
+          }
+
+          client = new Client({
+            authStrategy: new LocalAuth({
+              clientId: 'kassmpit-client',
+              dataPath: AUTH_DIR,
+            }),
+            puppeteer: {
+              headless: true,
+              executablePath: browserExecutablePath,
+              args: [
+                '--no-sandbox',
+                '--disable-setuid-sandbox',
+                '--disable-dev-shm-usage',
+              ],
+            },
+          });
+
+          client.on('qr', (qr: string) => {
+            connectionState = 'needs_scan';
+            console.warn('\n📱 SCAN QR CODE DENGAN WHATSAPP (Linked Devices):\n');
+            qrcodeTerminal.generate(qr, { small: true });
+          });
+
+          client.on('ready', () => {
+            isReady = true;
+            connectionState = 'ready';
+            lastInitError = null;
+            console.log('✅ WhatsApp Web client adalah ready!');
+          });
+
+          client.on('authenticated', () => {
+            console.log('✅ WhatsApp authenticated! Session saved.');
+          });
+
+          client.on('auth_failure', (msg) => {
+            console.error('❌ WhatsApp authentication failed:', msg);
+            isReady = false;
+            connectionState = 'needs_scan';
+            lastInitError = String(msg);
+          });
+
+          client.on('disconnected', (reason) => {
+            console.warn('⚠️ WhatsApp disconnected:', reason);
+            isReady = false;
+            connectionState = 'disconnected';
+            lastInitError = String(reason);
+            client = null;
+            initializingPromise = null;
+          });
+
+          client.on('message_create', (msg: WWebMessage) => {
+            if (msg.from !== 'status@broadcast') {
+              console.log(`📨 Message from ${msg.from}: ${msg.body}`);
+            }
+          });
+
+          await client.initialize();
+          return client;
+        } catch (error) {
+          const message = error instanceof Error ? error.message : String(error);
+          lastInitError = message;
+
+          if (attempt === 1 && isBrowserAlreadyRunningError(error)) {
+            connectionState = 'session_locked';
+            console.warn('Detected locked browser session. Attempting automatic cleanup and retry...');
+            await destroyCurrentClient();
+            await killLockedBrowserProcesses();
+            continue;
+          }
+
+          throw error;
+        }
       }
 
-      client = new Client({
-        authStrategy: new LocalAuth({
-          clientId: 'kassmpit-client',
-          dataPath: AUTH_DIR,
-        }),
-        puppeteer: {
-          headless: true,
-          executablePath: browserExecutablePath,
-          args: [
-            '--no-sandbox',
-            '--disable-setuid-sandbox',
-            '--disable-dev-shm-usage',
-          ],
-        },
-      });
-
-      client.on('qr', (qr: string) => {
-        console.warn('\n📱 SCAN QR CODE DENGAN WHATSAPP (Linked Devices):\n');
-        qrcodeTerminal.generate(qr, { small: true });
-      });
-
-      client.on('ready', () => {
-        isReady = true;
-        console.log('✅ WhatsApp Web client adalah ready!');
-      });
-
-      client.on('authenticated', () => {
-        console.log('✅ WhatsApp authenticated! Session saved.');
-      });
-
-      client.on('auth_failure', (msg) => {
-        console.error('❌ WhatsApp authentication failed:', msg);
-        isReady = false;
-      });
-
-      client.on('disconnected', (reason) => {
-        console.warn('⚠️ WhatsApp disconnected:', reason);
-        isReady = false;
-        client = null;
-        initializingPromise = null;
-      });
-
-      client.on('message_create', (msg: WWebMessage) => {
-        if (msg.from !== 'status@broadcast') {
-          console.log(`📨 Message from ${msg.from}: ${msg.body}`);
-        }
-      });
-
-      await client.initialize();
-      return client;
+      throw new Error('Failed to initialize WhatsApp client after retry.');
     } catch (error) {
       client = null;
       isReady = false;
+      connectionState = isBrowserAlreadyRunningError(error) ? 'session_locked' : 'error';
+      lastInitError = error instanceof Error ? error.message : String(error);
 
       const baseMessage =
         error instanceof Error ? error.message : 'Unknown WhatsApp client error';
       const guidance =
-        'Browser tidak ditemukan. Install Google Chrome/Microsoft Edge, atau set WHATSAPP_CHROME_PATH ke lokasi executable browser. Jika browser lama masih terkunci, tutup semua proses Chrome yang terkait lalu restart server.';
+        isBrowserAlreadyRunningError(error)
+          ? 'Browser lama untuk sesi WhatsApp masih terkunci. Gunakan Reset WA Connection di settings, atau tutup proses Chrome/Edge yang memakai session ini lalu coba lagi.'
+          : 'Browser tidak ditemukan. Install Google Chrome/Microsoft Edge, atau set WHATSAPP_CHROME_PATH ke lokasi executable browser.';
 
       console.error('Failed to initialize WhatsApp client:', error);
       throw new Error(`${baseMessage}\n${guidance}`);
@@ -224,18 +322,27 @@ export async function sendWhatsAppMessage(
 export function getClientStatus(): {
   connected: boolean;
   ready: boolean;
+  state: 'idle' | 'initializing' | 'needs_scan' | 'session_locked' | 'ready' | 'disconnected' | 'error';
+  lastError?: string | null;
   info?: {
     wid: string;
     pushname: string;
   };
 } {
   if (!client) {
-    return { connected: false, ready: false };
+    return {
+      connected: false,
+      ready: false,
+      state: connectionState,
+      lastError: lastInitError,
+    };
   }
 
   return {
     connected: client.pupBrowser?.connected ?? false,
     ready: isReady,
+    state: isReady ? 'ready' : connectionState,
+    lastError: lastInitError,
     info: client.info
       ? {
           wid: client.info.wid.user,
@@ -271,10 +378,12 @@ export async function resetWhatsAppClient() {
       await initializingPromise.catch(() => null);
     }
 
-    await destroyClient();
+    await destroyCurrentClient();
     await removeAuthDirectory();
     initializingPromise = null;
     isReady = false;
+    connectionState = 'idle';
+    lastInitError = null;
 
     return {
       success: true,
@@ -291,3 +400,5 @@ export async function resetWhatsAppClient() {
 }
 
 export { client, isReady };
+
+void initializeWhatsAppClient().catch(() => null);
