@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import { sendNotification } from '@/lib/notification';
 import { normalizeMidtransStatus, verifyMidtransSignature } from '@/lib/midtrans';
+import { getPaymentSuccessMessage, sendWhatsAppMessage } from '@/lib/whatsapp';
 
 function normalizeLegacyStatus(status: string): 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED' | 'EXPIRED' {
   const value = status.toUpperCase();
@@ -68,7 +68,8 @@ export async function POST(request: NextRequest) {
       ? normalizeMidtransStatus(rawStatus, body.fraud_status as string | undefined)
       : normalizeLegacyStatus(rawStatus);
 
-    const payment = await prisma.payment.findUnique({
+    // Try to find payment by order_id first, then by transaction_id
+    let payment = await prisma.payment.findUnique({
       where: { externalId },
       include: {
         billing: {
@@ -82,6 +83,23 @@ export async function POST(request: NextRequest) {
         },
       },
     });
+
+    if (!payment && isMidtransPayload && body.transaction_id) {
+      payment = await prisma.payment.findUnique({
+        where: { transactionId: body.transaction_id },
+        include: {
+          billing: {
+            include: {
+              student: {
+                include: {
+                  user: true,
+                },
+              },
+            },
+          },
+        },
+      });
+    }
 
     if (!payment) {
       return NextResponse.json(
@@ -120,6 +138,9 @@ export async function POST(request: NextRequest) {
         where: { id: payment.id },
         data: {
           status: normalizedStatus,
+          ...(isMidtransPayload && body.transaction_id && !payment.transactionId
+            ? { transactionId: body.transaction_id }
+            : {}),
           paidAt: normalizedStatus === 'COMPLETED'
             ? (paidAt ? new Date(paidAt) : new Date())
             : payment.paidAt,
@@ -151,21 +172,27 @@ export async function POST(request: NextRequest) {
     if (updated.updatedPayment.status === 'COMPLETED') {
       const student = payment.billing.student;
       if (student && (student.email || student.noTelp)) {
-        await sendNotification(
-          {
-            email: student.email || undefined,
-            phone: student.noTelp || undefined,
-            userId: student.user?.id,
-          },
-          'payment-success',
-          {
-            nama: student.nama,
-            paymentType: payment.billing.type,
+        if (student.noTelp) {
+          const phoneNumber = student.noTelp.startsWith('+')
+            ? student.noTelp
+            : `+62${student.noTelp.replace(/^0/, '')}`;
+
+          const message = getPaymentSuccessMessage({
+            studentName: student.nama,
             amount: payment.amount,
-            paidAt: updated.updatedPayment.paidAt?.toLocaleString('id-ID') || new Date().toLocaleString('id-ID'),
+            billingType: payment.billing.type,
+            paymentMethod: payment.method,
             transactionId: updated.updatedPayment.paymentNumber,
-          }
-        );
+          });
+
+          await sendWhatsAppMessage({
+            to: phoneNumber,
+            body: message,
+            template: 'payment_success',
+          }).catch((error) => {
+            console.warn('Failed to send payment success WhatsApp notification:', error);
+          });
+        }
       }
     }
 

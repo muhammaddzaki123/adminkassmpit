@@ -39,6 +39,13 @@ export async function POST(
       );
     }
 
+    if (!billing.allowInstallments) {
+      return NextResponse.json(
+        { error: 'Siswa ini tidak diizinkan cicilan' },
+        { status: 400 }
+      );
+    }
+
     // Check if billing is already paid
     if (billing.status === 'PAID') {
       return NextResponse.json(

@@ -19,6 +19,7 @@ interface Billing {
   paidAmount: number;
   remainingAmount: number;
   status: string;
+  allowInstallments?: boolean;
   month: number | null;
   year: number | null;
   dueDate: string | null;
@@ -33,11 +34,13 @@ function SPPPaymentContent() {
   const [billings, setBillings] = useState<Billing[]>([]);
   const [selectedBillings, setSelectedBillings] = useState<string[]>([]);
   const [paymentMethod, setPaymentMethod] = useState<'VIRTUAL_ACCOUNT' | 'TRANSFER_BANK' | 'EWALLET' | null>(null);
+  const [paymentBankCode, setPaymentBankCode] = useState<string>('');
   const [paymentAmount, setPaymentAmount] = useState<number>(0);
   const [payment, setPayment] = useState<{
     id: string;
     paymentNumber: string;
     externalId?: string;
+    bankCode?: string;
     amount: number;
     adminFee: number;
     totalPaid: number;
@@ -145,6 +148,67 @@ function SPPPaymentContent() {
     }
   };
 
+  const getPaymentMethodLabel = (method?: string | null) => {
+    switch (method) {
+      case 'VIRTUAL_ACCOUNT':
+        return 'Virtual Account';
+      case 'TRANSFER_BANK':
+        return 'Transfer Bank Manual';
+      case 'EWALLET':
+        return 'QRIS / E-Wallet';
+      default:
+        return method || '-';
+    }
+  };
+
+  const getPaymentMethodHint = (method?: string | null) => {
+    switch (method) {
+      case 'VIRTUAL_ACCOUNT':
+        return 'Bayar lewat nomor VA bank yang ditampilkan sistem';
+      case 'TRANSFER_BANK':
+        return 'Transfer manual sesuai instruksi yang muncul';
+      case 'EWALLET':
+        return 'Scan QR atau buka aplikasi e-wallet';
+      default:
+        return '';
+    }
+  };
+
+  const getBankLabel = (bankCode?: string | null) => {
+    switch (bankCode) {
+      case 'bca':
+        return 'BCA';
+      case 'bni':
+        return 'BNI';
+      case 'bri':
+        return 'BRI';
+      case 'bsm':
+        return 'BSI';
+      case 'cimb':
+        return 'CIMB Niaga';
+      case 'permata':
+        return 'Permata';
+      default:
+        return bankCode || '-';
+    }
+  };
+
+  const bankOptions = [
+    { value: 'bca', label: 'BCA' },
+    { value: 'bni', label: 'BNI' },
+    { value: 'bri', label: 'BRI' },
+    { value: 'bsm', label: 'BSI' },
+    { value: 'cimb', label: 'CIMB Niaga' },
+    { value: 'permata', label: 'Permata' },
+  ];
+
+  const selectPaymentMethod = (method: 'VIRTUAL_ACCOUNT' | 'TRANSFER_BANK' | 'EWALLET') => {
+    setPaymentMethod(method);
+    if (method === 'EWALLET') {
+      setPaymentBankCode('');
+    }
+  };
+
   const toggleBillingSelection = (billingId: string) => {
     if (selectedBillings.includes(billingId)) {
       setSelectedBillings(selectedBillings.filter(id => id !== billingId));
@@ -186,9 +250,19 @@ function SPPPaymentContent() {
     const billing = billings.find(b => b.id === selectedBillings[0]);
     if (!billing) return;
 
+    if ((paymentMethod === 'VIRTUAL_ACCOUNT' || paymentMethod === 'TRANSFER_BANK') && !paymentBankCode) {
+      alert('Pilih bank tujuan terlebih dahulu');
+      return;
+    }
+
     const amount = paymentAmount || billing.remainingAmount;
     if (amount <= 0 || amount > billing.remainingAmount) {
       alert(`Nominal pembayaran harus antara Rp 1 - ${formatCurrency(billing.remainingAmount)}`);
+      return;
+    }
+
+    if (amount < billing.remainingAmount && !billing.allowInstallments) {
+      alert('Tagihan ini tidak mengizinkan cicilan. Harus dibayar penuh.');
       return;
     }
 
@@ -203,6 +277,7 @@ function SPPPaymentContent() {
           billingId: billing.id,
           amount: amount,
           method: paymentMethod,
+          bankCode: paymentBankCode || null,
           notes: `Pembayaran ${billing.type} ${billing.month ? getMonthName(billing.month) : billing.billNumber}`,
         }),
       });
@@ -244,6 +319,51 @@ function SPPPaymentContent() {
     alert('Berhasil disalin!');
   };
 
+  const syncPaymentStatus = useCallback(async () => {
+    if (!payment?.id) return;
+
+    try {
+      const response = await fetchWithAuth('/api/payment/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ paymentId: payment.id }),
+      });
+
+      if (!response.ok) {
+        return;
+      }
+
+      const result = await response.json();
+      if (!result?.success || !result?.data?.status) {
+        return;
+      }
+
+      const latestStatus = result.data.status as string;
+      setPayment((prev) => (prev ? { ...prev, status: latestStatus } : prev));
+
+      if (latestStatus === 'COMPLETED') {
+        await fetchBillings();
+        setStep('success');
+      }
+    } catch (error) {
+      console.warn('Failed to sync payment status:', error);
+    }
+  }, [payment?.id, fetchBillings]);
+
+  useEffect(() => {
+    if (step !== 'payment' || !payment?.id || payment.status === 'COMPLETED') {
+      return;
+    }
+
+    syncPaymentStatus();
+
+    const interval = setInterval(() => {
+      syncPaymentStatus();
+    }, 10000);
+
+    return () => clearInterval(interval);
+  }, [step, payment?.id, payment?.status, syncPaymentStatus]);
+
   // Success screen
   if (step === 'success') {
     return (
@@ -279,7 +399,8 @@ function SPPPaymentContent() {
                       </div>
                       <div>
                         <p className="text-sm text-neutral-600">Metode</p>
-                        <p className="font-semibold">{payment.method}</p>
+                        <p className="font-semibold">{getPaymentMethodLabel(payment.method)}</p>
+                        <p className="text-xs text-neutral-500 mt-1">{getPaymentMethodHint(payment.method)}</p>
                       </div>
                       <div>
                         <p className="text-sm text-neutral-600">Nominal</p>
@@ -330,7 +451,8 @@ function SPPPaymentContent() {
                     <div>
                       <p className="font-semibold text-blue-800">Pembayaran Belum Selesai</p>
                       <p className="text-sm text-blue-700 mt-1">
-                        Silakan transfer sesuai nominal dan tunggu konfirmasi otomatis dari sistem.
+                        {payment.method ? `${getPaymentMethodLabel(payment.method)} dipilih. ` : ''}
+                        Silakan ikuti instruksi sesuai metode dan tunggu konfirmasi otomatis dari sistem.
                       </p>
                     </div>
                   </div>
@@ -344,6 +466,15 @@ function SPPPaymentContent() {
                       <Copy className="w-5 h-5" />
                     </button>
                   </div>
+
+                    {payment.bankCode && (
+                      <>
+                        <p className="text-sm text-neutral-600 mb-2">Bank</p>
+                        <div className="flex items-center justify-between bg-white rounded-lg p-4 mb-4">
+                          <p className="font-semibold text-neutral-900">{getBankLabel(payment.bankCode)}</p>
+                        </div>
+                      </>
+                    )}
 
                   {payment.externalId && (
                     <>
@@ -359,7 +490,7 @@ function SPPPaymentContent() {
 
                   {payment.vaNumber && (
                     <>
-                      <p className="text-sm text-neutral-600 mb-2">Virtual Account</p>
+                      <p className="text-sm text-neutral-600 mb-2">Virtual Account / Nomor Bayar{payment.bankCode ? ` - ${getBankLabel(payment.bankCode)}` : ''}</p>
                       <div className="flex items-center justify-between bg-white rounded-lg p-4 mb-4">
                         <p className="font-mono text-base font-bold">{payment.vaNumber}</p>
                         <button onClick={() => copyToClipboard(payment.vaNumber || '')} className="text-primary-600">
@@ -371,7 +502,8 @@ function SPPPaymentContent() {
 
                   {(payment.qrCode || payment.deeplink) && (
                     <div className="bg-white rounded-lg p-4 mb-4 space-y-3">
-                      <p className="text-sm font-semibold text-neutral-900">Aksi Pembayaran</p>
+                      <p className="text-sm font-semibold text-neutral-900">Aksi Pembayaran - {getPaymentMethodLabel(payment.method)}</p>
+                      <p className="text-xs text-neutral-500">QRIS bisa dibayar lewat GoPay, DANA, OVO, ShopeePay, dan aplikasi lain yang mendukung QRIS.</p>
                       {payment.qrCode && (
                         <a
                           href={payment.qrCode}
@@ -418,7 +550,7 @@ function SPPPaymentContent() {
                   <Button onClick={() => router.push('/student/dashboard')} variant="secondary" className="flex-1">
                     Kembali ke Dashboard
                   </Button>
-                  <Button onClick={fetchBillings} variant="primary" className="flex-1">
+                  <Button onClick={syncPaymentStatus} variant="primary" className="flex-1">
                     Refresh Status
                   </Button>
                 </div>
@@ -457,6 +589,9 @@ function SPPPaymentContent() {
     const total = getTotalAmount();
     const adminFee = getAdminFee();
     const grandTotal = total + adminFee;
+    const selectedBilling = selectedBillings.length === 1
+      ? billings.find((billing) => billing.id === selectedBillings[0]) || null
+      : null;
 
     return (
       <div className="flex min-h-screen bg-neutral-50">
@@ -519,7 +654,7 @@ function SPPPaymentContent() {
                 </div>
 
                 {/* Payment amount input for installment */}
-                {selectedBillings.length === 1 && (
+                {selectedBilling?.allowInstallments && (
                   <div className="mt-4">
                     <label className="block text-sm font-medium text-neutral-700 mb-2">
                       Nominal Pembayaran (Opsional - untuk cicilan)
@@ -536,13 +671,19 @@ function SPPPaymentContent() {
                     </p>
                   </div>
                 )}
+
+                {selectedBilling && !selectedBilling.allowInstallments && (
+                  <div className="mt-4 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800">
+                    Tagihan ini harus dibayar penuh. Opsi cicilan hanya tersedia untuk siswa tertentu.
+                  </div>
+                )}
               </Card>
 
               <Card>
                 <h3 className="font-semibold text-neutral-900 mb-4">Metode Pembayaran</h3>
                 <div className="space-y-3">
                   <button
-                    onClick={() => setPaymentMethod('VIRTUAL_ACCOUNT')}
+                    onClick={() => selectPaymentMethod('VIRTUAL_ACCOUNT')}
                     className={`w-full flex items-center gap-4 p-4 border-2 rounded-lg transition ${
                       paymentMethod === 'VIRTUAL_ACCOUNT'
                         ? 'border-primary-600 bg-primary-50'
@@ -552,13 +693,13 @@ function SPPPaymentContent() {
                     <Building className="w-6 h-6 text-primary-600" />
                     <div className="flex-1 text-left">
                       <p className="font-semibold text-neutral-900">Virtual Account</p>
-                      <p className="text-sm text-neutral-600">Transfer via VA Bank</p>
+                      <p className="text-sm text-neutral-600">Pilih bank VA yang tersedia di Midtrans</p>
                     </div>
                     <p className="text-sm text-neutral-600">+Rp 2.500</p>
                   </button>
 
                   <button
-                    onClick={() => setPaymentMethod('EWALLET')}
+                    onClick={() => selectPaymentMethod('EWALLET')}
                     className={`w-full flex items-center gap-4 p-4 border-2 rounded-lg transition ${
                       paymentMethod === 'EWALLET'
                         ? 'border-primary-600 bg-primary-50'
@@ -567,14 +708,14 @@ function SPPPaymentContent() {
                   >
                     <Smartphone className="w-6 h-6 text-primary-600" />
                     <div className="flex-1 text-left">
-                      <p className="font-semibold text-neutral-900">E-Wallet</p>
-                      <p className="text-sm text-neutral-600">OVO, GoPay, DANA</p>
+                      <p className="font-semibold text-neutral-900">QRIS / E-Wallet</p>
+                      <p className="text-sm text-neutral-600">Satu QRIS dapat dibayar lewat GoPay, DANA, OVO, ShopeePay, dan aplikasi lain yang mendukung QRIS</p>
                     </div>
                     <p className="text-sm text-neutral-600">+0.7%</p>
                   </button>
 
                   <button
-                    onClick={() => setPaymentMethod('TRANSFER_BANK')}
+                    onClick={() => selectPaymentMethod('TRANSFER_BANK')}
                     className={`w-full flex items-center gap-4 p-4 border-2 rounded-lg transition ${
                       paymentMethod === 'TRANSFER_BANK'
                         ? 'border-primary-600 bg-primary-50'
@@ -584,10 +725,42 @@ function SPPPaymentContent() {
                     <CreditCard className="w-6 h-6 text-primary-600" />
                     <div className="flex-1 text-left">
                       <p className="font-semibold text-neutral-900">Transfer Bank</p>
-                      <p className="text-sm text-neutral-600">Transfer manual</p>
+                      <p className="text-sm text-neutral-600">Pilih bank transfer yang didukung gateway</p>
                     </div>
                     <p className="text-sm text-green-600">Gratis</p>
                   </button>
+
+                  {(paymentMethod === 'VIRTUAL_ACCOUNT' || paymentMethod === 'TRANSFER_BANK') && (
+                    <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-4 space-y-3">
+                      <p className="text-sm font-semibold text-neutral-900">
+                        {paymentMethod === 'VIRTUAL_ACCOUNT' ? 'VA Bank' : 'Transfer Bank Manual'}
+                      </p>
+                      <p className="text-xs text-neutral-500">
+                        {paymentMethod === 'VIRTUAL_ACCOUNT'
+                          ? 'Pilih bank yang dipakai untuk Virtual Account.'
+                          : 'Pilih bank tujuan untuk transfer manual yang didukung gateway.'}
+                      </p>
+                      <div className="grid grid-cols-2 gap-2 md:grid-cols-3">
+                        {bankOptions.map((option) => (
+                          <button
+                            key={option.value}
+                            type="button"
+                            onClick={() => setPaymentBankCode(option.value)}
+                            className={`rounded-lg border px-3 py-2 text-sm font-medium transition ${
+                              paymentBankCode === option.value
+                                ? 'border-primary-600 bg-primary-50 text-primary-700'
+                                : 'border-neutral-200 bg-white text-neutral-700 hover:border-primary-300'
+                            }`}
+                          >
+                            {option.label}
+                          </button>
+                        ))}
+                      </div>
+                      <p className="text-xs text-neutral-500">
+                        Jika bank yang Anda cari tidak tersedia, berarti bank tersebut belum didukung oleh integrasi Midtrans saat ini dan sebaiknya pakai transfer manual atau QRIS.
+                      </p>
+                    </div>
+                  )}
 
                   <div className="bg-yellow-50 border-l-4 border-yellow-500 p-3">
                     <div className="flex items-start gap-2">

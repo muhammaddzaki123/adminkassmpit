@@ -39,6 +39,7 @@ export default function CreateStudentPage() {
     namaAyah: '',
     namaIbu: '',
     noTelpOrtu: '',
+    allowInstallments: false,
   });
 
   const activeAcademicYearId = useMemo(
@@ -176,37 +177,50 @@ export default function CreateStudentPage() {
                       maxLength={10}
                       required
                     />
-                      <div className="grid grid-cols-1 gap-4">
-                        <Select
-                          label="Tahun Ajaran"
-                          name="academicYearId"
-                          value={formData.academicYearId}
-                          onChange={handleInputChange}
-                          options={[
-                            { value: '', label: 'Pilih Tahun Ajaran' },
-                            ...academicYears.map((year) => ({
-                              value: year.id,
-                              label: `${year.year}${year.isActive ? ' (Aktif)' : ''}`,
-                            })),
-                          ]}
-                          required
-                        />
-                        <Select
-                          label="Kelas"
-                          name="classId"
-                          value={formData.classId}
-                          onChange={handleInputChange}
-                          options={[
-                            { value: '', label: 'Pilih Kelas' },
-                            ...classes.map((item) => ({
-                              value: item.id,
-                              label: `Kelas ${item.grade} - ${item.name}`,
-                            })),
-                          ]}
-                          required
-                        />
-                      </div>
+                    <div className="grid grid-cols-1 gap-4">
+                      <Select
+                        label="Tahun Ajaran"
+                        name="academicYearId"
+                        value={formData.academicYearId}
+                        onChange={handleInputChange}
+                        options={[
+                          { value: '', label: 'Pilih Tahun Ajaran' },
+                          ...academicYears.map((year) => ({
+                            value: year.id,
+                            label: `${year.year}${year.isActive ? ' (Aktif)' : ''}`,
+                          })),
+                        ]}
+                        required
+                      />
+                      <Select
+                        label="Kelas"
+                        name="classId"
+                        value={formData.classId}
+                        onChange={handleInputChange}
+                        options={[
+                          { value: '', label: 'Pilih Kelas' },
+                          ...classes.map((item) => ({
+                            value: item.id,
+                            label: `Kelas ${item.grade} - ${item.name}`,
+                          })),
+                        ]}
+                        required
+                      />
+                    </div>
                   </div>
+
+                  <label className="flex items-center gap-3 rounded-lg border border-neutral-200 bg-neutral-50 px-4 py-3">
+                    <input
+                      type="checkbox"
+                      checked={formData.allowInstallments}
+                      onChange={(e) => setFormData((prev) => ({ ...prev, allowInstallments: e.target.checked }))}
+                      className="h-4 w-4 rounded border-neutral-300 text-primary-600 focus:ring-primary-500"
+                    />
+                    <div>
+                      <p className="text-sm font-medium text-neutral-900">Izinkan cicilan</p>
+                      <p className="text-xs text-neutral-500">Aktifkan hanya untuk siswa tertentu yang memang boleh bayar bertahap.</p>
+                    </div>
+                  </label>
 
                     <div className="rounded-lg border border-neutral-200 bg-neutral-50 px-4 py-3 flex items-start gap-3">
                       <School className="w-5 h-5 text-primary-600 mt-0.5" />

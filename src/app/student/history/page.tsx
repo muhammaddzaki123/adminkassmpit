@@ -123,6 +123,19 @@ export default function HistoryPage() {
     }
   };
 
+  const getPaymentMethodLabel = (method?: string | null) => {
+    switch (method) {
+      case 'VIRTUAL_ACCOUNT':
+        return 'Virtual Account';
+      case 'TRANSFER_BANK':
+        return 'Transfer Bank Manual';
+      case 'EWALLET':
+        return 'QRIS / E-Wallet';
+      default:
+        return method || '-';
+    }
+  };
+
   const filteredTransactions = transactions.filter((trx) => {
     const matchStatus = filterStatus === 'all' || trx.status === filterStatus;
     const matchType = filterType === 'all' || trx.paymentType === filterType;
@@ -217,7 +230,7 @@ export default function HistoryPage() {
                           </div>
                           <div className="space-y-1 text-sm text-neutral-600">
                             <p>ID: {transaction.id}</p>
-                            <p>Metode: {transaction.paymentMethod.replace('_', ' ')}</p>
+                            <p>Metode: {getPaymentMethodLabel(transaction.paymentMethod)}</p>
                             {transaction.vaNumber && (
                               <p>VA Number: {transaction.vaNumber}</p>
                             )}

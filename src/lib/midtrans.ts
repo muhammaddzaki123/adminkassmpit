@@ -6,6 +6,7 @@ export interface MidtransChargeRequest {
   orderId: string;
   grossAmount: number;
   channel: MidtransPaymentChannel;
+  bankCode?: string;
   customer: {
     firstName: string;
     email?: string | null;
@@ -29,6 +30,16 @@ export interface MidtransChargeResult {
   vaNumber?: string;
   qrCodeUrl?: string;
   deeplinkUrl?: string;
+  raw: unknown;
+}
+
+export interface MidtransTransactionStatusResult {
+  transactionId?: string;
+  orderId: string;
+  transactionStatus: string;
+  fraudStatus?: string;
+  settlementTime?: string;
+  grossAmount?: string;
   raw: unknown;
 }
 
@@ -87,7 +98,7 @@ function resolveChargePayload(input: MidtransChargeRequest) {
     };
   }
 
-  const bank = process.env.MIDTRANS_DEFAULT_BANK || 'bca';
+  const bank = input.bankCode || process.env.MIDTRANS_DEFAULT_BANK || 'bca';
 
   return {
     ...basePayload,
@@ -131,6 +142,34 @@ export async function createMidtransCharge(input: MidtransChargeRequest): Promis
     vaNumber: body.va_numbers?.[0]?.va_number || body.permata_va_number || undefined,
     qrCodeUrl: body.qr_url || qrAction?.url || undefined,
     deeplinkUrl: deeplinkAction?.url || undefined,
+    raw: body,
+  };
+}
+
+export async function getMidtransTransactionStatus(orderId: string): Promise<MidtransTransactionStatusResult> {
+  const { serverKey, apiUrl } = getMidtransConfig();
+
+  const response = await fetch(`${apiUrl}/${orderId}/status`, {
+    method: 'GET',
+    headers: {
+      Authorization: getBasicAuthHeader(serverKey),
+      Accept: 'application/json',
+    },
+  });
+
+  const body = await response.json();
+
+  if (!response.ok) {
+    throw new Error(body?.status_message || body?.error_messages?.join(', ') || 'Failed to fetch Midtrans transaction status');
+  }
+
+  return {
+    transactionId: body.transaction_id ? String(body.transaction_id) : undefined,
+    orderId: String(body.order_id || orderId),
+    transactionStatus: String(body.transaction_status || 'pending'),
+    fraudStatus: body.fraud_status ? String(body.fraud_status) : undefined,
+    settlementTime: body.settlement_time ? String(body.settlement_time) : undefined,
+    grossAmount: body.gross_amount ? String(body.gross_amount) : undefined,
     raw: body,
   };
 }

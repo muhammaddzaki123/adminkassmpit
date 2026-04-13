@@ -147,6 +147,7 @@ export async function POST(request: NextRequest) {
             discount: 0,
             totalAmount: amount,
             paidAmount: 0,
+            allowInstallments: sc.student.allowInstallments,
             status: 'BILLED',
             dueDate,
             billDate: new Date(),

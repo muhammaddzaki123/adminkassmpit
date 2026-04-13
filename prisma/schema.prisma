@@ -128,6 +128,7 @@ model Student {
 
   // Virtual Account untuk pembayaran
   virtualAccount String? @unique @map("virtual_account") // VA number for payments
+  allowInstallments Boolean @default(false) @map("allow_installments")
 
   // Academic info
   enrollmentType String?   @map("enrollment_type") // NEW, CONTINUING, TRANSFER
@@ -509,10 +510,11 @@ model Payment {
   status PaymentStatus @default(PENDING)
 
   // Payment gateway integration
-  externalId String? @unique @map("external_id") // ID dari payment gateway
-  vaNumber   String? @map("va_number")
-  qrCode     String? @map("qr_code")
-  deeplink   String? // Link untuk e-wallet
+  externalId    String?  @unique @map("external_id") // Order ID dari payment gateway (MID-xxx)
+  transactionId String?  @unique @map("transaction_id") // Transaction ID dari Midtrans (A120260...)
+  vaNumber      String?  @map("va_number")
+  qrCode        String?  @map("qr_code")
+  deeplink      String? // Link untuk e-wallet
 
   // Timestamp
   expiredAt DateTime? @map("expired_at")

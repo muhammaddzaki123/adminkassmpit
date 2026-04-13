@@ -22,6 +22,7 @@ export async function POST(request: NextRequest) {
       namaAyah,
       namaIbu,
       noTelpOrtu,
+      allowInstallments,
       // Account settings
       username, // Optional, default = NISN
       password, // Optional, default = NISN
@@ -111,6 +112,7 @@ export async function POST(request: NextRequest) {
           noTelpOrangTua: noTelpOrtu || null,
           status: 'ACTIVE',
           enrollmentType: 'NEW',
+          allowInstallments: Boolean(allowInstallments),
           birthPlace: tempatLahir || null,
           birthDate: tanggalLahir ? new Date(tanggalLahir) : null,
           gender: jenisKelamin || null,

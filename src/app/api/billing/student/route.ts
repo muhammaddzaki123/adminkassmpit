@@ -103,6 +103,7 @@ export async function GET(req: NextRequest) {
       totalAmount: billing.totalAmount,
       paidAmount: billing.paidAmount,
       remainingAmount: billing.totalAmount - billing.paidAmount,
+      allowInstallments: billing.allowInstallments,
       status: billing.status,
       dueDate: billing.dueDate,
       billDate: billing.billDate,

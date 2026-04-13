@@ -15,6 +15,7 @@ type StudentDetail = {
   noTelpOrangTua: string | null;
   status: StudentStatus;
   virtualAccount: string | null;
+  allowInstallments: boolean;
   enrollmentType: string | null;
   admissionDate: Date;
   graduationDate: Date | null;
@@ -102,6 +103,7 @@ export async function GET(request: NextRequest, context: { params: Promise<{ id:
       noTelpOrangTua: student.noTelpOrangTua,
       status: student.status,
       virtualAccount: student.virtualAccount,
+      allowInstallments: student.allowInstallments,
       enrollmentType: student.enrollmentType,
       admissionDate: student.admissionDate,
       graduationDate: student.graduationDate,
@@ -165,6 +167,7 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
       noTelpOrangTua,
       status,
       virtualAccount,
+      allowInstallments,
       enrollmentType,
       admissionDate,
       graduationDate,
@@ -248,6 +251,7 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
           noTelpOrangTua: noTelpOrangTua || null,
           status: status as StudentStatus,
           virtualAccount: virtualAccount || null,
+          allowInstallments: Boolean(allowInstallments),
           enrollmentType: enrollmentType || null,
           admissionDate: admissionDate ? new Date(admissionDate) : existingStudent.admissionDate,
           graduationDate: graduationDate ? new Date(graduationDate) : null,

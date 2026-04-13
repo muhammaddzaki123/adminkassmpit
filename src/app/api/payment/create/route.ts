@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getServerSession } from '@/lib/auth';
-import { createMidtransCharge } from '@/lib/midtrans';
+import { createMidtransCharge, normalizeMidtransStatus } from '@/lib/midtrans';
 
 // POST /api/payment/create - Create payment for a billing (PROPER FLOW)
 export async function POST(request: NextRequest) {
@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { billingId, amount, method, receiptUrl, notes } = await request.json();
+    const { billingId, amount, method, bankCode, receiptUrl, notes } = await request.json();
 
     // Validate
     if (!billingId || !amount || !method) {
@@ -80,6 +80,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const isInstallmentPayment = amount < (billing.totalAmount - billing.paidAmount);
+    if (isInstallmentPayment && !billing.allowInstallments) {
+      return NextResponse.json(
+        { error: 'Billing ini tidak mengizinkan cicilan' },
+        { status: 400 }
+      );
+    }
+
     // Calculate remaining amount
     const remainingAmount = billing.totalAmount - billing.paidAmount;
 
@@ -104,8 +112,6 @@ export async function POST(request: NextRequest) {
     const totalPaid = amount + adminFee;
 
     // TUNAI must be processed by treasurer
-    const paymentStatus = method === 'TUNAI' ? 'COMPLETED' : 'PENDING';
-    
     if (method === 'TUNAI' && session.user.role !== 'TREASURER') {
       return NextResponse.json(
         { error: 'Cash payments must be processed by treasurer' },
@@ -117,6 +123,7 @@ export async function POST(request: NextRequest) {
 
     let gatewayResult: {
       orderId: string;
+      transactionId: string;
       status: string;
       expiredAt: Date | null;
       vaNumber: string | null;
@@ -131,6 +138,7 @@ export async function POST(request: NextRequest) {
           orderId: orderId!,
           grossAmount: totalPaid,
           channel: method,
+          bankCode,
           customer: {
             firstName: billing.student?.nama || 'Siswa',
             email: billing.student?.email,
@@ -159,6 +167,7 @@ export async function POST(request: NextRequest) {
 
         gatewayResult = {
           orderId: midtrans.orderId,
+          transactionId: midtrans.transactionId,
           status: midtrans.transactionStatus,
           expiredAt: midtrans.expiryTime ? new Date(midtrans.expiryTime) : null,
           vaNumber: midtrans.vaNumber || null,
@@ -175,6 +184,12 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    const resolvedPaymentStatus = method === 'TUNAI'
+      ? 'COMPLETED'
+      : (gatewayResult
+          ? normalizeMidtransStatus(gatewayResult.status)
+          : 'PENDING');
+
     // Create payment in transaction
     const payment = await prisma.$transaction(async (tx) => {
       // Create payment
@@ -188,15 +203,16 @@ export async function POST(request: NextRequest) {
           amount,
           adminFee,
           totalPaid,
-          status: paymentStatus,
-          notes,
+          status: resolvedPaymentStatus,
           receiptUrl,
           externalId: gatewayResult?.orderId || null,
+          transactionId: gatewayResult?.transactionId || null,
+          notes: notes,
           expiredAt: gatewayResult?.expiredAt || null,
           vaNumber: gatewayResult?.vaNumber || null,
           qrCode: gatewayResult?.qrCode || null,
           deeplink: gatewayResult?.deeplink || null,
-          paidAt: paymentStatus === 'COMPLETED' ? new Date() : null,
+          paidAt: resolvedPaymentStatus === 'COMPLETED' ? new Date() : null,
           ...(gatewayResult && {
             notes: [
               notes || '',
@@ -232,7 +248,7 @@ export async function POST(request: NextRequest) {
       }
 
       // If TUNAI, update billing immediately
-      if (paymentStatus === 'COMPLETED') {
+      if (resolvedPaymentStatus === 'COMPLETED') {
         const newPaidAmount = billing.paidAmount + amount;
         const newStatus = newPaidAmount >= billing.totalAmount ? 'PAID' : 'PARTIAL';
 
@@ -260,6 +276,7 @@ export async function POST(request: NextRequest) {
           totalPaid: payment.totalPaid,
           status: payment.status,
           method: payment.method,
+          bankCode: bankCode || null,
           vaNumber: payment.vaNumber,
           qrCode: payment.qrCode,
           expiredAt: payment.expiredAt,
@@ -268,6 +285,7 @@ export async function POST(request: NextRequest) {
         paymentInstructions: payment.status === 'PENDING' ? {
           method: payment.method,
           externalId: payment.externalId,
+          bankCode: bankCode || null,
           ...(payment.method === 'VIRTUAL_ACCOUNT' ? { vaNumber: payment.vaNumber } : {}),
           ...(payment.method === 'EWALLET' ? { deeplink: payment.deeplink, qrCode: payment.qrCode } : {}),
           expiredAt: payment.expiredAt,
