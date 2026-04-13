@@ -523,6 +523,7 @@ model Payment {
   // Bukti pembayaran
   receiptUrl String? @map("receipt_url")
   notes      String? @db.Text
+  auditPayload Json?   @map("audit_payload")
 
   // Metadata
   processedById String?  @map("processed_by_id")

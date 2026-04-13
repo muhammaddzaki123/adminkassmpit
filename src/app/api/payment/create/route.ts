@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getServerSession } from '@/lib/auth';
 import { createMidtransCharge, normalizeMidtransStatus } from '@/lib/midtrans';
+import { appendPaymentAuditEvent, buildPaymentNotes } from '@/lib/payment-audit';
 
 // POST /api/payment/create - Create payment for a billing (PROPER FLOW)
 export async function POST(request: NextRequest) {
@@ -192,6 +193,25 @@ export async function POST(request: NextRequest) {
 
     // Create payment in transaction
     const payment = await prisma.$transaction(async (tx) => {
+      const auditPayload = appendPaymentAuditEvent(null, {
+        source: 'create',
+        status: resolvedPaymentStatus,
+        message: method === 'TUNAI'
+          ? 'Pembayaran tunai diproses langsung'
+          : 'Pembayaran gateway dibuat',
+        raw: {
+          request: {
+            billingId,
+            amount,
+            method,
+            bankCode: bankCode || null,
+            receiptUrl: receiptUrl || null,
+            notes: notes || null,
+          },
+          gateway: gatewayResult?.raw ?? null,
+        },
+      });
+
       // Create payment
       const newPayment = await tx.payment.create({
         data: {
@@ -207,19 +227,13 @@ export async function POST(request: NextRequest) {
           receiptUrl,
           externalId: gatewayResult?.orderId || null,
           transactionId: gatewayResult?.transactionId || null,
-          notes: notes,
+          notes: buildPaymentNotes(resolvedPaymentStatus),
+          auditPayload,
           expiredAt: gatewayResult?.expiredAt || null,
           vaNumber: gatewayResult?.vaNumber || null,
           qrCode: gatewayResult?.qrCode || null,
           deeplink: gatewayResult?.deeplink || null,
           paidAt: resolvedPaymentStatus === 'COMPLETED' ? new Date() : null,
-          ...(gatewayResult && {
-            notes: [
-              notes || '',
-              `Midtrans Status: ${gatewayResult.status}`,
-              `Midtrans Payload: ${JSON.stringify(gatewayResult.raw)}`,
-            ].filter(Boolean).join('\n'),
-          }),
           ...(session.user.role === 'TREASURER' && {
             processedBy: {
               connect: { id: session.user.id }

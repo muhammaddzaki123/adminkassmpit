@@ -1,12 +1,13 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Upload, CheckCircle, X, Filter, AlertCircle, Search } from 'lucide-react';
+import { Upload, CheckCircle, X, Filter, AlertCircle, Search, Eye, FileText } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input, Select } from '@/components/ui/Input';
 import { Table } from '@/components/ui/Table';
 import { Badge } from '@/components/ui/Badge';
+import { fetchWithAuth } from '@/lib/api-client';
 
 interface Student {
   id: string;
@@ -29,6 +30,48 @@ interface Payment {
   status: string;
   paidAt?: string;
   description?: string;
+}
+
+interface PaymentDetail extends Payment {
+  paymentNumber: string;
+  externalId: string | null;
+  transactionId: string | null;
+  adminFee: number;
+  totalAmount: number;
+  notes: string | null;
+  receiptUrl: string | null;
+  createdAt: string;
+  updatedAt: string;
+  billing: {
+    id: string;
+    billNumber: string;
+    status: string;
+    totalAmount: number;
+    paidAmount: number;
+    student: {
+      id: string;
+      nama: string;
+      nisn: string;
+      email?: string | null;
+      noTelp?: string | null;
+      kelas: string;
+    };
+  };
+  paymentDetails: Array<{
+    description: string;
+    amount: number;
+    notes?: string | null;
+  }>;
+  auditPayload: {
+    updatedAt: string;
+    events: Array<{
+      source: string;
+      status: string;
+      message?: string;
+      recordedAt: string;
+      raw: unknown;
+    }>;
+  } | null;
 }
 
 interface Stats {
@@ -64,6 +107,9 @@ export function SPPPayment() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [detailPayment, setDetailPayment] = useState<PaymentDetail | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [detailError, setDetailError] = useState<string | null>(null);
   
   const [formData, setFormData] = useState<FormData>({
     studentId: '',
@@ -206,6 +252,38 @@ export function SPPPayment() {
     return months[month - 1] || '-';
   };
 
+  const openDetail = async (paymentId: string) => {
+    setDetailLoading(true);
+    setDetailError(null);
+    setDetailPayment(null);
+
+    try {
+      const response = await fetchWithAuth(`/api/payment/${paymentId}/detail`);
+      if (!response.ok) {
+        const result = await response.json().catch(() => null);
+        throw new Error(result?.error || `Gagal memuat detail pembayaran (${response.status})`);
+      }
+
+      const result = await response.json();
+      if (result.success) {
+        setDetailPayment(result.data.payment);
+      } else {
+        throw new Error(result.error || 'Gagal memuat detail pembayaran');
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Terjadi kesalahan';
+      setDetailError(errorMessage);
+    } finally {
+      setDetailLoading(false);
+    }
+  };
+
+  const closeDetail = () => {
+    setDetailPayment(null);
+    setDetailError(null);
+    setDetailLoading(false);
+  };
+
   const columns = [
     {
       key: 'student',
@@ -341,13 +419,96 @@ export function SPPPayment() {
           isLoading={isLoading}
           actions={(row) => (
             <div className="flex gap-2 justify-end">
-              {row.description && (
-                <span className="text-xs text-neutral-600 mr-2">{row.description}</span>
-              )}
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => openDetail(row.id)}
+              >
+                <Eye className="w-4 h-4 mr-1" />
+                Lihat Detail
+              </Button>
             </div>
           )}
         />
       </Card>
+
+      {detailPayment && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <Card className="w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-start justify-between gap-4 mb-6">
+              <div>
+                <h3 className="text-[#1c1c1c] text-xl font-bold">Detail Pembayaran</h3>
+                <p className="text-sm text-[#4b5563]">{detailPayment.paymentNumber}</p>
+              </div>
+              <button onClick={closeDetail} className="text-[#4b5563] hover:text-[#1c1c1c]">
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            {detailLoading ? (
+              <div className="py-10 text-center text-[#4b5563]">Memuat detail...</div>
+            ) : detailError ? (
+              <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-red-700">{detailError}</div>
+            ) : (
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Card padding="md" className="border-neutral-200">
+                    <p className="text-xs uppercase tracking-[0.12em] text-[#4b5563] mb-2">Ringkasan</p>
+                    <div className="space-y-2 text-sm text-[#1c1c1c]">
+                      <p><span className="text-[#4b5563]">Siswa:</span> {detailPayment.billing.student.nama}</p>
+                      <p><span className="text-[#4b5563]">NISN:</span> {detailPayment.billing.student.nisn}</p>
+                      <p><span className="text-[#4b5563]">Kelas:</span> {detailPayment.billing.student.kelas}</p>
+                      <p><span className="text-[#4b5563]">Status:</span> {detailPayment.status}</p>
+                      <p><span className="text-[#4b5563]">Metode:</span> {detailPayment.paymentType}</p>
+                      <p><span className="text-[#4b5563]">Nominal:</span> Rp {detailPayment.amount.toLocaleString('id-ID')}</p>
+                      <p><span className="text-[#4b5563]">Bayar pada:</span> {detailPayment.paidAt ? new Date(detailPayment.paidAt).toLocaleString('id-ID') : '-'}</p>
+                    </div>
+                  </Card>
+
+                  <Card padding="md" className="border-neutral-200">
+                    <p className="text-xs uppercase tracking-[0.12em] text-[#4b5563] mb-2">Audit Ringkas</p>
+                    <div className="space-y-2 text-sm text-[#1c1c1c]">
+                      <p><span className="text-[#4b5563]">Notes:</span> {detailPayment.notes || '-'}</p>
+                      <p><span className="text-[#4b5563]">No. Tagihan:</span> {detailPayment.billing.billNumber}</p>
+                      <p><span className="text-[#4b5563]">Status Tagihan:</span> {detailPayment.billing.status}</p>
+                      <p><span className="text-[#4b5563]">External ID:</span> {detailPayment.externalId || '-'}</p>
+                      <p><span className="text-[#4b5563]">Transaction ID:</span> {detailPayment.transactionId || '-'}</p>
+                      <p><span className="text-[#4b5563]">Updated:</span> {new Date(detailPayment.updatedAt).toLocaleString('id-ID')}</p>
+                    </div>
+                  </Card>
+                </div>
+
+                <Card padding="md" className="border-neutral-200">
+                  <div className="flex items-center gap-2 mb-3">
+                    <FileText className="w-4 h-4 text-[#4b5563]" />
+                    <h4 className="font-semibold text-[#1c1c1c]">Payload Audit Mentah</h4>
+                  </div>
+                  <pre className="whitespace-pre-wrap wrap-break-word rounded-lg bg-neutral-950 text-neutral-100 text-xs p-4 overflow-x-auto">
+{JSON.stringify(detailPayment.auditPayload, null, 2)}
+                  </pre>
+                </Card>
+
+                <Card padding="md" className="border-neutral-200">
+                  <h4 className="font-semibold text-[#1c1c1c] mb-3">Detail Item Pembayaran</h4>
+                  <div className="space-y-2 text-sm">
+                    {detailPayment.paymentDetails.length > 0 ? detailPayment.paymentDetails.map((item, index) => (
+                      <div key={`${item.description}-${index}`} className="flex items-center justify-between gap-4 rounded-lg border border-neutral-200 px-3 py-2">
+                        <div>
+                          <p className="font-medium text-[#1c1c1c]">{item.description}</p>
+                          {item.notes && <p className="text-xs text-[#4b5563]">{item.notes}</p>}
+                        </div>
+                        <p className="font-semibold text-[#1c1c1c]">Rp {item.amount.toLocaleString('id-ID')}</p>
+                      </div>
+                    )) : (
+                      <p className="text-[#4b5563]">Tidak ada detail tambahan.</p>
+                    )}
+                  </div>
+                </Card>
+              </div>
+            )}
+          </Card>
+        </div>
+      )}
 
       {/* Input Modal */}
       {showModal && (

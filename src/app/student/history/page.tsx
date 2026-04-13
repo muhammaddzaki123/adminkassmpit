@@ -47,12 +47,15 @@ export default function HistoryPage() {
       return;
     }
 
-    fetchTransactions();
+    fetchTransactions(user.studentId || null);
   }, [router]);
 
-  const fetchTransactions = async () => {
+  const fetchTransactions = async (currentStudentId: string | null) => {
     try {
-      const response = await fetchWithAuth('/api/student/transactions?studentId=student-123');
+      const url = currentStudentId
+        ? `/api/student/transactions?studentId=${currentStudentId}`
+        : '/api/student/transactions';
+      const response = await fetchWithAuth(url);
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -96,7 +99,7 @@ export default function HistoryPage() {
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'PAID':
+      case 'COMPLETED':
         return <CheckCircle className="w-5 h-5 text-green-600" />;
       case 'PENDING':
         return <Clock className="w-5 h-5 text-yellow-600" />;
@@ -110,7 +113,7 @@ export default function HistoryPage() {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'PAID':
+      case 'COMPLETED':
         return <Badge variant="success">Berhasil</Badge>;
       case 'PENDING':
         return <Badge variant="warning">Menunggu</Badge>;
@@ -184,9 +187,10 @@ export default function HistoryPage() {
                     onChange={(e) => setFilterStatus(e.target.value)}
                     options={[
                       { value: 'all', label: 'Semua Status' },
-                      { value: 'PAID', label: 'Berhasil' },
+                      { value: 'COMPLETED', label: 'Berhasil' },
                       { value: 'PENDING', label: 'Menunggu' },
                       { value: 'FAILED', label: 'Gagal' },
+                      { value: 'EXPIRED', label: 'Kadaluarsa' },
                     ]}
                   />
                 </div>
@@ -262,6 +266,7 @@ export default function HistoryPage() {
                           size="sm"
                           variant="outline"
                           icon={<Eye className="w-4 h-4" />}
+                          onClick={() => router.push('/student/spp')}
                         >
                           Detail
                         </Button>

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getServerSession } from '@/lib/auth';
 import { getMidtransTransactionStatus, normalizeMidtransStatus } from '@/lib/midtrans';
+import { appendPaymentAuditEvent, buildPaymentNotes } from '@/lib/payment-audit';
 import { getPaymentSuccessMessage, sendWhatsAppMessage } from '@/lib/whatsapp';
 
 function resolveBillingStatus(totalAmount: number, paidAmount: number): 'PAID' | 'PARTIAL' {
@@ -86,7 +87,13 @@ export async function POST(request: NextRequest) {
           paidAt: normalizedStatus === 'COMPLETED'
             ? (midtransStatus.settlementTime ? new Date(midtransStatus.settlementTime) : (payment.paidAt || new Date()))
             : payment.paidAt,
-          notes: `${payment.notes ? `${payment.notes}\n` : ''}Sync Midtrans: ${JSON.stringify(midtransStatus.raw)}`,
+          notes: buildPaymentNotes(normalizedStatus),
+          auditPayload: appendPaymentAuditEvent(payment.auditPayload, {
+            source: 'sync',
+            status: normalizedStatus,
+            message: 'Sinkronisasi status dari Midtrans',
+            raw: midtransStatus.raw,
+          }),
         },
       });
 

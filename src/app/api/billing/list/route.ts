@@ -3,6 +3,16 @@ import prisma from '@/lib/prisma';
 import { getServerSession } from '@/lib/auth';
 import { Prisma, BillingStatus, PaymentType } from '@prisma/client';
 
+const BILLING_STATUS_VALUES: BillingStatus[] = [
+  'UNBILLED',
+  'BILLED',
+  'PARTIAL',
+  'PAID',
+  'OVERDUE',
+  'CANCELLED',
+  'WAIVED',
+];
+
 // GET /api/billing/list - Treasurer views all billings with filters
 export async function GET(request: NextRequest) {
   try {
@@ -17,6 +27,7 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status');
+    const statusList = searchParams.getAll('status');
     const classId = searchParams.get('classId');
     const type = searchParams.get('type');
     const month = searchParams.get('month');
@@ -28,8 +39,18 @@ export async function GET(request: NextRequest) {
     // Build where clause
     const where: Prisma.BillingWhereInput = {};
 
-    if (status) {
-      where.status = status as BillingStatus;
+    if (status || statusList.length > 0) {
+      const rawStatusValues = statusList.length > 0 ? statusList : [status || ''];
+      const parsedStatuses = rawStatusValues
+        .flatMap((item) => item.split(','))
+        .map((item) => item.trim().toUpperCase())
+        .filter((item): item is BillingStatus => BILLING_STATUS_VALUES.includes(item as BillingStatus));
+
+      if (parsedStatuses.length === 1) {
+        where.status = parsedStatuses[0];
+      } else if (parsedStatuses.length > 1) {
+        where.status = { in: parsedStatuses };
+      }
     }
 
     if (type) {

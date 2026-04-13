@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { getServerSession } from '@/lib/auth';
 
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
-    const studentId = searchParams.get('studentId');
+    const session = await getServerSession(request);
+    const studentId = searchParams.get('studentId') || session?.user.studentId;
 
     if (!studentId) {
       return NextResponse.json(
@@ -43,7 +45,8 @@ export async function GET(request: NextRequest) {
       totalAmount: payment.amount + (payment.adminFee || 0),
       status: payment.status,
       paymentMethod: payment.method || 'VIRTUAL_ACCOUNT',
-      description: payment.notes || payment.billing.description || '',
+      description: payment.billing.description || payment.notes || '',
+      billingNumber: payment.billing.billNumber,
       vaNumber: payment.vaNumber,
       paidAt: payment.paidAt?.toISOString(),
       expiredAt: payment.expiredAt?.toISOString(),

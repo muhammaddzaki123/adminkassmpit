@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { normalizeMidtransStatus, verifyMidtransSignature } from '@/lib/midtrans';
+import { appendPaymentAuditEvent, buildPaymentNotes } from '@/lib/payment-audit';
 import { getPaymentSuccessMessage, sendWhatsAppMessage } from '@/lib/whatsapp';
 
 function normalizeLegacyStatus(status: string): 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED' | 'EXPIRED' {
@@ -144,9 +145,13 @@ export async function POST(request: NextRequest) {
           paidAt: normalizedStatus === 'COMPLETED'
             ? (paidAt ? new Date(paidAt) : new Date())
             : payment.paidAt,
-          notes: body.message
-            ? `${payment.notes ? `${payment.notes}\n` : ''}Webhook: ${String(body.message)}`
-            : `${payment.notes ? `${payment.notes}\n` : ''}${isMidtransPayload ? `Midtrans: ${JSON.stringify(body)}` : ''}`.trim() || payment.notes,
+          notes: buildPaymentNotes(normalizedStatus),
+          auditPayload: appendPaymentAuditEvent(payment.auditPayload, {
+            source: 'webhook',
+            status: normalizedStatus,
+            message: body.message ? String(body.message) : 'Webhook Midtrans diterima',
+            raw: body,
+          }),
         },
       });
 

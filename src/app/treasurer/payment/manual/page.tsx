@@ -47,10 +47,11 @@ export default function ManualPaymentPage() {
   const fetchBillings = useCallback(async () => {
     setLoading(true);
     try {
-      const params = new URLSearchParams({
-        status: 'BILLED,PARTIAL,OVERDUE',
-        search: searchQuery,
-      });
+      const params = new URLSearchParams();
+      params.append('status', 'BILLED');
+      params.append('status', 'PARTIAL');
+      params.append('status', 'OVERDUE');
+      params.append('search', searchQuery);
       
       const response = await fetchWithAuth(`/api/billing/list?${params.toString()}`);
       if (!response.ok) {

@@ -681,86 +681,125 @@ function SPPPaymentContent() {
 
               <Card>
                 <h3 className="font-semibold text-neutral-900 mb-4">Metode Pembayaran</h3>
-                <div className="space-y-3">
-                  <button
+                <div className="space-y-4">
+                  <div
+                    role="button"
+                    tabIndex={0}
                     onClick={() => selectPaymentMethod('VIRTUAL_ACCOUNT')}
-                    className={`w-full flex items-center gap-4 p-4 border-2 rounded-lg transition ${
+                    onKeyDown={(e) => e.key === 'Enter' && selectPaymentMethod('VIRTUAL_ACCOUNT')}
+                    className={`rounded-xl border-2 p-5 transition cursor-pointer ${
                       paymentMethod === 'VIRTUAL_ACCOUNT'
-                        ? 'border-primary-600 bg-primary-50'
-                        : 'border-neutral-200 hover:border-primary-300'
+                        ? 'border-primary-600 bg-primary-50 shadow-sm'
+                        : 'border-neutral-200 bg-white hover:border-primary-300'
                     }`}
                   >
-                    <Building className="w-6 h-6 text-primary-600" />
-                    <div className="flex-1 text-left">
-                      <p className="font-semibold text-neutral-900">Virtual Account</p>
-                      <p className="text-sm text-neutral-600">Pilih bank VA yang tersedia di Midtrans</p>
-                    </div>
-                    <p className="text-sm text-neutral-600">+Rp 2.500</p>
-                  </button>
-
-                  <button
-                    onClick={() => selectPaymentMethod('EWALLET')}
-                    className={`w-full flex items-center gap-4 p-4 border-2 rounded-lg transition ${
-                      paymentMethod === 'EWALLET'
-                        ? 'border-primary-600 bg-primary-50'
-                        : 'border-neutral-200 hover:border-primary-300'
-                    }`}
-                  >
-                    <Smartphone className="w-6 h-6 text-primary-600" />
-                    <div className="flex-1 text-left">
-                      <p className="font-semibold text-neutral-900">QRIS / E-Wallet</p>
-                      <p className="text-sm text-neutral-600">Satu QRIS dapat dibayar lewat GoPay, DANA, OVO, ShopeePay, dan aplikasi lain yang mendukung QRIS</p>
-                    </div>
-                    <p className="text-sm text-neutral-600">+0.7%</p>
-                  </button>
-
-                  <button
-                    onClick={() => selectPaymentMethod('TRANSFER_BANK')}
-                    className={`w-full flex items-center gap-4 p-4 border-2 rounded-lg transition ${
-                      paymentMethod === 'TRANSFER_BANK'
-                        ? 'border-primary-600 bg-primary-50'
-                        : 'border-neutral-200 hover:border-primary-300'
-                    }`}
-                  >
-                    <CreditCard className="w-6 h-6 text-primary-600" />
-                    <div className="flex-1 text-left">
-                      <p className="font-semibold text-neutral-900">Transfer Bank</p>
-                      <p className="text-sm text-neutral-600">Pilih bank transfer yang didukung gateway</p>
-                    </div>
-                    <p className="text-sm text-green-600">Gratis</p>
-                  </button>
-
-                  {(paymentMethod === 'VIRTUAL_ACCOUNT' || paymentMethod === 'TRANSFER_BANK') && (
-                    <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-4 space-y-3">
-                      <p className="text-sm font-semibold text-neutral-900">
-                        {paymentMethod === 'VIRTUAL_ACCOUNT' ? 'VA Bank' : 'Transfer Bank Manual'}
-                      </p>
-                      <p className="text-xs text-neutral-500">
-                        {paymentMethod === 'VIRTUAL_ACCOUNT'
-                          ? 'Pilih bank yang dipakai untuk Virtual Account.'
-                          : 'Pilih bank tujuan untuk transfer manual yang didukung gateway.'}
-                      </p>
-                      <div className="grid grid-cols-2 gap-2 md:grid-cols-3">
-                        {bankOptions.map((option) => (
-                          <button
-                            key={option.value}
-                            type="button"
-                            onClick={() => setPaymentBankCode(option.value)}
-                            className={`rounded-lg border px-3 py-2 text-sm font-medium transition ${
-                              paymentBankCode === option.value
-                                ? 'border-primary-600 bg-primary-50 text-primary-700'
-                                : 'border-neutral-200 bg-white text-neutral-700 hover:border-primary-300'
-                            }`}
-                          >
-                            {option.label}
-                          </button>
-                        ))}
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-start gap-3">
+                        <div className="w-11 h-11 rounded-xl bg-primary-100 text-primary-700 flex items-center justify-center">
+                          <Building className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <p className="text-base font-semibold text-neutral-900">VA Bank</p>
+                          <p className="text-sm text-neutral-600">Pilih bank untuk membuat nomor Virtual Account.</p>
+                        </div>
                       </div>
-                      <p className="text-xs text-neutral-500">
-                        Jika bank yang Anda cari tidak tersedia, berarti bank tersebut belum didukung oleh integrasi Midtrans saat ini dan sebaiknya pakai transfer manual atau QRIS.
-                      </p>
+                      <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-amber-100 text-amber-700">+Rp 2.500</span>
                     </div>
-                  )}
+                    <div className="mt-4 grid grid-cols-2 gap-2 md:grid-cols-3">
+                      {bankOptions.map((option) => (
+                        <button
+                          key={`va-${option.value}`}
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            selectPaymentMethod('VIRTUAL_ACCOUNT');
+                            setPaymentBankCode(option.value);
+                          }}
+                          className={`rounded-lg border px-3 py-2 text-sm font-medium transition ${
+                            paymentMethod === 'VIRTUAL_ACCOUNT' && paymentBankCode === option.value
+                              ? 'border-primary-600 bg-primary-100 text-primary-700'
+                              : 'border-neutral-200 bg-white text-neutral-700 hover:border-primary-300'
+                          }`}
+                        >
+                          {option.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => selectPaymentMethod('EWALLET')}
+                    onKeyDown={(e) => e.key === 'Enter' && selectPaymentMethod('EWALLET')}
+                    className={`rounded-xl border-2 p-5 transition cursor-pointer ${
+                      paymentMethod === 'EWALLET'
+                        ? 'border-primary-600 bg-primary-50 shadow-sm'
+                        : 'border-neutral-200 bg-white hover:border-primary-300'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-start gap-3">
+                        <div className="w-11 h-11 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center">
+                          <Smartphone className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <p className="text-base font-semibold text-neutral-900">QRIS</p>
+                          <p className="text-sm text-neutral-600">Satu QR bisa dibayar lewat GoPay, DANA, OVO, ShopeePay, dan aplikasi lain yang mendukung QRIS.</p>
+                        </div>
+                      </div>
+                      <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-amber-100 text-amber-700">+0.7%</span>
+                    </div>
+                  </div>
+
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => selectPaymentMethod('TRANSFER_BANK')}
+                    onKeyDown={(e) => e.key === 'Enter' && selectPaymentMethod('TRANSFER_BANK')}
+                    className={`rounded-xl border-2 p-5 transition cursor-pointer ${
+                      paymentMethod === 'TRANSFER_BANK'
+                        ? 'border-primary-600 bg-primary-50 shadow-sm'
+                        : 'border-neutral-200 bg-white hover:border-primary-300'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-start gap-3">
+                        <div className="w-11 h-11 rounded-xl bg-sky-100 text-sky-700 flex items-center justify-center">
+                          <CreditCard className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <p className="text-base font-semibold text-neutral-900">Transfer Bank Manual</p>
+                          <p className="text-sm text-neutral-600">Pilih bank tujuan transfer manual yang tersedia.</p>
+                        </div>
+                      </div>
+                      <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-green-100 text-green-700">Gratis</span>
+                    </div>
+                    <div className="mt-4 grid grid-cols-2 gap-2 md:grid-cols-3">
+                      {bankOptions.map((option) => (
+                        <button
+                          key={`tf-${option.value}`}
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            selectPaymentMethod('TRANSFER_BANK');
+                            setPaymentBankCode(option.value);
+                          }}
+                          className={`rounded-lg border px-3 py-2 text-sm font-medium transition ${
+                            paymentMethod === 'TRANSFER_BANK' && paymentBankCode === option.value
+                              ? 'border-primary-600 bg-primary-100 text-primary-700'
+                              : 'border-neutral-200 bg-white text-neutral-700 hover:border-primary-300'
+                          }`}
+                        >
+                          {option.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <p className="text-xs text-neutral-500">
+                    Bank yang tidak muncul berarti belum tersedia di integrasi Midtrans saat ini.
+                  </p>
 
                   <div className="bg-yellow-50 border-l-4 border-yellow-500 p-3">
                     <div className="flex items-start gap-2">

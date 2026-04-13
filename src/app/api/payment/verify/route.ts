@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getServerSession } from '@/lib/auth';
+import { appendPaymentAuditEvent, buildPaymentNotes } from '@/lib/payment-audit';
 import { 
   getPaymentSuccessMessage, 
   sendWhatsAppMessage 
@@ -42,6 +43,20 @@ export async function POST(request: NextRequest) {
 
       // Create payment directly as COMPLETED
       const payment = await prisma.$transaction(async (tx) => {
+        const auditPayload = appendPaymentAuditEvent(null, {
+          source: 'manual-verify',
+          status: 'COMPLETED',
+          message: `Pembayaran manual diverifikasi oleh ${session.user.nama}`,
+          raw: {
+            billingId,
+            amount,
+            method: method || 'TUNAI',
+            paidAt: paidAt || null,
+            receiptUrl: receiptUrl || null,
+            notes: notes || null,
+          },
+        });
+
         const newPayment = await tx.payment.create({
           data: {
             paymentNumber,
@@ -54,7 +69,8 @@ export async function POST(request: NextRequest) {
             method: method || 'TUNAI',
             status: 'COMPLETED',
             paidAt: paidAt ? new Date(paidAt) : new Date(),
-            notes: notes || `Manual payment by ${session.user.nama}`,
+            notes: buildPaymentNotes('COMPLETED'),
+            auditPayload,
             receiptUrl,
             processedBy: {
               connect: { id: session.user.id }
@@ -138,7 +154,17 @@ export async function POST(request: NextRequest) {
           status: action === 'APPROVE' ? 'COMPLETED' : 'FAILED',
           paidAt: action === 'APPROVE' ? new Date() : null,
           processedById: session.user.id,
-          notes: notes || payment.notes,
+          notes: buildPaymentNotes(action === 'APPROVE' ? 'COMPLETED' : 'FAILED'),
+          auditPayload: appendPaymentAuditEvent(payment.auditPayload, {
+            source: 'manual-verify',
+            status: action === 'APPROVE' ? 'COMPLETED' : 'FAILED',
+            message: notes || `Pembayaran ${action === 'APPROVE' ? 'disetujui' : 'ditolak'} oleh ${session.user.nama}`,
+            raw: {
+              paymentId,
+              action,
+              notes: notes || null,
+            },
+          }),
         },
       });
 
