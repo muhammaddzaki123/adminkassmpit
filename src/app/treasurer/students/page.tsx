@@ -12,6 +12,19 @@ import { Badge } from '@/components/ui/Badge';
 import { Search, Download, AlertCircle, ChevronDown, X } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 
+interface SppDetail {
+  id: string;
+  billNumber: string;
+  status: string;
+  period: string;
+  month?: number | null;
+  year?: number | null;
+  totalAmount: number;
+  paidAmount: number;
+  dueDate?: string | null;
+  billDate?: string | null;
+}
+
 interface Student {
   id: string;
   nisn: string;
@@ -37,18 +50,7 @@ interface Student {
       unbilled: number;
     };
   };
-  sppDetails?: Array<{
-    id: string;
-    billNumber: string;
-    status: string;
-    period: string;
-    month?: number | null;
-    year?: number | null;
-    totalAmount: number;
-    paidAmount: number;
-    dueDate?: string | null;
-    billDate?: string | null;
-  }>;
+  sppDetails?: SppDetail[];
 }
 
 function getBillingStatusBadge(status: string | null) {
@@ -74,6 +76,8 @@ export default function StudentsPage() {
   const [sppSortByOverdue, setSppSortByOverdue] = useState<'default' | 'overdue_desc' | 'overdue_asc'>('default');
   const [selectedStudentForModal, setSelectedStudentForModal] = useState<Student | null>(null);
   const [detailViewMode, setDetailViewMode] = useState<'all' | 'unpaid'>('all');
+  const [showSppStatusMatrix, setShowSppStatusMatrix] = useState(false);
+  const [matrixStatusView, setMatrixStatusView] = useState<'all' | 'risk'>('all');
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -195,6 +199,66 @@ export default function StudentsPage() {
         totalTunggak: 0,
       }
     );
+  }, [displayedStudents]);
+
+  const sppPeriods = useMemo(() => {
+    const periodMap = new Map<string, { key: string; label: string; year: number; month: number }>();
+
+    displayedStudents.forEach((student) => {
+      (student.sppDetails || []).forEach((detail) => {
+        const year = detail.year ?? 0;
+        const month = detail.month ?? 0;
+        const key = `${year}-${month}`;
+        if (!periodMap.has(key)) {
+          periodMap.set(key, {
+            key,
+            label: detail.period,
+            year,
+            month,
+          });
+        }
+      });
+    });
+
+    return Array.from(periodMap.values()).sort((a, b) => {
+      if (a.year === b.year) return a.month - b.month;
+      return a.year - b.year;
+    });
+  }, [displayedStudents]);
+
+  const isOutstandingStatus = (status: string) => {
+    return !['PAID', 'WAIVED', 'CANCELLED'].includes(status);
+  };
+
+  const matrixStudents = useMemo(() => {
+    if (matrixStatusView === 'all') return displayedStudents;
+    return displayedStudents.filter((student) => (student.sppDetails || []).some((detail) => isOutstandingStatus(detail.status)));
+  }, [displayedStudents, matrixStatusView]);
+
+  const visibleSppPeriods = useMemo(() => {
+    if (matrixStatusView === 'all') return sppPeriods;
+
+    return sppPeriods.filter((period) => {
+      return matrixStudents.some((student) => {
+        const detail = (student.sppDetails || []).find(
+          (d) => `${d.year ?? 0}-${d.month ?? 0}` === period.key
+        );
+        return detail ? isOutstandingStatus(detail.status) : false;
+      });
+    });
+  }, [sppPeriods, matrixStudents, matrixStatusView]);
+
+  const sppMatrixByStudent = useMemo(() => {
+    return displayedStudents.reduce<Record<string, Record<string, SppDetail>>>((acc, student) => {
+      const perPeriod = (student.sppDetails || []).reduce<Record<string, SppDetail>>((detailAcc, detail) => {
+        const key = `${detail.year ?? 0}-${detail.month ?? 0}`;
+        detailAcc[key] = detail;
+        return detailAcc;
+      }, {});
+
+      acc[student.id] = perPeriod;
+      return acc;
+    }, {});
   }, [displayedStudents]);
 
   const formatCurrency = (value: number) => {
@@ -434,6 +498,20 @@ export default function StudentsPage() {
     return statusMap[status] || { label: status, color: 'info' as const };
   };
 
+  const getSppCellBackgroundClass = (status: string) => {
+    const map: Record<string, string> = {
+      OVERDUE: 'bg-red-100 border border-red-200',
+      PARTIAL: 'bg-amber-100 border border-amber-200',
+      BILLED: 'bg-blue-100 border border-blue-200',
+      UNBILLED: 'bg-neutral-100 border border-neutral-200',
+      PAID: 'bg-green-100 border border-green-200',
+      WAIVED: 'bg-zinc-100 border border-zinc-200',
+      CANCELLED: 'bg-zinc-100 border border-zinc-200',
+    };
+
+    return map[status] || 'bg-white border border-neutral-200';
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-neutral-50">
@@ -555,6 +633,12 @@ export default function StudentsPage() {
                 <Button variant="outline" icon={<Download className="w-4 h-4" />} onClick={handleExportPdf}>
                   Export PDF
                 </Button>
+                <Button
+                  variant={showSppStatusMatrix ? 'primary' : 'outline'}
+                  onClick={() => setShowSppStatusMatrix((prev) => !prev)}
+                >
+                  {showSppStatusMatrix ? 'Sembunyikan Status SPP Semua Siswa' : 'Tampilkan Status SPP Semua Siswa'}
+                </Button>
               </div>
 
               {displayedStudents.length === 0 ? (
@@ -635,6 +719,104 @@ export default function StudentsPage() {
                 </div>
               )}
             </Card>
+
+            {showSppStatusMatrix && (
+              <Card>
+                <div className="space-y-3 mb-4">
+                  <h2 className="text-lg font-semibold text-neutral-900">Status SPP Semua Siswa per Bulan</h2>
+                  <p className="text-sm text-neutral-600">
+                    Tabel ini melebar ke samping. Geser horizontal untuk melihat status semua bulan per siswa.
+                  </p>
+                  <div className="flex flex-wrap items-center gap-2 text-xs text-neutral-700">
+                    <span className="font-medium text-neutral-800 mr-1">Legend:</span>
+                    <span className="inline-flex items-center gap-1 rounded-full border border-red-200 bg-red-100 px-2 py-0.5">Merah: Tunggak</span>
+                    <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-100 px-2 py-0.5">Kuning: Cicilan</span>
+                    <span className="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-100 px-2 py-0.5">Biru: Ditagih</span>
+                    <span className="inline-flex items-center gap-1 rounded-full border border-green-200 bg-green-100 px-2 py-0.5">Hijau: Lunas</span>
+                    <span className="inline-flex items-center gap-1 rounded-full border border-neutral-200 bg-neutral-100 px-2 py-0.5">Abu: Belum Tagih / Lainnya</span>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      size="sm"
+                      variant={matrixStatusView === 'all' ? 'primary' : 'outline'}
+                      onClick={() => setMatrixStatusView('all')}
+                    >
+                      Semua Status
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant={matrixStatusView === 'risk' ? 'primary' : 'outline'}
+                      onClick={() => setMatrixStatusView('risk')}
+                    >
+                      Hanya Tunggakan / Belum Lunas
+                    </Button>
+                  </div>
+                </div>
+
+                {matrixStudents.length === 0 || visibleSppPeriods.length === 0 ? (
+                  <div className="text-center py-10 text-neutral-600">
+                    Data SPP bulanan belum tersedia untuk ditampilkan.
+                  </div>
+                ) : (
+                  <div className="w-full overflow-auto max-h-[70vh] border border-neutral-200 rounded-lg">
+                    <table className="text-sm min-w-max">
+                      <thead className="bg-neutral-100 border-b border-neutral-200">
+                        <tr>
+                          <th className="px-3 py-3 text-left font-medium text-neutral-700 sticky top-0 left-0 z-30 bg-neutral-100 min-w-[130px]">NISN</th>
+                          <th className="px-3 py-3 text-left font-medium text-neutral-700 sticky top-0 left-[130px] z-30 bg-neutral-100 min-w-[220px]">Nama</th>
+                          <th className="px-3 py-3 text-left font-medium text-neutral-700 sticky top-0 left-[350px] z-30 bg-neutral-100 min-w-[90px]">Kelas</th>
+                          {visibleSppPeriods.map((period) => (
+                            <th key={period.key} className="px-3 py-3 text-left font-medium text-neutral-700 min-w-[180px] sticky top-0 z-20 bg-neutral-100">
+                              {period.label}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-neutral-200">
+                        {matrixStudents.map((student) => (
+                          <tr key={`matrix-${student.id}`} className="hover:bg-neutral-50">
+                            <td className="px-3 py-3 sticky left-0 z-10 bg-white min-w-[130px]">{student.nisn}</td>
+                            <td className="px-3 py-3 sticky left-[130px] z-10 bg-white min-w-[220px] font-medium">{student.nama}</td>
+                            <td className="px-3 py-3 sticky left-[350px] z-10 bg-white min-w-[90px]">{student.kelas || '-'}</td>
+                            {visibleSppPeriods.map((period) => {
+                              const detail = sppMatrixByStudent[student.id]?.[period.key];
+                              if (!detail) {
+                                return (
+                                  <td key={`${student.id}-${period.key}`} className="px-3 py-3 text-neutral-400 min-w-[180px]">
+                                    -
+                                  </td>
+                                );
+                              }
+
+                              const badge = getBillingStatusBadge(detail.status);
+                              const showAsEmpty = matrixStatusView === 'risk' && !isOutstandingStatus(detail.status);
+
+                              if (showAsEmpty) {
+                                return (
+                                  <td key={`${student.id}-${period.key}`} className="px-3 py-3 text-neutral-300 min-w-[180px]">
+                                    -
+                                  </td>
+                                );
+                              }
+
+                              return (
+                                <td key={`${student.id}-${period.key}`} className="px-3 py-3 min-w-[180px]">
+                                  <div className={`space-y-1 rounded-md p-2 ${getSppCellBackgroundClass(detail.status)}`}>
+                                    <Badge variant={badge.variant}>{badge.label}</Badge>
+                                    <p className="text-xs text-neutral-600">{detail.billNumber}</p>
+                                    <p className="text-xs text-neutral-500">{formatCurrency(detail.paidAmount)} / {formatCurrency(detail.totalAmount)}</p>
+                                  </div>
+                                </td>
+                              );
+                            })}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </Card>
+            )}
 
             {selectedStudentForModal && (
               <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
