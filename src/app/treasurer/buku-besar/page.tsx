@@ -592,6 +592,7 @@ export default function BukuBesarPage() {
   const handleAddExpenseCategory = async () => {
     const name = newExpenseCategoryName.trim();
     if (!name) {
+      setShowExpenseCategoryManager(true);
       setCategoryMessage('Nama kategori tidak boleh kosong');
       return;
     }
@@ -604,6 +605,7 @@ export default function BukuBesarPage() {
       });
       const result = await response.json() as { success: boolean; error?: string };
       if (!response.ok || !result.success) {
+        setShowExpenseCategoryManager(true);
         setCategoryMessage(result.error || 'Gagal menambah kategori');
         return;
       }
@@ -614,6 +616,7 @@ export default function BukuBesarPage() {
       await fetchExpenseCategories();
     } catch (createError) {
       console.error('Error creating expense category:', createError);
+      setShowExpenseCategoryManager(true);
       setCategoryMessage('Terjadi kesalahan saat menambah kategori');
     }
   };
@@ -622,6 +625,7 @@ export default function BukuBesarPage() {
     const id = editingCategoryId;
     const name = editingCategoryName.trim();
     if (!id || !name) {
+      setShowExpenseCategoryManager(true);
       setCategoryMessage('Nama kategori tidak boleh kosong');
       return;
     }
@@ -636,6 +640,7 @@ export default function BukuBesarPage() {
       });
       const result = await response.json() as { success: boolean; error?: string };
       if (!response.ok || !result.success) {
+        setShowExpenseCategoryManager(true);
         setCategoryMessage(result.error || 'Gagal mengubah kategori');
         return;
       }
@@ -651,6 +656,7 @@ export default function BukuBesarPage() {
       await fetchLedger();
     } catch (updateError) {
       console.error('Error updating expense category:', updateError);
+      setShowExpenseCategoryManager(true);
       setCategoryMessage('Terjadi kesalahan saat mengubah kategori');
     }
   };

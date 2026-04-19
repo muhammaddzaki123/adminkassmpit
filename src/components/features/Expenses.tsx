@@ -281,6 +281,7 @@ export function Expenses() {
   const handleAddCategory = async () => {
     const name = newCategoryName.trim();
     if (!name) {
+      setShowCategoryManager(true);
       setCategoryMessage({ type: 'error', text: 'Nama kategori tidak boleh kosong' });
       return;
     }
@@ -294,6 +295,7 @@ export function Expenses() {
 
       const data = await response.json() as { success: boolean; error?: string };
       if (!response.ok || !data.success) {
+        setShowCategoryManager(true);
         setCategoryMessage({ type: 'error', text: data.error || 'Gagal menambah kategori' });
         return;
       }
@@ -304,6 +306,7 @@ export function Expenses() {
       void fetchCategoryOptions();
     } catch (error) {
       console.error('Error adding category:', error);
+      setShowCategoryManager(true);
       setCategoryMessage({ type: 'error', text: 'Terjadi kesalahan saat menambah kategori' });
     }
   };
@@ -318,6 +321,7 @@ export function Expenses() {
     const name = editingCategoryName.trim();
 
     if (!id || !name) {
+      setShowCategoryManager(true);
       setCategoryMessage({ type: 'error', text: 'Nama kategori tidak boleh kosong' });
       return;
     }
@@ -331,6 +335,7 @@ export function Expenses() {
 
       const data = await response.json() as { success: boolean; error?: string };
       if (!response.ok || !data.success) {
+        setShowCategoryManager(true);
         setCategoryMessage({ type: 'error', text: data.error || 'Gagal mengubah kategori' });
         return;
       }
@@ -345,6 +350,7 @@ export function Expenses() {
       void fetchExpenses();
     } catch (error) {
       console.error('Error updating category:', error);
+      setShowCategoryManager(true);
       setCategoryMessage({ type: 'error', text: 'Terjadi kesalahan saat mengubah kategori' });
     }
   };
@@ -443,7 +449,15 @@ export function Expenses() {
           >
             Export CSV
           </Button>
-          <Button variant="primary" icon={<Plus className="w-5 h-5" />} onClick={() => setShowModal(true)}>
+          <Button
+            variant="primary"
+            icon={<Plus className="w-5 h-5" />}
+            onClick={() => {
+              setShowCategoryManager(false);
+              setCategoryMessage(null);
+              setShowModal(true);
+            }}
+          >
             Tambah Pengeluaran
           </Button>
         </div>
@@ -562,7 +576,15 @@ export function Expenses() {
               }
             </p>
             {selectedCategory === 'all' && selectedPeriod === 'this-month' && (
-              <Button variant="primary" icon={<Plus className="w-5 h-5" />} onClick={() => setShowModal(true)}>
+              <Button
+                variant="primary"
+                icon={<Plus className="w-5 h-5" />}
+                onClick={() => {
+                  setShowCategoryManager(false);
+                  setCategoryMessage(null);
+                  setShowModal(true);
+                }}
+              >
                 Tambah Pengeluaran Pertama
               </Button>
             )}
