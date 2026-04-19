@@ -30,9 +30,9 @@ interface StudentDetail {
   birthDate: string | null;
   gender: string | null;
   religion: string | null;
+  allowInstallments: boolean;
   currentClass: {
     classId: string;
-  allowInstallments: boolean;
     className: string;
     grade: number;
     academicYearId: string;
@@ -77,7 +77,7 @@ export default function EditStudentPage() {
     nisn: '',
     noTelp: '',
     email: '',
-  allowInstallments: false,
+    allowInstallments: false,
     alamat: '',
     namaOrangTua: '',
     noTelpOrangTua: '',
@@ -120,7 +120,6 @@ export default function EditStudentPage() {
 
         const studentData: StudentDetail = studentJson.data;
         setStudent(studentData);
-        allowInstallments: studentData.allowInstallments,
         setClasses(classesJson.data || []);
         setAcademicYears(yearsJson.data || []);
 
@@ -129,6 +128,7 @@ export default function EditStudentPage() {
           nisn: studentData.nisn,
           noTelp: studentData.noTelp || '',
           email: studentData.email || '',
+          allowInstallments: studentData.allowInstallments,
           alamat: studentData.alamat || '',
           namaOrangTua: studentData.namaOrangTua || '',
           noTelpOrangTua: studentData.noTelpOrangTua || '',
@@ -138,18 +138,6 @@ export default function EditStudentPage() {
           admissionDate: studentData.admissionDate ? studentData.admissionDate.slice(0, 10) : '',
           graduationDate: studentData.graduationDate ? studentData.graduationDate.slice(0, 10) : '',
           birthPlace: studentData.birthPlace || '',
-                  <label className="flex items-center gap-3 rounded-lg border border-neutral-200 bg-neutral-50 px-4 py-3">
-                    <input
-                      type="checkbox"
-                      checked={formData.allowInstallments}
-                      onChange={(e) => setFormData((prev) => ({ ...prev, allowInstallments: e.target.checked }))}
-                      className="h-4 w-4 rounded border-neutral-300 text-primary-600 focus:ring-primary-500"
-                    />
-                    <div>
-                      <p className="text-sm font-medium text-neutral-900">Izinkan cicilan</p>
-                      <p className="text-xs text-neutral-500">Aktifkan hanya untuk siswa yang memang boleh bayar bertahap.</p>
-                    </div>
-                  </label>
           birthDate: studentData.birthDate ? studentData.birthDate.slice(0, 10) : '',
           gender: studentData.gender || '',
           religion: studentData.religion || '',
@@ -446,6 +434,21 @@ export default function EditStudentPage() {
                       })),
                     ]}
                   />
+                </div>
+
+                <div className="mt-4">
+                  <label className="flex items-center gap-3 rounded-lg border border-neutral-200 bg-neutral-50 px-4 py-3">
+                    <input
+                      type="checkbox"
+                      checked={formData.allowInstallments}
+                      onChange={(e) => setFormData((prev) => ({ ...prev, allowInstallments: e.target.checked }))}
+                      className="h-4 w-4 rounded border-neutral-300 text-primary-600 focus:ring-primary-500"
+                    />
+                    <div>
+                      <p className="text-sm font-medium text-neutral-900">Izinkan cicilan</p>
+                      <p className="text-xs text-neutral-500">Aktifkan hanya untuk siswa yang memang boleh bayar bertahap.</p>
+                    </div>
+                  </label>
                 </div>
 
                 {student?.currentClass && (

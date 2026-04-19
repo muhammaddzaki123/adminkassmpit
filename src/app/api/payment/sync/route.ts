@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
 import { getServerSession } from '@/lib/auth';
 import { getMidtransTransactionStatus, normalizeMidtransStatus } from '@/lib/midtrans';
 import { appendPaymentAuditEvent, buildPaymentNotes } from '@/lib/payment-audit';
@@ -92,12 +93,12 @@ export async function POST(request: NextRequest) {
             source: 'sync',
             status: normalizedStatus,
             message: 'Sinkronisasi status dari Midtrans',
-            raw: midtransStatus.raw,
-          }),
+            raw: midtransStatus.raw as Prisma.InputJsonValue,
+          }) as Prisma.InputJsonValue,
         },
       });
 
-      let updatedBilling = payment.billing;
+      let updatedBillingStatus = payment.billing.status;
 
       if (normalizedStatus === 'COMPLETED' && payment.status !== 'COMPLETED') {
         const newPaidAmount = Math.min(
@@ -105,16 +106,18 @@ export async function POST(request: NextRequest) {
           payment.billing.paidAmount + payment.amount
         );
 
-        updatedBilling = await tx.billing.update({
+        const updatedBilling = await tx.billing.update({
           where: { id: payment.billingId },
           data: {
             paidAmount: newPaidAmount,
             status: resolveBillingStatus(payment.billing.totalAmount, newPaidAmount),
           },
         });
+
+        updatedBillingStatus = updatedBilling.status;
       }
 
-      return { updatedPayment, updatedBilling };
+      return { updatedPayment, updatedBillingStatus };
     });
 
     if (updated.updatedPayment.status === 'COMPLETED' && payment.status !== 'COMPLETED' && payment.billing.student.noTelp) {
@@ -144,7 +147,7 @@ export async function POST(request: NextRequest) {
       data: {
         paymentId: updated.updatedPayment.id,
         status: updated.updatedPayment.status,
-        billingStatus: updated.updatedBilling.status,
+        billingStatus: updated.updatedBillingStatus,
         synced: true,
         changed: true,
       },

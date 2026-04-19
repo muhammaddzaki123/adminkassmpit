@@ -82,6 +82,11 @@ enum ExpenseCategory {
   OPERASIONAL
   LAINNYA
 }
+ 
+enum LedgerDirection {
+  INCOME
+  EXPENSE
+}
 
 model User {
   id           String      @id @default(uuid())
@@ -103,6 +108,7 @@ model User {
   processedPayments    Payment[]         @relation("PaymentProcessor")
   issuedBillings       Billing[]         @relation("BillingIssuer")
   waivedBillings       Billing[]         @relation("BillingWaiver")
+  createdCashLedgerEntries CashLedgerEntry[] @relation("CashLedgerCreator")
   createdAcademicYears AcademicYear[]    @relation("AcademicYearCreator")
   createdTemplates     BillingTemplate[] @relation("TemplateCreator")
   updatedSettings      SystemSettings[]  @relation("SettingsUpdater")
@@ -259,6 +265,29 @@ model Expense {
   updatedAt   DateTime        @updatedAt @map("updated_at")
 
   @@map("expenses")
+}
+ 
+model CashLedgerEntry {
+  id              String          @id @default(uuid())
+  entryNumber     String          @unique @map("entry_number")
+  date            DateTime
+  direction       LedgerDirection
+  source          String
+  category        String
+  description     String
+  amount          Float
+  referenceNumber  String?         @map("reference_number")
+  notes           String?         @db.Text
+  createdById     String?         @map("created_by_id")
+  createdBy       User?           @relation("CashLedgerCreator", fields: [createdById], references: [id])
+  createdAt       DateTime        @default(now()) @map("created_at")
+  updatedAt       DateTime        @updatedAt @map("updated_at")
+ 
+  @@index([date])
+  @@index([direction, date])
+  @@index([source])
+  @@index([category])
+  @@map("cash_ledger_entries")
 }
 
 model SystemSettings {

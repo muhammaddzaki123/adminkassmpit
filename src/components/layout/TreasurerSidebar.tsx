@@ -102,6 +102,11 @@ export function TreasurerSidebar() {
             path: '/treasurer/reports',
           },
           {
+            label: 'Buku Besar',
+            path: '/treasurer/buku-besar',
+            matchPrefixes: ['/treasurer/buku-besar'],
+          },
+          {
             label: 'Riwayat Transaksi',
             path: '/treasurer/history',
           },

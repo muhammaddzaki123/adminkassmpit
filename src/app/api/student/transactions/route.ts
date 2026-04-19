@@ -29,6 +29,7 @@ export async function GET(request: NextRequest) {
             month: true,
             year: true,
             description: true,
+            billNumber: true,
           },
         },
       },
