@@ -13,7 +13,7 @@ type LedgerItem = {
   direction: LedgerDirection;
   source: string;
   category: string;
-  description: string;
+  description: string | null;
   amount: number;
   referenceNumber?: string | null;
   notes?: string | null;
@@ -327,6 +327,7 @@ export async function POST(request: NextRequest) {
     const source = String(body.source || '').trim();
     const category = String(body.category || '').trim();
     const description = String(body.description || '').trim();
+    const normalizedDescription = description || null;
     const referenceNumber = String(body.referenceNumber || '').trim();
     const notes = String(body.notes || '').trim();
     const dateInput = String(body.date || '');
@@ -339,9 +340,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!source || !category || !description || !dateInput || !amount || amount <= 0) {
+    if (!source || !category || !dateInput || !amount || amount <= 0) {
       return NextResponse.json(
-        { success: false, error: 'Data belum lengkap untuk menyimpan transaksi buku besar' },
+        { success: false, error: 'Data belum lengkap untuk menyimpan transaksi buku besar (arah, sumber, kategori, tanggal, nominal)' },
         { status: 400 }
       );
     }
@@ -371,7 +372,7 @@ export async function POST(request: NextRequest) {
           direction,
           source,
           category,
-          description,
+          description: normalizedDescription,
           amount,
           referenceNumber: referenceNumber || null,
           notes: notes || null,

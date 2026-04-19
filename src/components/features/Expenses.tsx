@@ -12,7 +12,7 @@ interface Expense {
   id: string;
   date: string;
   category: string;
-  description: string;
+  description: string | null;
   amount: number;
   status: string;
   receipt?: string;
@@ -37,14 +37,26 @@ interface FormData {
   amount: string;
 }
 
+interface ExpenseCategoryOption {
+  id: string;
+  name: string;
+  isActive: boolean;
+}
+
 export function Expenses() {
   const [showModal, setShowModal] = useState(false);
+  const [showCategoryManager, setShowCategoryManager] = useState(false);
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [categoryMessage, setCategoryMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [selectedPeriod, setSelectedPeriod] = useState('this-month');
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [categoryOptions, setCategoryOptions] = useState<ExpenseCategoryOption[]>([]);
+  const [newCategoryName, setNewCategoryName] = useState('');
+  const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
+  const [editingCategoryName, setEditingCategoryName] = useState('');
   const [stats, setStats] = useState<Stats>({
     totalThisMonth: 0,
     totalExpense: 0,
@@ -90,9 +102,27 @@ export function Expenses() {
     }
   }, [selectedPeriod, selectedCategory]);
 
+  const fetchCategoryOptions = useCallback(async () => {
+    try {
+      const response = await fetch('/api/expense-categories');
+      if (!response.ok) return;
+
+      const data = await response.json() as { success: boolean; data?: ExpenseCategoryOption[] };
+      if (data.success && data.data) {
+        setCategoryOptions(data.data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch expense categories:', error);
+    }
+  }, []);
+
   useEffect(() => {
     fetchExpenses();
   }, [fetchExpenses]);
+
+  useEffect(() => {
+    void fetchCategoryOptions();
+  }, [fetchCategoryOptions]);
 
   const calculateStats = (expensesData: Expense[], incomeData: { amount: number }[]) => {
     // Total pengeluaran bulan ini
@@ -147,8 +177,8 @@ export function Expenses() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.category || !formData.description || !formData.amount) {
-      setMessage({ type: 'error', text: 'Semua field wajib diisi' });
+    if (!formData.category || !formData.amount || !formData.date) {
+      setMessage({ type: 'error', text: 'Field bertanda * wajib diisi' });
       return;
     }
 
@@ -164,7 +194,7 @@ export function Expenses() {
       const payload = {
         date: new Date(formData.date).toISOString(),
         category: formData.category,
-        description: formData.description,
+        description: formData.description || null,
         amount: parseFloat(formData.amount),
         status: 'APPROVED'
       };
@@ -181,8 +211,10 @@ export function Expenses() {
         setMessage({ type: 'success', text: 'Pengeluaran berhasil disimpan!' });
         setTimeout(() => {
           setShowModal(false);
+          setShowCategoryManager(false);
           setMessage(null);
           fetchExpenses();
+          void fetchCategoryOptions();
           resetForm();
         }, 1500);
       } else {
@@ -226,7 +258,7 @@ export function Expenses() {
       ...expenses.map(exp => [
         new Date(exp.date).toLocaleDateString('id-ID'),
         getCategoryLabel(exp.category),
-        exp.description,
+        exp.description || '-',
         exp.amount,
         exp.status === 'APPROVED' ? 'Disetujui' : 'Pending'
       ]),
@@ -243,15 +275,98 @@ export function Expenses() {
   };
 
   const getCategoryLabel = (category: string) => {
-    const labels: Record<string, string> = {
-      'GAJI': 'Gaji Guru & Karyawan',
-      'ATK': 'Alat Tulis Kantor',
-      'UTILITAS': 'Listrik, Air, Internet',
-      'PEMELIHARAAN': 'Pemeliharaan Gedung',
-      'OPERASIONAL': 'Operasional Lainnya',
-      'LAINNYA': 'Lain-lain'
-    };
-    return labels[category] || category;
+    return category;
+  };
+
+  const handleAddCategory = async () => {
+    const name = newCategoryName.trim();
+    if (!name) {
+      setCategoryMessage({ type: 'error', text: 'Nama kategori tidak boleh kosong' });
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/expense-categories', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name }),
+      });
+
+      const data = await response.json() as { success: boolean; error?: string };
+      if (!response.ok || !data.success) {
+        setCategoryMessage({ type: 'error', text: data.error || 'Gagal menambah kategori' });
+        return;
+      }
+
+      setCategoryMessage({ type: 'success', text: 'Kategori berhasil ditambahkan' });
+      setNewCategoryName('');
+      setFormData((prev) => ({ ...prev, category: name }));
+      void fetchCategoryOptions();
+    } catch (error) {
+      console.error('Error adding category:', error);
+      setCategoryMessage({ type: 'error', text: 'Terjadi kesalahan saat menambah kategori' });
+    }
+  };
+
+  const handleStartEditCategory = (item: ExpenseCategoryOption) => {
+    setEditingCategoryId(item.id);
+    setEditingCategoryName(item.name);
+  };
+
+  const handleSaveCategoryEdit = async () => {
+    const id = editingCategoryId;
+    const name = editingCategoryName.trim();
+
+    if (!id || !name) {
+      setCategoryMessage({ type: 'error', text: 'Nama kategori tidak boleh kosong' });
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/expense-categories', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, name }),
+      });
+
+      const data = await response.json() as { success: boolean; error?: string };
+      if (!response.ok || !data.success) {
+        setCategoryMessage({ type: 'error', text: data.error || 'Gagal mengubah kategori' });
+        return;
+      }
+
+      setCategoryMessage({ type: 'success', text: 'Kategori berhasil diubah' });
+      setEditingCategoryId(null);
+      setEditingCategoryName('');
+      if (formData.category) {
+        setFormData((prev) => ({ ...prev, category: prev.category === categoryOptions.find((opt) => opt.id === id)?.name ? name : prev.category }));
+      }
+      void fetchCategoryOptions();
+      void fetchExpenses();
+    } catch (error) {
+      console.error('Error updating category:', error);
+      setCategoryMessage({ type: 'error', text: 'Terjadi kesalahan saat mengubah kategori' });
+    }
+  };
+
+  const handleDeleteCategory = async (id: string) => {
+    try {
+      const response = await fetch(`/api/expense-categories?id=${encodeURIComponent(id)}`, {
+        method: 'DELETE',
+      });
+
+      const data = await response.json() as { success: boolean; error?: string };
+      if (!response.ok || !data.success) {
+        setCategoryMessage({ type: 'error', text: data.error || 'Gagal menghapus kategori' });
+        return;
+      }
+
+      setCategoryMessage({ type: 'success', text: 'Kategori berhasil dihapus' });
+      void fetchCategoryOptions();
+    } catch (error) {
+      console.error('Error deleting category:', error);
+      setCategoryMessage({ type: 'error', text: 'Terjadi kesalahan saat menghapus kategori' });
+    }
   };
 
   const columns = [
@@ -286,7 +401,7 @@ export function Expenses() {
       label: 'Keterangan', 
       width: '30%',
       render: (item: Expense) => (
-        <p className="text-sm text-neutral-700 line-clamp-2">{item.description}</p>
+        <p className="text-sm text-neutral-700 line-clamp-2">{item.description || '-'}</p>
       )
     },
     {
@@ -425,12 +540,7 @@ export function Expenses() {
             onChange={(e) => setSelectedCategory(e.target.value)}
             options={[
               { value: 'all', label: 'Semua Kategori' },
-              { value: 'GAJI', label: 'Gaji Guru & Karyawan' },
-              { value: 'ATK', label: 'Alat Tulis Kantor' },
-              { value: 'UTILITAS', label: 'Listrik, Air, Internet' },
-              { value: 'PEMELIHARAAN', label: 'Pemeliharaan Gedung' },
-              { value: 'OPERASIONAL', label: 'Operasional Lainnya' },
-              { value: 'LAINNYA', label: 'Lain-lain' },
+              ...categoryOptions.map((item) => ({ value: item.name, label: item.name })),
             ]}
             className="w-56"
           />
@@ -500,7 +610,7 @@ export function Expenses() {
                 </div>
               </div>
               <button 
-                onClick={() => { setShowModal(false); setMessage(null); resetForm(); }} 
+                onClick={() => { setShowModal(false); setShowCategoryManager(false); setMessage(null); resetForm(); }} 
                 className="text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100 p-2 rounded-lg transition-colors"
               >
                 <X className="w-6 h-6" />
@@ -524,35 +634,89 @@ export function Expenses() {
               <div className="grid grid-cols-2 gap-4">
                 <Input
                   type="date"
-                  label="Tanggal"
+                  label="Tanggal *"
                   value={formData.date}
                   onChange={(e) => setFormData({ ...formData, date: e.target.value })}
                   required
                 />
-                <Select
-                  label="Kategori"
-                  value={formData.category}
-                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                  options={[
-                    { value: '', label: 'Pilih Kategori' },
-                    { value: 'GAJI', label: 'Gaji Guru & Karyawan' },
-                    { value: 'ATK', label: 'Alat Tulis Kantor' },
-                    { value: 'UTILITAS', label: 'Listrik, Air, Internet' },
-                    { value: 'PEMELIHARAAN', label: 'Pemeliharaan Gedung' },
-                    { value: 'OPERASIONAL', label: 'Operasional Lainnya' },
-                    { value: 'LAINNYA', label: 'Lain-lain' },
-                  ]}
-                  required
-                />
+
+                <div>
+                  <Input
+                    label="Kategori *"
+                    list="expense-category-options"
+                    value={formData.category}
+                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                    placeholder="Pilih atau ketik kategori"
+                    required
+                  />
+                  <datalist id="expense-category-options">
+                    {categoryOptions.map((item) => (
+                      <option key={item.id} value={item.name} />
+                    ))}
+                  </datalist>
+                  <div className="mt-2 flex justify-end">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setShowCategoryManager((prev) => !prev)}
+                    >
+                      {showCategoryManager ? 'Tutup Kelola Kategori' : 'Kelola Kategori'}
+                    </Button>
+                  </div>
+                </div>
               </div>
+
+              {showCategoryManager && (
+              <div className="rounded-lg border border-neutral-200 p-3 space-y-3">
+                <p className="text-sm font-medium text-neutral-700">Kelola Kategori</p>
+                {categoryMessage && (
+                  <p className={`text-xs ${categoryMessage.type === 'success' ? 'text-green-600' : 'text-red-600'}`}>
+                    {categoryMessage.text}
+                  </p>
+                )}
+
+                <div className="flex gap-2">
+                  <Input
+                    value={newCategoryName}
+                    onChange={(e) => setNewCategoryName(e.target.value)}
+                    placeholder="Tambah kategori baru"
+                  />
+                  <Button type="button" variant="outline" onClick={handleAddCategory}>
+                    Tambah
+                  </Button>
+                </div>
+
+                <div className="max-h-36 overflow-auto space-y-2">
+                  {categoryOptions.map((item) => (
+                    <div key={item.id} className="flex items-center gap-2">
+                      {editingCategoryId === item.id ? (
+                        <>
+                          <Input
+                            value={editingCategoryName}
+                            onChange={(e) => setEditingCategoryName(e.target.value)}
+                          />
+                          <Button type="button" variant="outline" onClick={handleSaveCategoryEdit}>Simpan</Button>
+                          <Button type="button" variant="ghost" onClick={() => setEditingCategoryId(null)}>Batal</Button>
+                        </>
+                      ) : (
+                        <>
+                          <div className="flex-1 text-sm text-neutral-700">{item.name}</div>
+                          <Button type="button" variant="ghost" onClick={() => handleStartEditCategory(item)}>Edit</Button>
+                          <Button type="button" variant="ghost" onClick={() => handleDeleteCategory(item.id)}>Hapus</Button>
+                        </>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+              )}
 
               <TextArea
                 label="Keterangan"
-                placeholder="Deskripsi pengeluaran..."
+                placeholder="Deskripsi pengeluaran (opsional)"
                 rows={3}
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                required
               />
 
               <div>
@@ -597,7 +761,7 @@ export function Expenses() {
                   type="button" 
                   variant="outline" 
                   fullWidth 
-                  onClick={() => { setShowModal(false); setMessage(null); resetForm(); }}
+                  onClick={() => { setShowModal(false); setShowCategoryManager(false); setMessage(null); resetForm(); }}
                   disabled={isSubmitting}
                 >
                   Batal

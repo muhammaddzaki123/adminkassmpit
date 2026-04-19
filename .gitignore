@@ -44,4 +44,5 @@ next-env.d.ts
 
 # whatsapp-web.js local session/auth cache
 .wwebjs_auth/
+.wwebjs_cache/
 qrcode.txt

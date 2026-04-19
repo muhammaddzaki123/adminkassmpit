@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import { ExpenseCategory, ExpenseStatus } from '@prisma/client';
+import { ExpenseStatus } from '@prisma/client';
 import { requireTreasurer } from '@/lib/auth-helpers';
 
 export async function GET(request: NextRequest) {
@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
 
     // Filter by category
     if (category && category !== 'all') {
-      where.category = category as ExpenseCategory;
+      where.category = category;
     }
 
     // Filter by period
@@ -69,12 +69,14 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const { date, category, description, amount, status } = body;
+    const normalizedCategory = String(category || '').trim();
+    const normalizedDescription = String(description || '').trim();
 
     // Validasi input
-    if (!date || !category || !description || !amount) {
+    if (!date || !normalizedCategory || !amount) {
       return NextResponse.json({ 
         success: false, 
-        error: 'Data tidak lengkap. date, category, description, dan amount wajib diisi' 
+        error: 'Data tidak lengkap. date, category, dan amount wajib diisi' 
       }, { status: 400 });
     }
 
@@ -85,11 +87,17 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
+    await prisma.expenseCategoryOption.upsert({
+      where: { name: normalizedCategory },
+      update: { isActive: true },
+      create: { name: normalizedCategory, isActive: true },
+    });
+
     const expense = await prisma.expense.create({
       data: {
         date: new Date(date),
-        category: category as ExpenseCategory,
-        description,
+        category: normalizedCategory,
+        description: normalizedDescription || null,
         amount: parseFloat(amount),
         status: (status as ExpenseStatus) || ExpenseStatus.APPROVED,
       },

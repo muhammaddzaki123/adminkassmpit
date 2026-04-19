@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { fetchWithAuth } from '@/lib/api-client';
 import { TreasurerSidebar } from '@/components/layout/TreasurerSidebar';
@@ -20,6 +20,8 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   Landmark,
+  Settings,
+  X,
 } from 'lucide-react';
 
 type LedgerDirection = 'INCOME' | 'EXPENSE';
@@ -31,7 +33,7 @@ interface LedgerEntry {
   direction: LedgerDirection;
   source: string;
   category: string;
-  description: string;
+  description: string | null;
   amount: number;
   referenceNumber?: string | null;
   notes?: string | null;
@@ -71,6 +73,18 @@ interface LedgerFormState {
   notes: string;
 }
 
+interface ExpenseCategoryOption {
+  id: string;
+  name: string;
+  isActive: boolean;
+}
+
+interface IncomeCategoryOption {
+  id: string;
+  name: string;
+  isActive: boolean;
+}
+
 const incomeSourceOptions = [
   { value: 'BOS', label: 'BOS' },
   { value: 'SPP', label: 'SPP' },
@@ -86,21 +100,12 @@ const expenseSourceOptions = [
   { value: 'LAINNYA', label: 'Lainnya' },
 ];
 
-const incomeCategoryOptions = [
+const defaultIncomeCategoryOptions = [
   { value: 'PENERIMAAN_BOS', label: 'Penerimaan BOS' },
   { value: 'SPP', label: 'SPP' },
+  { value: 'DAFTAR_ULANG', label: 'Daftar Ulang' },
   { value: 'DONASI', label: 'Donasi' },
   { value: 'HIBAH', label: 'Hibah' },
-  { value: 'LAINNYA', label: 'Lainnya' },
-];
-
-const expenseCategoryOptions = [
-  { value: 'GAJI', label: 'Gaji Guru & Karyawan' },
-  { value: 'ATK', label: 'Alat Tulis Kantor' },
-  { value: 'UTILITAS', label: 'Listrik, Air, Internet' },
-  { value: 'PEMELIHARAAN', label: 'Pemeliharaan' },
-  { value: 'OPERASIONAL', label: 'Operasional' },
-  { value: 'KEGIATAN', label: 'Kegiatan' },
   { value: 'LAINNYA', label: 'Lainnya' },
 ];
 
@@ -144,6 +149,11 @@ function getMonthLabel(month: number) {
   return months[month - 1] || 'Januari';
 }
 
+function getIncomeCategoryLabel(category: string) {
+  const found = defaultIncomeCategoryOptions.find((item) => item.value === category);
+  return found?.label || category;
+}
+
 function getDefaultFormState(): LedgerFormState {
   const today = new Date();
   return {
@@ -166,11 +176,24 @@ export default function BukuBesarPage() {
   const [year, setYear] = useState(String(new Date().getFullYear()));
   const [searchQuery, setSearchQuery] = useState('');
   const [directionFilter, setDirectionFilter] = useState('all');
+  const [incomeCategoryFilter, setIncomeCategoryFilter] = useState('all');
   const [entries, setEntries] = useState<LedgerEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [categoryMessage, setCategoryMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [form, setForm] = useState<LedgerFormState>(getDefaultFormState);
+  const [expenseCategoryOptions, setExpenseCategoryOptions] = useState<ExpenseCategoryOption[]>([]);
+  const [newExpenseCategoryName, setNewExpenseCategoryName] = useState('');
+  const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
+  const [editingCategoryName, setEditingCategoryName] = useState('');
+  const [showExpenseCategoryManager, setShowExpenseCategoryManager] = useState(false);
+  const [incomeCategoryOptions, setIncomeCategoryOptions] = useState<IncomeCategoryOption[]>([]);
+  const [showIncomeCategoryModal, setShowIncomeCategoryModal] = useState(false);
+  const [incomeCategoryMessage, setIncomeCategoryMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [newIncomeCategoryName, setNewIncomeCategoryName] = useState('');
+  const [editingIncomeCategoryId, setEditingIncomeCategoryId] = useState<string | null>(null);
+  const [editingIncomeCategoryName, setEditingIncomeCategoryName] = useState('');
 
   useEffect(() => {
     const userData = localStorage.getItem('user');
@@ -186,7 +209,7 @@ export default function BukuBesarPage() {
     }
   }, [router]);
 
-  const fetchLedger = async () => {
+  const fetchLedger = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -215,11 +238,47 @@ export default function BukuBesarPage() {
     } finally {
       setLoading(false);
     }
+  }, [period, month, year]);
+
+  const fetchExpenseCategories = async () => {
+    try {
+      const response = await fetchWithAuth('/api/expense-categories');
+      if (!response.ok) return;
+
+      const result = await response.json() as { success: boolean; data?: ExpenseCategoryOption[] };
+      if (result.success && result.data) {
+        setExpenseCategoryOptions(result.data);
+      }
+    } catch (fetchError) {
+      console.error('Error fetching expense categories:', fetchError);
+    }
   };
 
   useEffect(() => {
-    fetchLedger();
-  }, [period, month, year]);
+    void fetchLedger();
+  }, [fetchLedger]);
+
+  useEffect(() => {
+    void fetchExpenseCategories();
+  }, []);
+
+  const fetchIncomeCategories = useCallback(async () => {
+    try {
+      const response = await fetchWithAuth('/api/income-categories');
+      if (!response.ok) return;
+
+      const result = await response.json() as { success: boolean; data?: IncomeCategoryOption[] };
+      if (result.success && result.data) {
+        setIncomeCategoryOptions(result.data);
+      }
+    } catch (fetchError) {
+      console.error('Error fetching income categories:', fetchError);
+    }
+  }, []);
+
+  useEffect(() => {
+    void fetchIncomeCategories();
+  }, [fetchIncomeCategories]);
 
   const filteredEntries = useMemo(() => {
     return entries.filter((entry) => {
@@ -244,9 +303,34 @@ export default function BukuBesarPage() {
 
       const matchesSearch = searchQuery.trim() === '' || haystack.includes(searchQuery.toLowerCase());
 
-      return matchesDirection && matchesSearch;
+      const matchesIncomeCategory =
+        incomeCategoryFilter === 'all' ||
+        (entry.direction === 'INCOME' && entry.category === incomeCategoryFilter);
+      return matchesDirection && matchesIncomeCategory && matchesSearch;
     });
-  }, [entries, directionFilter, searchQuery]);
+  }, [entries, directionFilter, incomeCategoryFilter, searchQuery]);
+
+  const incomeCategoryFilterOptions = useMemo(() => {
+    const values = new Set<string>([
+      ...defaultIncomeCategoryOptions.map((item) => item.value),
+      ...incomeCategoryOptions.map((item) => item.name),
+    ]);
+    entries
+      .filter((entry) => entry.direction === 'INCOME')
+      .forEach((entry) => values.add(entry.category));
+
+    return [
+      { value: 'all', label: 'Semua Kategori Pemasukan' },
+      ...Array.from(values).map((value) => ({ value, label: getIncomeCategoryLabel(value) })),
+    ];
+  }, [entries, incomeCategoryOptions]);
+
+  const handleDirectionFilterChange = (value: string) => {
+    setDirectionFilter(value);
+    if (value !== 'all' && value !== 'income') {
+      setIncomeCategoryFilter('all');
+    }
+  };
 
   const summary = useMemo(() => {
     let income = 0;
@@ -299,7 +383,9 @@ export default function BukuBesarPage() {
 
   const handleDirectionChange = (value: LedgerDirection) => {
     const nextSource = value === 'INCOME' ? incomeSourceOptions[0].value : expenseSourceOptions[0].value;
-    const nextCategory = value === 'INCOME' ? incomeCategoryOptions[0].value : expenseCategoryOptions[0].value;
+    const nextCategory = value === 'INCOME'
+      ? (incomeCategoryOptions[0]?.name || defaultIncomeCategoryOptions[0].value)
+      : (expenseCategoryOptions[0]?.name || 'LAINNYA');
 
     setForm((current) => ({
       ...current,
@@ -307,6 +393,10 @@ export default function BukuBesarPage() {
       source: nextSource,
       category: nextCategory,
     }));
+
+    if (value !== 'EXPENSE') {
+      setShowExpenseCategoryManager(false);
+    }
   };
 
   const handleCreateEntry = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -331,6 +421,7 @@ export default function BukuBesarPage() {
 
       setForm(getDefaultFormState());
       await fetchLedger();
+      await fetchExpenseCategories();
     } catch (submitError) {
       console.error('Error creating ledger entry:', submitError);
       setError('Gagal menyimpan transaksi buku besar. Periksa kembali datanya.');
@@ -366,7 +457,7 @@ export default function BukuBesarPage() {
         escapeCsv(entry.direction === 'INCOME' ? 'Pemasukan' : 'Pengeluaran'),
         escapeCsv(entry.source),
         escapeCsv(entry.category),
-        escapeCsv(entry.description),
+        escapeCsv(entry.description || '-'),
         escapeCsv(entry.referenceNumber || '-'),
         escapeCsv(entry.direction === 'INCOME' ? entry.amount : ''),
         escapeCsv(entry.direction === 'EXPENSE' ? entry.amount : ''),
@@ -400,7 +491,188 @@ export default function BukuBesarPage() {
   };
 
   const sourceOptions = form.direction === 'INCOME' ? incomeSourceOptions : expenseSourceOptions;
-  const categoryOptions = form.direction === 'INCOME' ? incomeCategoryOptions : expenseCategoryOptions;
+  const incomeFormCategoryOptions = useMemo(() => {
+    const values = new Set<string>([
+      ...defaultIncomeCategoryOptions.map((item) => item.value),
+      ...incomeCategoryOptions.map((item) => item.name),
+    ]);
+
+    return Array.from(values).map((value) => ({ value, label: getIncomeCategoryLabel(value) }));
+  }, [incomeCategoryOptions]);
+
+  const categoryOptions = form.direction === 'INCOME'
+    ? incomeFormCategoryOptions
+    : expenseCategoryOptions.map((item) => ({ value: item.name, label: item.name }));
+
+  const handleAddIncomeCategory = async () => {
+    const name = newIncomeCategoryName.trim();
+    if (!name) {
+      setIncomeCategoryMessage({ type: 'error', text: 'Nama kategori tidak boleh kosong' });
+      return;
+    }
+
+    try {
+      const response = await fetchWithAuth('/api/income-categories', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name }),
+      });
+      const result = await response.json() as { success: boolean; error?: string };
+      if (!response.ok || !result.success) {
+        setIncomeCategoryMessage({ type: 'error', text: result.error || 'Gagal menambah kategori pemasukan' });
+        return;
+      }
+
+      setIncomeCategoryMessage({ type: 'success', text: 'Kategori pemasukan berhasil ditambahkan' });
+      setNewIncomeCategoryName('');
+      setForm((prev) => ({ ...prev, category: name }));
+      await fetchIncomeCategories();
+    } catch (createError) {
+      console.error('Error creating income category:', createError);
+      setIncomeCategoryMessage({ type: 'error', text: 'Terjadi kesalahan saat menambah kategori pemasukan' });
+    }
+  };
+
+  const handleSaveIncomeCategory = async () => {
+    const id = editingIncomeCategoryId;
+    const name = editingIncomeCategoryName.trim();
+    if (!id || !name) {
+      setIncomeCategoryMessage({ type: 'error', text: 'Nama kategori tidak boleh kosong' });
+      return;
+    }
+
+    const previousName = incomeCategoryOptions.find((item) => item.id === id)?.name;
+
+    try {
+      const response = await fetchWithAuth('/api/income-categories', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, name }),
+      });
+      const result = await response.json() as { success: boolean; error?: string };
+      if (!response.ok || !result.success) {
+        setIncomeCategoryMessage({ type: 'error', text: result.error || 'Gagal mengubah kategori pemasukan' });
+        return;
+      }
+
+      setEditingIncomeCategoryId(null);
+      setEditingIncomeCategoryName('');
+      setIncomeCategoryMessage({ type: 'success', text: 'Kategori pemasukan berhasil diubah' });
+      setForm((prev) => ({
+        ...prev,
+        category: prev.category === previousName ? name : prev.category,
+      }));
+      await fetchIncomeCategories();
+      await fetchLedger();
+    } catch (updateError) {
+      console.error('Error updating income category:', updateError);
+      setIncomeCategoryMessage({ type: 'error', text: 'Terjadi kesalahan saat mengubah kategori pemasukan' });
+    }
+  };
+
+  const handleDeleteIncomeCategory = async (id: string) => {
+    try {
+      const response = await fetchWithAuth(`/api/income-categories?id=${encodeURIComponent(id)}`, {
+        method: 'DELETE',
+      });
+      const result = await response.json() as { success: boolean; error?: string };
+      if (!response.ok || !result.success) {
+        setIncomeCategoryMessage({ type: 'error', text: result.error || 'Gagal menghapus kategori pemasukan' });
+        return;
+      }
+
+      setIncomeCategoryMessage({ type: 'success', text: 'Kategori pemasukan berhasil dihapus' });
+      await fetchIncomeCategories();
+    } catch (deleteError) {
+      console.error('Error deleting income category:', deleteError);
+      setIncomeCategoryMessage({ type: 'error', text: 'Terjadi kesalahan saat menghapus kategori pemasukan' });
+    }
+  };
+
+  const handleAddExpenseCategory = async () => {
+    const name = newExpenseCategoryName.trim();
+    if (!name) {
+      setCategoryMessage('Nama kategori tidak boleh kosong');
+      return;
+    }
+
+    try {
+      const response = await fetchWithAuth('/api/expense-categories', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name }),
+      });
+      const result = await response.json() as { success: boolean; error?: string };
+      if (!response.ok || !result.success) {
+        setCategoryMessage(result.error || 'Gagal menambah kategori');
+        return;
+      }
+
+      setCategoryMessage('Kategori berhasil ditambahkan');
+      setNewExpenseCategoryName('');
+      setForm((prev) => ({ ...prev, category: name }));
+      await fetchExpenseCategories();
+    } catch (createError) {
+      console.error('Error creating expense category:', createError);
+      setCategoryMessage('Terjadi kesalahan saat menambah kategori');
+    }
+  };
+
+  const handleSaveExpenseCategory = async () => {
+    const id = editingCategoryId;
+    const name = editingCategoryName.trim();
+    if (!id || !name) {
+      setCategoryMessage('Nama kategori tidak boleh kosong');
+      return;
+    }
+
+    const previousName = expenseCategoryOptions.find((item) => item.id === id)?.name;
+
+    try {
+      const response = await fetchWithAuth('/api/expense-categories', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, name }),
+      });
+      const result = await response.json() as { success: boolean; error?: string };
+      if (!response.ok || !result.success) {
+        setCategoryMessage(result.error || 'Gagal mengubah kategori');
+        return;
+      }
+
+      setEditingCategoryId(null);
+      setEditingCategoryName('');
+      setCategoryMessage('Kategori berhasil diubah');
+      setForm((prev) => ({
+        ...prev,
+        category: prev.category === previousName ? name : prev.category,
+      }));
+      await fetchExpenseCategories();
+      await fetchLedger();
+    } catch (updateError) {
+      console.error('Error updating expense category:', updateError);
+      setCategoryMessage('Terjadi kesalahan saat mengubah kategori');
+    }
+  };
+
+  const handleDeleteExpenseCategory = async (id: string) => {
+    try {
+      const response = await fetchWithAuth(`/api/expense-categories?id=${encodeURIComponent(id)}`, {
+        method: 'DELETE',
+      });
+      const result = await response.json() as { success: boolean; error?: string };
+      if (!response.ok || !result.success) {
+        setCategoryMessage(result.error || 'Gagal menghapus kategori');
+        return;
+      }
+
+      setCategoryMessage('Kategori berhasil dihapus');
+      await fetchExpenseCategories();
+    } catch (deleteError) {
+      console.error('Error deleting expense category:', deleteError);
+      setCategoryMessage('Terjadi kesalahan saat menghapus kategori');
+    }
+  };
 
   if (loading) {
     return (
@@ -513,90 +785,7 @@ export default function BukuBesarPage() {
               </Card>
             </div>
 
-            <div className="grid grid-cols-1 xl:grid-cols-[1.1fr_0.9fr] gap-6">
-              <Card>
-                <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between mb-6">
-                  <div>
-                    <h2 className="text-xl font-bold text-neutral-900">Filter Buku Besar</h2>
-                    <p className="text-sm text-neutral-600 mt-1">Pilih periode dan arah transaksi yang ingin dilihat.</p>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-neutral-600">
-                    <Filter className="w-4 h-4" />
-                    {visibleEntries.length} transaksi ditemukan
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                  <Select
-                    label="Periode"
-                    value={period}
-                    onChange={(event) => setPeriod(event.target.value)}
-                    options={[
-                      { value: 'monthly', label: 'Bulanan' },
-                      { value: 'yearly', label: 'Tahunan' },
-                      { value: 'all', label: 'Semua' },
-                    ]}
-                  />
-
-                  {period === 'monthly' ? (
-                    <Select
-                      label="Bulan"
-                      value={month}
-                      onChange={(event) => setMonth(event.target.value)}
-                      options={[
-                        { value: '1', label: 'Januari' },
-                        { value: '2', label: 'Februari' },
-                        { value: '3', label: 'Maret' },
-                        { value: '4', label: 'April' },
-                        { value: '5', label: 'Mei' },
-                        { value: '6', label: 'Juni' },
-                        { value: '7', label: 'Juli' },
-                        { value: '8', label: 'Agustus' },
-                        { value: '9', label: 'September' },
-                        { value: '10', label: 'Oktober' },
-                        { value: '11', label: 'November' },
-                        { value: '12', label: 'Desember' },
-                      ]}
-                    />
-                  ) : (
-                    <div />
-                  )}
-
-                  <Select
-                    label="Tahun"
-                    value={year}
-                    onChange={(event) => setYear(event.target.value)}
-                    options={[
-                      { value: '2024', label: '2024' },
-                      { value: '2025', label: '2025' },
-                      { value: '2026', label: '2026' },
-                      { value: '2027', label: '2027' },
-                    ]}
-                  />
-
-                  <Select
-                    label="Jenis"
-                    value={directionFilter}
-                    onChange={(event) => setDirectionFilter(event.target.value)}
-                    options={[
-                      { value: 'all', label: 'Semua' },
-                      { value: 'income', label: 'Pemasukan' },
-                      { value: 'expense', label: 'Pengeluaran' },
-                    ]}
-                  />
-                </div>
-
-                <div className="mt-4">
-                  <Input
-                    placeholder="Cari nomor transaksi, sumber, kategori, deskripsi, atau nama siswa..."
-                    value={searchQuery}
-                    onChange={(event) => setSearchQuery(event.target.value)}
-                    icon={<Search className="w-4 h-4" />}
-                  />
-                </div>
-              </Card>
-
-              <Card>
+            <Card>
                 <div className="flex items-start justify-between gap-4 mb-6">
                   <div>
                     <h2 className="text-xl font-bold text-neutral-900">Input Transaksi Kas</h2>
@@ -610,74 +799,208 @@ export default function BukuBesarPage() {
                 </div>
 
                 <form className="space-y-4" onSubmit={handleCreateEntry}>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Select
-                      label="Arah Transaksi"
-                      value={form.direction}
-                      onChange={(event) => handleDirectionChange(event.target.value as LedgerDirection)}
-                      options={[
-                        { value: 'INCOME', label: 'Pemasukan' },
-                        { value: 'EXPENSE', label: 'Pengeluaran' },
-                      ]}
-                    />
-
-                    <Select
-                      label="Sumber"
-                      value={form.source}
-                      onChange={(event) => handleFormChange('source', event.target.value)}
-                      options={sourceOptions}
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Select
-                      label="Kategori"
-                      value={form.category}
-                      onChange={(event) => handleFormChange('category', event.target.value)}
-                      options={categoryOptions}
-                    />
-
-                    <Input
-                      label="Nominal"
-                      type="number"
-                      min="1"
-                      step="1"
-                      placeholder="Masukkan nominal"
-                      value={form.amount}
-                      onChange={(event) => handleFormChange('amount', event.target.value)}
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Input
-                      label="Tanggal"
-                      type="date"
-                      value={form.date}
-                      onChange={(event) => handleFormChange('date', event.target.value)}
-                    />
-
-                    <Input
-                      label="Referensi"
-                      placeholder="Nomor bukti / transfer / kwitansi"
-                      value={form.referenceNumber}
-                      onChange={(event) => handleFormChange('referenceNumber', event.target.value)}
-                    />
-                  </div>
-
-                  <Input
-                    label="Deskripsi"
-                    placeholder="Contoh: Penerimaan BOS tahap 1 / Pembelian ATK"
-                    value={form.description}
-                    onChange={(event) => handleFormChange('description', event.target.value)}
+                  <Select
+                    label="Arah Transaksi *"
+                    value={form.direction}
+                    onChange={(event) => handleDirectionChange(event.target.value as LedgerDirection)}
+                    options={[
+                      { value: 'INCOME', label: 'Pemasukan' },
+                      { value: 'EXPENSE', label: 'Pengeluaran' },
+                    ]}
                   />
 
-                  <TextArea
-                    label="Catatan"
-                    rows={4}
-                    placeholder="Catatan tambahan untuk audit atau penjelasan transaksi"
-                    value={form.notes}
-                    onChange={(event) => handleFormChange('notes', event.target.value)}
-                  />
+                  {form.direction === 'INCOME' ? (
+                    <>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <Select
+                          label="Sumber *"
+                          value={form.source}
+                          onChange={(event) => handleFormChange('source', event.target.value)}
+                          options={sourceOptions}
+                        />
+
+                        <div className="space-y-2">
+                          <Select
+                            label="Kategori *"
+                            value={form.category}
+                            onChange={(event) => handleFormChange('category', event.target.value)}
+                            options={categoryOptions}
+                          />
+                          <div className="flex justify-end">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              icon={<Settings className="w-4 h-4" />}
+                              onClick={() => {
+                                setShowIncomeCategoryModal(true);
+                                setIncomeCategoryMessage(null);
+                              }}
+                            >
+                              Kelola Kategori Pemasukan
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <Input
+                          label="Nominal *"
+                          type="number"
+                          min="1"
+                          step="1"
+                          placeholder="Masukkan nominal"
+                          value={form.amount}
+                          onChange={(event) => handleFormChange('amount', event.target.value)}
+                        />
+
+                        <Input
+                          label="Tanggal *"
+                          type="date"
+                          value={form.date}
+                          onChange={(event) => handleFormChange('date', event.target.value)}
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <Input
+                          label="Referensi"
+                          placeholder="Nomor bukti / transfer / kwitansi"
+                          value={form.referenceNumber}
+                          onChange={(event) => handleFormChange('referenceNumber', event.target.value)}
+                        />
+
+                        <Input
+                          label="Keterangan"
+                          placeholder="Contoh: Penerimaan BOS tahap 1"
+                          value={form.description}
+                          onChange={(event) => handleFormChange('description', event.target.value)}
+                        />
+                      </div>
+
+                      <TextArea
+                        label="Catatan"
+                        rows={4}
+                        placeholder="Catatan tambahan untuk audit atau penjelasan transaksi"
+                        value={form.notes}
+                        onChange={(event) => handleFormChange('notes', event.target.value)}
+                      />
+                    </>
+                  ) : (
+                    <>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <Input
+                          label="Tanggal *"
+                          type="date"
+                          value={form.date}
+                          onChange={(event) => handleFormChange('date', event.target.value)}
+                          required
+                        />
+
+                        <div>
+                          <Input
+                            label="Kategori *"
+                            list="ledger-expense-categories"
+                            value={form.category}
+                            onChange={(event) => handleFormChange('category', event.target.value)}
+                            placeholder="Pilih atau ketik kategori"
+                            required
+                          />
+                          <datalist id="ledger-expense-categories">
+                            {expenseCategoryOptions.map((item) => (
+                              <option key={item.id} value={item.name} />
+                            ))}
+                          </datalist>
+                        </div>
+                      </div>
+
+                      <TextArea
+                        label="Keterangan"
+                        rows={3}
+                        placeholder="Deskripsi pengeluaran (opsional)"
+                        value={form.description}
+                        onChange={(event) => handleFormChange('description', event.target.value)}
+                      />
+
+                      <div>
+                        <label className="block text-sm font-medium text-neutral-700 mb-2">
+                          Nominal <span className="text-red-500">*</span>
+                        </label>
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500 font-medium">
+                            Rp
+                          </span>
+                          <Input
+                            type="number"
+                            min="1"
+                            step="1"
+                            placeholder="0"
+                            value={form.amount}
+                            onChange={(event) => handleFormChange('amount', event.target.value)}
+                            className="pl-12"
+                            required
+                          />
+                        </div>
+                      </div>
+
+                      <div className="flex justify-end">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => setShowExpenseCategoryManager((prev) => !prev)}
+                        >
+                          {showExpenseCategoryManager ? 'Tutup Kelola Kategori' : 'Kelola Kategori Pengeluaran'}
+                        </Button>
+                      </div>
+
+                      {showExpenseCategoryManager && (
+                      <div className="rounded-lg border border-neutral-200 p-3 space-y-3">
+                        <p className="text-sm font-medium text-neutral-700">Kelola Kategori Pengeluaran</p>
+                        {categoryMessage && <p className="text-xs text-neutral-600">{categoryMessage}</p>}
+
+                        <div className="flex gap-2">
+                          <Input
+                            value={newExpenseCategoryName}
+                            onChange={(event) => setNewExpenseCategoryName(event.target.value)}
+                            placeholder="Tambah kategori baru"
+                          />
+                          <Button type="button" variant="outline" onClick={handleAddExpenseCategory}>
+                            Tambah
+                          </Button>
+                        </div>
+
+                        <div className="max-h-36 overflow-auto space-y-2">
+                          {expenseCategoryOptions.map((item) => (
+                            <div key={item.id} className="flex items-center gap-2">
+                              {editingCategoryId === item.id ? (
+                                <>
+                                  <Input
+                                    value={editingCategoryName}
+                                    onChange={(event) => setEditingCategoryName(event.target.value)}
+                                  />
+                                  <Button type="button" variant="outline" onClick={handleSaveExpenseCategory}>Simpan</Button>
+                                  <Button type="button" variant="ghost" onClick={() => setEditingCategoryId(null)}>Batal</Button>
+                                </>
+                              ) : (
+                                <>
+                                  <div className="flex-1 text-sm text-neutral-700">{item.name}</div>
+                                  <Button type="button" variant="ghost" onClick={() => {
+                                    setEditingCategoryId(item.id);
+                                    setEditingCategoryName(item.name);
+                                  }}>
+                                    Edit
+                                  </Button>
+                                  <Button type="button" variant="ghost" onClick={() => handleDeleteExpenseCategory(item.id)}>
+                                    Hapus
+                                  </Button>
+                                </>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                      )}
+                    </>
+                  )}
 
                   <Button
                     type="submit"
@@ -688,8 +1011,102 @@ export default function BukuBesarPage() {
                     Simpan Transaksi
                   </Button>
                 </form>
-              </Card>
-            </div>
+            </Card>
+
+            <Card>
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between mb-6">
+                <div>
+                  <h2 className="text-xl font-bold text-neutral-900">Filter Buku Besar</h2>
+                  <p className="text-sm text-neutral-600 mt-1">Pilih periode dan arah transaksi yang ingin dilihat.</p>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-neutral-600">
+                  <Filter className="w-4 h-4" />
+                  {visibleEntries.length} transaksi ditemukan
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                <Select
+                  label="Periode"
+                  value={period}
+                  onChange={(event) => setPeriod(event.target.value)}
+                  options={[
+                    { value: 'monthly', label: 'Bulanan' },
+                    { value: 'yearly', label: 'Tahunan' },
+                    { value: 'all', label: 'Semua' },
+                  ]}
+                />
+
+                {period === 'monthly' ? (
+                  <Select
+                    label="Bulan"
+                    value={month}
+                    onChange={(event) => setMonth(event.target.value)}
+                    options={[
+                      { value: '1', label: 'Januari' },
+                      { value: '2', label: 'Februari' },
+                      { value: '3', label: 'Maret' },
+                      { value: '4', label: 'April' },
+                      { value: '5', label: 'Mei' },
+                      { value: '6', label: 'Juni' },
+                      { value: '7', label: 'Juli' },
+                      { value: '8', label: 'Agustus' },
+                      { value: '9', label: 'September' },
+                      { value: '10', label: 'Oktober' },
+                      { value: '11', label: 'November' },
+                      { value: '12', label: 'Desember' },
+                    ]}
+                  />
+                ) : (
+                  <div />
+                )}
+
+                <Select
+                  label="Tahun"
+                  value={year}
+                  onChange={(event) => setYear(event.target.value)}
+                  options={[
+                    { value: '2024', label: '2024' },
+                    { value: '2025', label: '2025' },
+                    { value: '2026', label: '2026' },
+                    { value: '2027', label: '2027' },
+                  ]}
+                />
+
+                <Select
+                  label="Jenis"
+                  value={directionFilter}
+                  onChange={(event) => handleDirectionFilterChange(event.target.value)}
+                  options={[
+                    { value: 'all', label: 'Semua' },
+                    { value: 'income', label: 'Pemasukan' },
+                    { value: 'expense', label: 'Pengeluaran' },
+                  ]}
+                />
+
+                <Select
+                  label="Kategori Pemasukan"
+                  value={incomeCategoryFilter}
+                  onChange={(event) => {
+                    const value = event.target.value;
+                    setIncomeCategoryFilter(value);
+                    if (value !== 'all' && directionFilter !== 'income') {
+                      setDirectionFilter('income');
+                    }
+                  }}
+                  options={incomeCategoryFilterOptions}
+                />
+              </div>
+
+              <div className="mt-4">
+                <Input
+                  placeholder="Cari nomor transaksi, sumber, kategori, deskripsi, atau nama siswa..."
+                  value={searchQuery}
+                  onChange={(event) => setSearchQuery(event.target.value)}
+                  icon={<Search className="w-4 h-4" />}
+                />
+              </div>
+            </Card>
 
             <Card>
               <div className="flex items-start justify-between gap-4 mb-6">
@@ -749,7 +1166,7 @@ export default function BukuBesarPage() {
                           </td>
                           <td className="p-4 text-sm text-neutral-900">
                             <p className="font-medium">{entry.category}</p>
-                            <p className="text-xs text-neutral-500">{entry.description}</p>
+                            <p className="text-xs text-neutral-500">{entry.description || '-'}</p>
                             {entry.referenceNumber && (
                               <p className="text-xs text-neutral-500 mt-1">Ref: {entry.referenceNumber}</p>
                             )}
@@ -826,6 +1243,95 @@ export default function BukuBesarPage() {
                 </div>
               </Card>
             </div>
+
+            {showIncomeCategoryModal && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+                <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <h3 className="text-lg font-bold text-neutral-900">Kelola Kategori Pemasukan</h3>
+                      <p className="text-sm text-neutral-600">Tambah, ubah, atau hapus kategori pemasukan.</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowIncomeCategoryModal(false);
+                        setIncomeCategoryMessage(null);
+                        setEditingIncomeCategoryId(null);
+                        setEditingIncomeCategoryName('');
+                      }}
+                      className="text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100 p-2 rounded-lg transition-colors"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+
+                  {incomeCategoryMessage && (
+                    <div className={`mb-4 p-3 rounded-lg text-sm ${incomeCategoryMessage.type === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
+                      {incomeCategoryMessage.text}
+                    </div>
+                  )}
+
+                  <div className="flex gap-2 mb-4">
+                    <Input
+                      value={newIncomeCategoryName}
+                      onChange={(event) => setNewIncomeCategoryName(event.target.value)}
+                      placeholder="Tambah kategori pemasukan baru"
+                    />
+                    <Button type="button" variant="outline" onClick={handleAddIncomeCategory}>
+                      Tambah
+                    </Button>
+                  </div>
+
+                  <div className="space-y-2 max-h-80 overflow-auto">
+                    {incomeCategoryOptions.length === 0 ? (
+                      <p className="text-sm text-neutral-500">Belum ada kategori pemasukan khusus.</p>
+                    ) : (
+                      incomeCategoryOptions.map((item) => (
+                        <div key={item.id} className="flex items-center gap-2 rounded-lg border border-neutral-200 p-2">
+                          {editingIncomeCategoryId === item.id ? (
+                            <>
+                              <Input
+                                value={editingIncomeCategoryName}
+                                onChange={(event) => setEditingIncomeCategoryName(event.target.value)}
+                              />
+                              <Button type="button" variant="outline" onClick={handleSaveIncomeCategory}>Simpan</Button>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                onClick={() => {
+                                  setEditingIncomeCategoryId(null);
+                                  setEditingIncomeCategoryName('');
+                                }}
+                              >
+                                Batal
+                              </Button>
+                            </>
+                          ) : (
+                            <>
+                              <div className="flex-1 text-sm text-neutral-700">{item.name}</div>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                onClick={() => {
+                                  setEditingIncomeCategoryId(item.id);
+                                  setEditingIncomeCategoryName(item.name);
+                                }}
+                              >
+                                Edit
+                              </Button>
+                              <Button type="button" variant="ghost" onClick={() => handleDeleteIncomeCategory(item.id)}>
+                                Hapus
+                              </Button>
+                            </>
+                          )}
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </Card>
+              </div>
+            )}
           </div>
         </main>
       </div>

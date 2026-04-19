@@ -256,8 +256,8 @@ model NewStudentTransaction {
 model Expense {
   id          String          @id @default(uuid())
   date        DateTime
-  category    ExpenseCategory
-  description String
+  category    String
+  description String?
   amount      Float
   status      ExpenseStatus   @default(PENDING)
   receipt     String? // URL to receipt
@@ -265,6 +265,28 @@ model Expense {
   updatedAt   DateTime        @updatedAt @map("updated_at")
 
   @@map("expenses")
+}
+
+model ExpenseCategoryOption {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([isActive])
+  @@map("expense_category_options")
+}
+
+model IncomeCategoryOption {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([isActive])
+  @@map("income_category_options")
 }
  
 model CashLedgerEntry {
@@ -274,7 +296,7 @@ model CashLedgerEntry {
   direction       LedgerDirection
   source          String
   category        String
-  description     String
+  description     String?
   amount          Float
   referenceNumber  String?         @map("reference_number")
   notes           String?         @db.Text
