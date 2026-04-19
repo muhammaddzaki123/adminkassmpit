@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo, Fragment } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { fetchWithAuth } from '@/lib/api-client';
 import { TreasurerSidebar } from '@/components/layout/TreasurerSidebar';
@@ -9,7 +9,7 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input, Select } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
-import { Search, Download, AlertCircle, ChevronDown, ChevronUp } from 'lucide-react';
+import { Search, Download, AlertCircle, ChevronDown, X } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 
 interface Student {
@@ -72,7 +72,8 @@ export default function StudentsPage() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [sppLatestStatusFilter, setSppLatestStatusFilter] = useState('all');
   const [sppSortByOverdue, setSppSortByOverdue] = useState<'default' | 'overdue_desc' | 'overdue_asc'>('default');
-  const [expandedStudentIds, setExpandedStudentIds] = useState<string[]>([]);
+  const [selectedStudentForModal, setSelectedStudentForModal] = useState<Student | null>(null);
+  const [detailViewMode, setDetailViewMode] = useState<'all' | 'unpaid'>('all');
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -125,9 +126,18 @@ export default function StudentsPage() {
 
       const latestSppStatus = (s.sppSummary?.statusTerbaru || 'NO_BILLING').toUpperCase();
       const overdueCount = s.sppSummary?.statusCounts.overdue || 0;
-      const matchesSppLatestStatus = sppLatestStatusFilter === 'all'
-        || (sppLatestStatusFilter === 'OVERDUE' && (latestSppStatus === 'OVERDUE' || overdueCount > 0))
-        || latestSppStatus === sppLatestStatusFilter;
+      const unpaidCount = (s.sppDetails || []).filter((detail) => !['PAID', 'WAIVED', 'CANCELLED'].includes(detail.status)).length;
+
+      let matchesSppLatestStatus = false;
+      if (sppLatestStatusFilter === 'all') {
+        matchesSppLatestStatus = true;
+      } else if (sppLatestStatusFilter === 'OVERDUE') {
+        matchesSppLatestStatus = latestSppStatus === 'OVERDUE' || overdueCount > 0;
+      } else if (sppLatestStatusFilter === 'UNPAID') {
+        matchesSppLatestStatus = unpaidCount > 0;
+      } else {
+        matchesSppLatestStatus = latestSppStatus === sppLatestStatusFilter;
+      }
 
       return matchesSearch && matchesStatus && matchesSppLatestStatus;
     });
@@ -137,6 +147,19 @@ export default function StudentsPage() {
     const rows = [...filteredStudents];
 
     if (sppSortByOverdue === 'default') {
+      if (sppLatestStatusFilter === 'OVERDUE' || sppLatestStatusFilter === 'UNPAID') {
+        rows.sort((a, b) => {
+          const overdueA = a.sppSummary?.statusCounts.overdue || 0;
+          const overdueB = b.sppSummary?.statusCounts.overdue || 0;
+          if (overdueA === overdueB) {
+            const unpaidA = (a.sppDetails || []).filter((detail) => !['PAID', 'WAIVED', 'CANCELLED'].includes(detail.status)).length;
+            const unpaidB = (b.sppDetails || []).filter((detail) => !['PAID', 'WAIVED', 'CANCELLED'].includes(detail.status)).length;
+            if (unpaidA === unpaidB) return a.nama.localeCompare(b.nama, 'id-ID');
+            return unpaidB - unpaidA;
+          }
+          return overdueB - overdueA;
+        });
+      }
       return rows;
     }
 
@@ -190,11 +213,23 @@ export default function StudentsPage() {
   };
 
   const toggleSppDetails = (studentId: string) => {
-    setExpandedStudentIds((prev) => (
-      prev.includes(studentId)
-        ? prev.filter((id) => id !== studentId)
-        : [...prev, studentId]
-    ));
+    const student = displayedStudents.find((s) => s.id === studentId) || null;
+    if (!student) return;
+
+    setDetailViewMode(sppLatestStatusFilter === 'OVERDUE' || sppLatestStatusFilter === 'UNPAID' ? 'unpaid' : 'all');
+    setSelectedStudentForModal(student);
+  };
+
+  const closeSppDetailsModal = () => {
+    setSelectedStudentForModal(null);
+    setDetailViewMode('all');
+  };
+
+  const getDetailRowsForModal = () => {
+    if (!selectedStudentForModal) return [];
+    const allRows = selectedStudentForModal.sppDetails || [];
+    if (detailViewMode === 'all') return allRows;
+    return allRows.filter((detail) => !['PAID', 'WAIVED', 'CANCELLED'].includes(detail.status));
   };
 
   const getStudentExportRows = (rows: Student[]) => {
@@ -487,7 +522,8 @@ export default function StudentsPage() {
                     onChange={(e) => setSppLatestStatusFilter(e.target.value)}
                     options={[
                       { value: 'all', label: 'Semua SPP Terbaru' },
-                      { value: 'OVERDUE', label: 'SPP Terbaru: Tunggak' },
+                      { value: 'OVERDUE', label: 'Daftar Tunggakan' },
+                      { value: 'UNPAID', label: 'Daftar Belum Dibayar' },
                       { value: 'PARTIAL', label: 'SPP Terbaru: Cicilan' },
                       { value: 'BILLED', label: 'SPP Terbaru: Ditagih' },
                       { value: 'PAID', label: 'SPP Terbaru: Lunas' },
@@ -544,12 +580,11 @@ export default function StudentsPage() {
                         const summary = student.sppSummary;
                         const latest = getBillingStatusBadge(summary?.statusTerbaru || null);
                         const studentStatus = getStudentStatusBadge(student.status);
-                        const isExpanded = expandedStudentIds.includes(student.id);
                         const canExpand = (student.sppDetails?.length || 0) > 0;
+                        const unpaidCount = (student.sppDetails || []).filter((detail) => !['PAID', 'WAIVED', 'CANCELLED'].includes(detail.status)).length;
 
                         return (
-                          <Fragment key={student.id}>
-                            <tr className="hover:bg-[#f9fafb] transition-colors align-top">
+                          <tr key={student.id} className="hover:bg-[#f9fafb] transition-colors align-top">
                               <td className="px-4 py-3 text-[#1c1c1c]">{student.nisn}</td>
                               <td className="px-4 py-3 text-[#1c1c1c] font-medium">{student.nama}</td>
                               <td className="px-4 py-3 text-[#1c1c1c]">{student.kelas || '-'}</td>
@@ -571,23 +606,19 @@ export default function StudentsPage() {
                                     <p className="text-xs text-neutral-500">
                                       Lunas {summary.statusCounts.paid}/{summary.totalTagihan} • Cicilan {summary.statusCounts.partial} • Tunggak {summary.statusCounts.overdue}
                                     </p>
+                                    {(sppLatestStatusFilter === 'OVERDUE' || sppLatestStatusFilter === 'UNPAID') && (
+                                      <p className="text-xs text-amber-700 font-medium">
+                                        Belum dibayar: {unpaidCount} tagihan
+                                      </p>
+                                    )}
                                     {canExpand && (
                                       <button
                                         type="button"
                                         onClick={() => toggleSppDetails(student.id)}
                                         className="inline-flex items-center gap-1 text-xs text-primary-700 hover:text-primary-800 font-medium"
                                       >
-                                        {isExpanded ? (
-                                          <>
-                                            <ChevronUp className="w-3.5 h-3.5" />
-                                            Sembunyikan detail SPP
-                                          </>
-                                        ) : (
-                                          <>
-                                            <ChevronDown className="w-3.5 h-3.5" />
-                                            Lihat detail SPP per bulan
-                                          </>
-                                        )}
+                                        <ChevronDown className="w-3.5 h-3.5" />
+                                        Lihat detail SPP per bulan
                                       </button>
                                     )}
                                   </div>
@@ -597,45 +628,6 @@ export default function StudentsPage() {
                                 <Badge variant={studentStatus.color}>{studentStatus.label}</Badge>
                               </td>
                             </tr>
-
-                            {isExpanded && canExpand && (
-                              <tr className="bg-neutral-50">
-                                <td colSpan={6} className="px-4 py-4">
-                                  <div className="rounded-lg border border-neutral-200 bg-white overflow-x-auto">
-                                    <table className="w-full text-xs md:text-sm">
-                                      <thead className="bg-neutral-100 border-b border-neutral-200">
-                                        <tr>
-                                          <th className="px-3 py-2 text-left font-medium text-neutral-600">Periode</th>
-                                          <th className="px-3 py-2 text-left font-medium text-neutral-600">No Tagihan</th>
-                                          <th className="px-3 py-2 text-left font-medium text-neutral-600">Status</th>
-                                          <th className="px-3 py-2 text-right font-medium text-neutral-600">Total</th>
-                                          <th className="px-3 py-2 text-right font-medium text-neutral-600">Dibayar</th>
-                                          <th className="px-3 py-2 text-left font-medium text-neutral-600">Jatuh Tempo</th>
-                                        </tr>
-                                      </thead>
-                                      <tbody className="divide-y divide-neutral-200">
-                                        {student.sppDetails?.map((detail) => {
-                                          const badge = getBillingStatusBadge(detail.status);
-                                          return (
-                                            <tr key={detail.id}>
-                                              <td className="px-3 py-2">{detail.period}</td>
-                                              <td className="px-3 py-2">{detail.billNumber}</td>
-                                              <td className="px-3 py-2">
-                                                <Badge variant={badge.variant}>{badge.label}</Badge>
-                                              </td>
-                                              <td className="px-3 py-2 text-right">{formatCurrency(detail.totalAmount)}</td>
-                                              <td className="px-3 py-2 text-right">{formatCurrency(detail.paidAmount)}</td>
-                                              <td className="px-3 py-2">{formatDate(detail.dueDate)}</td>
-                                            </tr>
-                                          );
-                                        })}
-                                      </tbody>
-                                    </table>
-                                  </div>
-                                </td>
-                              </tr>
-                            )}
-                          </Fragment>
                         );
                       })}
                     </tbody>
@@ -643,6 +635,86 @@ export default function StudentsPage() {
                 </div>
               )}
             </Card>
+
+            {selectedStudentForModal && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+                <div className="bg-white rounded-xl shadow-xl w-full max-w-6xl max-h-[90vh] overflow-hidden">
+                  <div className="flex items-start justify-between gap-3 px-5 py-4 border-b border-neutral-200">
+                    <div>
+                      <h3 className="text-lg font-semibold text-neutral-900">Detail Pembayaran SPP</h3>
+                      <p className="text-sm text-neutral-600">
+                        {selectedStudentForModal.nama} ({selectedStudentForModal.nisn}) • Kelas {selectedStudentForModal.kelas || '-'}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={closeSppDetailsModal}
+                      className="text-neutral-500 hover:text-neutral-700"
+                      aria-label="Tutup modal detail SPP"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+
+                  <div className="px-5 py-4 flex flex-wrap gap-3 border-b border-neutral-200">
+                    <Button
+                      variant={detailViewMode === 'all' ? 'primary' : 'outline'}
+                      size="sm"
+                      onClick={() => setDetailViewMode('all')}
+                    >
+                      Semua Tagihan
+                    </Button>
+                    <Button
+                      variant={detailViewMode === 'unpaid' ? 'primary' : 'outline'}
+                      size="sm"
+                      onClick={() => setDetailViewMode('unpaid')}
+                    >
+                      Belum Dibayar / Tunggakan
+                    </Button>
+                  </div>
+
+                  <div className="p-5 overflow-auto max-h-[65vh]">
+                    {getDetailRowsForModal().length === 0 ? (
+                      <div className="text-center py-10 text-neutral-600">
+                        Tidak ada data untuk mode yang dipilih.
+                      </div>
+                    ) : (
+                      <div className="rounded-lg border border-neutral-200 overflow-x-auto">
+                        <table className="w-full text-sm">
+                          <thead className="bg-neutral-100 border-b border-neutral-200">
+                            <tr>
+                              <th className="px-3 py-2 text-left font-medium text-neutral-600">Periode</th>
+                              <th className="px-3 py-2 text-left font-medium text-neutral-600">No Tagihan</th>
+                              <th className="px-3 py-2 text-left font-medium text-neutral-600">Status</th>
+                              <th className="px-3 py-2 text-right font-medium text-neutral-600">Total</th>
+                              <th className="px-3 py-2 text-right font-medium text-neutral-600">Dibayar</th>
+                              <th className="px-3 py-2 text-left font-medium text-neutral-600">Jatuh Tempo</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-neutral-200">
+                            {getDetailRowsForModal().map((detail) => {
+                              const badge = getBillingStatusBadge(detail.status);
+                              return (
+                                <tr key={detail.id}>
+                                  <td className="px-3 py-2">{detail.period}</td>
+                                  <td className="px-3 py-2">{detail.billNumber}</td>
+                                  <td className="px-3 py-2">
+                                    <Badge variant={badge.variant}>{badge.label}</Badge>
+                                  </td>
+                                  <td className="px-3 py-2 text-right">{formatCurrency(detail.totalAmount)}</td>
+                                  <td className="px-3 py-2 text-right">{formatCurrency(detail.paidAmount)}</td>
+                                  <td className="px-3 py-2">{formatDate(detail.dueDate)}</td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </main>
       </div>
