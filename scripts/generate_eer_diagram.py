@@ -2,16 +2,20 @@ import re
 import math
 from xml.sax.saxutils import escape
 
-# Extract Schema
 schema_file = 'tmp_models.txt'
 entities_attributes = {}
 with open(schema_file) as f:
     data = f.read()
 
+# Exclude metadata and system fields
 exclude_attrs = ['createdAt', 'updatedAt', 'isActive', 'processedById', 'issuedById', 'waivedById']
 
 for match in re.finditer(r'model\s+(\w+)\s+\{(.*?)\}', data, re.DOTALL):
     model_name = match.group(1)
+
+    # We will conceptually remove StudentClass from Entities later,
+    # but we parse its fields first to use them as relationship attributes.
+
     fields = []
     for line in match.group(2).strip().split('\n'):
         line = line.strip()
@@ -28,23 +32,32 @@ for match in re.finditer(r'model\s+(\w+)\s+\{(.*?)\}', data, re.DOTALL):
                 continue
 
             is_pk = '@id' in line
-            is_fk = '@relation' in line and 'fields: [' in line
+            is_fk_relation = '@relation' in line and 'fields: [' in line
 
-            if is_fk:
-                continue # We'll just skip the relation property and keep the foreign key scalar field
+            # PURE CONCEPTUAL: FKs are not attributes.
+            if is_fk_relation or (name.endswith('Id') and name != 'id'):
+                continue
 
-            if name.endswith('Id') and name != 'id':
-                type_type = 'FK'
-            elif is_pk:
+            # For StudentClass (which becomes a relationship), we also don't need 'id' as an attribute
+            # in pure conceptual modeling unless it's a weak entity. Here it's a M:N relationship.
+            if model_name == "StudentClass" and name == "id":
+                continue
+
+            if is_pk:
                 type_type = 'PK'
             else:
                 type_type = 'ATTR'
 
             fields.append((name, type_type))
+
     entities_attributes[model_name] = fields
 
+# Extract Relationship Attributes for StudentClass (which will be a diamond)
+rel_student_class_attrs = entities_attributes.pop("StudentClass", [])
+
+# Entities to render
 entities = list(entities_attributes.keys())
-weak_entities = ["BillingItem", "PaymentDetail", "Installment", "StudentClass"]
+weak_entities = ["BillingItem", "PaymentDetail", "Installment"]
 
 drawio_header = '''<?xml version="1.0" encoding="UTF-8"?>
 <mxfile host="app.diagrams.net">
@@ -72,7 +85,6 @@ styles = {
     "weak_entity": "shape=ext;margin=3;double=1;whiteSpace=wrap;html=1;align=center;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;",
     "attribute": "ellipse;whiteSpace=wrap;html=1;align=center;fontStyle=0;",
     "pk_attribute": "ellipse;whiteSpace=wrap;html=1;align=center;fontStyle=4;",
-    "fk_attribute": "ellipse;whiteSpace=wrap;html=1;align=center;fontStyle=0;",
     "derived_attribute": "ellipse;whiteSpace=wrap;html=1;align=center;dashed=1;",
     "relationship": "rhombus;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;",
     "weak_relationship": "rhombus;whiteSpace=wrap;html=1;double=1;fillColor=#e1d5e7;strokeColor=#9673a6;",
@@ -92,10 +104,9 @@ layout = {
     "Student": (2200, 500),
     "NewStudent": (2600, 500),
 
-    "Rel_Student_Class": (2200, 800), # Not really needed if StudentClass is entity
+    "Rel_Pendaftaran": (2200, 800), # This replaces StudentClass entity
     "Class": (1800, 800),
     "AcademicYear": (1000, 800),
-    "StudentClass": (2600, 800),
 
     "BillingTemplate": (1000, 1100),
     "BillingItem": (1000, 1400),
@@ -121,17 +132,13 @@ layout = {
 
 entity_id_map = {}
 
-def distribute_attributes(entity_name, pos_x, pos_y, attributes, e_width=120, e_height=60, radius=160):
+def distribute_attributes(parent_id, pos_x, pos_y, attributes, e_width=120, e_height=60, radius=140):
     global node_id, nodes_xml
     n = len(attributes)
     if n == 0: return
 
     for i, attr in enumerate(attributes):
         name, atype = attr
-
-        label = name
-        if atype == 'FK':
-            label += " (FK)"
 
         angle = (2 * math.pi * i) / n
         attr_x = pos_x + e_width/2 + radius * math.cos(angle) - 40
@@ -141,43 +148,41 @@ def distribute_attributes(entity_name, pos_x, pos_y, attributes, e_width=120, e_
         attr_id = node_id
 
         style = styles["pk_attribute"] if atype == 'PK' else styles["attribute"]
-        nodes_xml += add_node(f"node_{attr_id}", label, style, attr_x, attr_y, 80, 40)
-        nodes_xml += add_edge(f"edge_{attr_id}", f"node_{entity_id_map[entity_name]}", f"node_{attr_id}", styles["line"])
+        nodes_xml += add_node(f"node_{attr_id}", name, style, attr_x, attr_y, 80, 40)
+        nodes_xml += add_edge(f"edge_{attr_id}", f"node_{parent_id}", f"node_{attr_id}", styles["line"])
 
-for entity, pos in layout.items():
+# 1. Draw Entities
+for entity in entities:
+    pos = layout.get(entity, (0,0))
     if "ISA_" in entity or "Rel_" in entity:
         continue
     node_id += 1
     entity_id_map[entity] = node_id
 
     style = styles["weak_entity"] if entity in weak_entities else styles["entity"]
-
     nodes_xml += add_node(f"node_{node_id}", entity, style, pos[0], pos[1], 120, 60)
 
     if entity in entities_attributes:
-        distribute_attributes(entity, pos[0], pos[1], entities_attributes[entity])
+        distribute_attributes(node_id, pos[0], pos[1], entities_attributes[entity])
 
+# 2. Draw ISA
 isa_id = node_id + 100
 nodes_xml += add_node(f"node_{isa_id}", "ISA", styles["isa"], layout["ISA_User"][0]+40, layout["ISA_User"][1], 40, 40)
 nodes_xml += add_edge(f"edge_isa_user", f"node_{isa_id}", f"node_{entity_id_map['User']}", styles["line"])
-
 for role in ["Admin", "Headmaster", "Treasurer", "Student", "NewStudent"]:
-    nodes_xml += add_edge(f"edge_isa_{role}", f"node_{entity_id_map[role]}", f"node_{isa_id}", styles["line"])
+    if role in entity_id_map:
+        nodes_xml += add_edge(f"edge_isa_{role}", f"node_{entity_id_map[role]}", f"node_{isa_id}", styles["line"])
 
+# 3. Draw Relationships
 relationships = [
-    # Academic Year relations (user requested explicitly)
-    ("kelas tahun ajaran", "AcademicYear", "StudentClass", "1:N", (1800, 650)),
-    ("tagihan tahun ajaran", "AcademicYear", "Billing", "1:N", (1600, 1100)),
+    # Academic Year relations
+    ("tahun ajaran tagihan", "AcademicYear", "Billing", "1:N", (1600, 1100)),
     ("template tahun ajaran", "AcademicYear", "BillingTemplate", "1:N", (1000, 950)),
-    ("registrasi tahun ajaran", "AcademicYear", "NewStudent", "1:N", (1800, 550)),
-
-    # Class relations
-    ("memiliki kelas", "Student", "StudentClass", "1:N", (2400, 650)),
-    ("detail kelas", "Class", "StudentClass", "1:N", (2200, 800)),
-    ("memiliki template", "Class", "BillingTemplate", "1:N", (1400, 950)),
+    ("registrasi tahun ajaran", "AcademicYear", "NewStudent", "1:N", (1600, 500)),
 
     # Billing Template & Item
     ("berisi item", "BillingTemplate", "BillingItem", "1:N", (1000, 1250)),
+    ("template kelas", "Class", "BillingTemplate", "1:N", (1400, 950)),
 
     # Billing, Student, Payment, Installment
     ("memiliki tagihan", "Student", "Billing", "1:N", (2200, 950)),
@@ -203,13 +208,33 @@ for rel in relationships:
     rel_idx += 1
 
     style = styles["weak_relationship"] if e2 in weak_entities else styles["relationship"]
-
     nodes_xml += add_node(f"node_{rel_id}", name, style, pos[0], pos[1], 120, 50)
 
     if e1 in entity_id_map:
         nodes_xml += add_edge(f"edge_rel_{rel_id}_e1", f"node_{entity_id_map[e1]}", f"node_{rel_id}", styles["line"], value="1" if card.startswith("1") else "M")
     if e2 in entity_id_map:
         nodes_xml += add_edge(f"edge_rel_{rel_id}_e2", f"node_{rel_id}", f"node_{entity_id_map[e2]}", styles["line"], value="1" if card.endswith("1") else "N")
+
+
+# 4. Special M:N Relationship with Attributes (Pendaftaran / StudentClass)
+# Student (M) <---> Pendaftaran (M:N Rel) <---> Class (N)
+# Pendaftaran also links to AcademicYear (1:N)
+rel_pendaftaran_id = node_id + 800
+pos_pend = layout["Rel_Pendaftaran"]
+nodes_xml += add_node(f"node_{rel_pendaftaran_id}", "pendaftaran", styles["relationship"], pos_pend[0], pos_pend[1], 120, 50)
+
+# Connect to Student (M)
+if "Student" in entity_id_map:
+    nodes_xml += add_edge(f"edge_pend_student", f"node_{entity_id_map['Student']}", f"node_{rel_pendaftaran_id}", styles["line"], value="M")
+# Connect to Class (N)
+if "Class" in entity_id_map:
+    nodes_xml += add_edge(f"edge_pend_class", f"node_{rel_pendaftaran_id}", f"node_{entity_id_map['Class']}", styles["line"], value="N")
+# Connect to AcademicYear (Rel to Rel or Entity to Rel)
+if "AcademicYear" in entity_id_map:
+    nodes_xml += add_edge(f"edge_pend_ay", f"node_{entity_id_map['AcademicYear']}", f"node_{rel_pendaftaran_id}", styles["line"], value="1")
+
+# Distribute Descriptive Attributes to the Relationship
+distribute_attributes(rel_pendaftaran_id, pos_pend[0], pos_pend[1], rel_student_class_attrs, e_width=120, e_height=50, radius=120)
 
 with open('docs/ERD-KASSMPIT-Chen-Indo.drawio', 'w') as f:
     f.write(drawio_header + "\n" + nodes_xml + drawio_footer)
