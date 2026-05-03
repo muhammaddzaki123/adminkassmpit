@@ -1,20 +1,50 @@
 import re
+import math
 from xml.sax.saxutils import escape
 
-entities = [
-    "User", "Student", "NewStudent", "NewStudentTransaction",
-    "Expense", "ExpenseCategoryOption", "IncomeCategoryOption",
-    "CashLedgerEntry", "SystemSettings", "NotificationLog",
-    "AcademicYear", "Class", "StudentClass", "BillingTemplate",
-    "Billing", "Payment", "ActivityLog", "BillingItem", "PaymentDetail", "Installment"
-]
+# Extract Schema
+schema_file = 'tmp_models.txt'
+entities_attributes = {}
+with open(schema_file) as f:
+    data = f.read()
 
-weak_entities = ["BillingItem", "PaymentDetail", "Installment"]
+for match in re.finditer(r'model\s+(\w+)\s+\{(.*?)\}', data, re.DOTALL):
+    model_name = match.group(1)
+    fields = []
+    for line in match.group(2).strip().split('\n'):
+        line = line.strip()
+        if not line or line.startswith('//') or line.startswith('@@'):
+            continue
+        parts = line.split()
+        if len(parts) >= 2:
+            name = parts[0]
+            type_info = parts[1]
+            if type_info.endswith('[]'):
+                continue
+
+            is_pk = '@id' in line
+            is_fk = '@relation' in line and 'fields: [' in line
+
+            if is_fk:
+                continue # We'll just skip the relation property and keep the foreign key scalar field
+
+            if name.endswith('Id') and name != 'id':
+                type_type = 'FK'
+            elif is_pk:
+                type_type = 'PK'
+            else:
+                type_type = 'ATTR'
+
+            fields.append((name, type_type))
+    entities_attributes[model_name] = fields
+
+entities = list(entities_attributes.keys())
+weak_entities = ["BillingItem", "PaymentDetail", "Installment", "StudentClass"]
 
 drawio_header = '''<?xml version="1.0" encoding="UTF-8"?>
 <mxfile host="app.diagrams.net">
   <diagram name="Conceptual EER Diagram" id="kassmpit-eer">
-    <mxGraphModel dx="1422" dy="798" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="3000" pageHeight="2000" math="0" shadow="0">
+    <mxGraphModel dx="1422" dy="798" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="3000" pageHeight="3000" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />'''
@@ -37,6 +67,7 @@ styles = {
     "weak_entity": "shape=ext;margin=3;double=1;whiteSpace=wrap;html=1;align=center;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;",
     "attribute": "ellipse;whiteSpace=wrap;html=1;align=center;fontStyle=0;",
     "pk_attribute": "ellipse;whiteSpace=wrap;html=1;align=center;fontStyle=4;",
+    "fk_attribute": "ellipse;whiteSpace=wrap;html=1;align=center;fontStyle=0;",
     "derived_attribute": "ellipse;whiteSpace=wrap;html=1;align=center;dashed=1;",
     "relationship": "rhombus;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;",
     "weak_relationship": "rhombus;whiteSpace=wrap;html=1;double=1;fillColor=#e1d5e7;strokeColor=#9673a6;",
@@ -47,43 +78,71 @@ styles = {
 nodes_xml = ""
 node_id = 100
 
+# Widen layout to make room for attributes
 layout = {
-    "User": (600, 100),
-    "ISA_User": (600, 200),
-    "Admin": (200, 300),
-    "Headmaster": (400, 300),
-    "Treasurer": (600, 300),
-    "Student": (800, 300),
-    "NewStudent": (1000, 300),
+    "User": (1400, 200),
+    "ISA_User": (1400, 350),
+    "Admin": (600, 500),
+    "Headmaster": (1000, 500),
+    "Treasurer": (1400, 500),
+    "Student": (1800, 500),
+    "NewStudent": (2200, 500),
 
-    "Rel_Student_Class": (800, 450),
-    "Class": (600, 450),
-    "AcademicYear": (400, 450),
-    "StudentClass": (1000, 450),
+    "Rel_Student_Class": (1800, 800),
+    "Class": (1400, 800),
+    "AcademicYear": (1000, 800),
+    "StudentClass": (2200, 800),
 
-    "BillingTemplate": (200, 600),
-    "BillingItem": (200, 750),
+    "BillingTemplate": (600, 1100),
+    "BillingItem": (600, 1400),
 
-    "Rel_Billing_Student": (800, 600),
-    "Billing": (800, 750),
-    "Installment": (600, 750),
+    "Rel_Billing_Student": (1800, 1100),
+    "Billing": (1800, 1400),
+    "Installment": (1400, 1400),
 
-    "Payment": (1000, 750),
-    "PaymentDetail": (1200, 750),
+    "Payment": (2200, 1400),
+    "PaymentDetail": (2600, 1400),
 
-    "Expense": (200, 900),
-    "ExpenseCategoryOption": (200, 1050),
+    "Expense": (600, 1700),
+    "ExpenseCategoryOption": (600, 2000),
 
-    "CashLedgerEntry": (600, 900),
-    "ActivityLog": (1000, 900),
-    "NotificationLog": (1200, 900),
+    "CashLedgerEntry": (1400, 1700),
+    "ActivityLog": (2200, 1700),
+    "NotificationLog": (2600, 1700),
 
-    "NewStudentTransaction": (1200, 300),
-    "SystemSettings": (1400, 300),
-    "IncomeCategoryOption": (1400, 900)
+    "NewStudentTransaction": (2600, 500),
+    "SystemSettings": (2600, 800),
+    "IncomeCategoryOption": (2600, 2000)
 }
 
 entity_id_map = {}
+
+def distribute_attributes(entity_name, pos_x, pos_y, attributes, e_width=120, e_height=60, radius=150):
+    global node_id, nodes_xml
+    n = len(attributes)
+    if n == 0: return
+
+    # We want to distribute attributes in a circle or semi-circle around the entity
+    # Start angle 0 is right, pi/2 is down, pi is left, 3pi/2 is up
+    for i, attr in enumerate(attributes):
+        name, atype = attr
+
+        # Add (FK) if it's a foreign key
+        label = name
+        if atype == 'FK':
+            label += " (FK)"
+
+        # Calculate angle (avoiding bottom completely if there's a relationship going down, but a full circle is easier)
+        angle = (2 * math.pi * i) / n
+        attr_x = pos_x + e_width/2 + radius * math.cos(angle) - 40 # 40 is half attr width
+        attr_y = pos_y + e_height/2 + radius * math.sin(angle) - 20 # 20 is half attr height
+
+        node_id += 1
+        attr_id = node_id
+
+        style = styles["pk_attribute"] if atype == 'PK' else styles["attribute"]
+        nodes_xml += add_node(f"node_{attr_id}", label, style, attr_x, attr_y, 80, 40)
+        nodes_xml += add_edge(f"edge_{attr_id}", f"node_{entity_id_map[entity_name]}", f"node_{attr_id}", styles["line"])
 
 for entity, pos in layout.items():
     if "ISA_" in entity or "Rel_" in entity:
@@ -95,21 +154,9 @@ for entity, pos in layout.items():
 
     nodes_xml += add_node(f"node_{node_id}", entity, style, pos[0], pos[1], 120, 60)
 
-    # Attributes
-    attr_id_1 = node_id + 1000
-    nodes_xml += add_node(f"node_{attr_id_1}", "id", styles["pk_attribute"], pos[0]-20, pos[1]-50, 60, 40)
-    nodes_xml += add_edge(f"edge_{attr_id_1}", f"node_{node_id}", f"node_{attr_id_1}", styles["line"])
-
-    # Custom attributes based on Indonesian memory requirement
-    if entity == "User":
-        attr_id_2 = node_id + 2000
-        nodes_xml += add_node(f"node_{attr_id_2}", "peran (role)", styles["attribute"], pos[0]+80, pos[1]-50, 80, 40)
-        nodes_xml += add_edge(f"edge_{attr_id_2}", f"node_{node_id}", f"node_{attr_id_2}", styles["line"])
-    elif entity == "Billing":
-        attr_id_3 = node_id + 3000
-        nodes_xml += add_node(f"node_{attr_id_3}", "total_bayar", styles["derived_attribute"], pos[0]+80, pos[1]-50, 80, 40)
-        nodes_xml += add_edge(f"edge_{attr_id_3}", f"node_{node_id}", f"node_{attr_id_3}", styles["line"])
-
+    # Draw attributes around entity
+    if entity in entities_attributes:
+        distribute_attributes(entity, pos[0], pos[1], entities_attributes[entity])
 
 isa_id = node_id + 100
 nodes_xml += add_node(f"node_{isa_id}", "ISA", styles["isa"], layout["ISA_User"][0]+40, layout["ISA_User"][1], 40, 40)
@@ -120,19 +167,19 @@ for role in ["Admin", "Headmaster", "Treasurer", "Student", "NewStudent"]:
 
 relationships = [
     ("mendaftar", "Student", "Class", "M:N", layout["Rel_Student_Class"]),
-    ("memiliki template", "Class", "BillingTemplate", "1:N", (400, 525)),
-    ("berisi item", "BillingTemplate", "BillingItem", "1:N", (200, 675)),
+    ("memiliki template", "Class", "BillingTemplate", "1:N", (1000, 950)),
+    ("berisi item", "BillingTemplate", "BillingItem", "1:N", (600, 1250)),
     ("memiliki tagihan", "Student", "Billing", "1:N", layout["Rel_Billing_Student"]),
-    ("membayar", "Billing", "Payment", "1:N", (900, 750)),
-    ("memiliki cicilan", "Billing", "Installment", "1:N", (700, 750)),
-    ("memiliki detail", "Payment", "PaymentDetail", "1:N", (1100, 750)),
-    ("membuat", "User", "Expense", "1:N", (400, 600)),
-    ("memiliki kategori", "Expense", "ExpenseCategoryOption", "1:N", (200, 975)),
-    ("mencatat log", "User", "ActivityLog", "1:N", (1000, 600)),
-    ("menerima notif", "User", "NotificationLog", "1:N", (1200, 600)),
-    ("menghasilkan kas", "Payment", "CashLedgerEntry", "1:1", (800, 825)),
-    ("tahun ajaran", "Class", "AcademicYear", "N:1", (500, 450)),
-    ("transaksi", "NewStudent", "NewStudentTransaction", "1:N", (1100, 300))
+    ("membayar", "Billing", "Payment", "1:N", (2000, 1400)),
+    ("memiliki cicilan", "Billing", "Installment", "1:N", (1600, 1400)),
+    ("memiliki detail", "Payment", "PaymentDetail", "1:N", (2400, 1400)),
+    ("membuat", "User", "Expense", "1:N", (1000, 950)), # Need better pos, roughly center
+    ("memiliki kategori", "Expense", "ExpenseCategoryOption", "1:N", (600, 1850)),
+    ("mencatat log", "User", "ActivityLog", "1:N", (1800, 950)),
+    ("menerima notif", "User", "NotificationLog", "1:N", (2000, 950)),
+    ("menghasilkan kas", "Payment", "CashLedgerEntry", "1:1", (1800, 1550)),
+    ("tahun ajaran", "Class", "AcademicYear", "N:1", (1200, 800)),
+    ("transaksi", "NewStudent", "NewStudentTransaction", "1:N", (2400, 500))
 ]
 
 rel_idx = 1
@@ -146,20 +193,13 @@ for rel in relationships:
     nodes_xml += add_node(f"node_{rel_id}", name, style, pos[0], pos[1], 120, 50)
 
     if e1 in entity_id_map:
-        # Edge with cardinality
         nodes_xml += add_edge(f"edge_rel_{rel_id}_e1", f"node_{entity_id_map[e1]}", f"node_{rel_id}", styles["line"], value="1" if card.startswith("1") else "M")
     if e2 in entity_id_map:
         nodes_xml += add_edge(f"edge_rel_{rel_id}_e2", f"node_{rel_id}", f"node_{entity_id_map[e2]}", styles["line"], value="1" if card.endswith("1") else "N")
 
-# Aggregation representation - draw a bounding box around Student, Rel_Student_Class, Class
-# Actually, Chen's aggregation is a rectangle around the relationship.
-# We'll just add a big dashed rectangle around the enrollment relationship to represent the StudentClass entity conceptually.
+# Aggregation box
 agg_id = node_id + 900
-nodes_xml += add_node(f"node_{agg_id}", "", "rounded=0;whiteSpace=wrap;html=1;dashed=1;fillColor=none;strokeColor=#000000;", 550, 400, 350, 150)
-# We need to ensure the aggregation box is behind other elements, but Draw.io XML order matters.
-# It's fine for now, we just prepend it.
-nodes_xml = f'        <mxCell id="node_{agg_id}" value="" style="rounded=0;whiteSpace=wrap;html=1;dashed=1;fillColor=none;strokeColor=#000000;" vertex="1" parent="1"><mxGeometry x="550" y="400" width="350" height="150" as="geometry" /></mxCell>\n' + nodes_xml
-
+nodes_xml = f'        <mxCell id="node_{agg_id}" value="" style="rounded=0;whiteSpace=wrap;html=1;dashed=1;fillColor=none;strokeColor=#000000;" vertex="1" parent="1"><mxGeometry x="1350" y="700" width="900" height="250" as="geometry" /></mxCell>\n' + nodes_xml
 
 with open('docs/ERD-KASSMPIT-Chen-Indo.drawio', 'w') as f:
     f.write(drawio_header + "\n" + nodes_xml + drawio_footer)
