@@ -8,6 +8,8 @@ entities_attributes = {}
 with open(schema_file) as f:
     data = f.read()
 
+exclude_attrs = ['createdAt', 'updatedAt', 'isActive', 'processedById', 'issuedById', 'waivedById']
+
 for match in re.finditer(r'model\s+(\w+)\s+\{(.*?)\}', data, re.DOTALL):
     model_name = match.group(1)
     fields = []
@@ -20,6 +22,9 @@ for match in re.finditer(r'model\s+(\w+)\s+\{(.*?)\}', data, re.DOTALL):
             name = parts[0]
             type_info = parts[1]
             if type_info.endswith('[]'):
+                continue
+
+            if name in exclude_attrs:
                 continue
 
             is_pk = '@id' in line
@@ -44,7 +49,7 @@ weak_entities = ["BillingItem", "PaymentDetail", "Installment", "StudentClass"]
 drawio_header = '''<?xml version="1.0" encoding="UTF-8"?>
 <mxfile host="app.diagrams.net">
   <diagram name="Conceptual EER Diagram" id="kassmpit-eer">
-    <mxGraphModel dx="1422" dy="798" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="3000" pageHeight="3000" math="0" shadow="0">
+    <mxGraphModel dx="1422" dy="798" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="4000" pageHeight="3000" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />'''
@@ -78,64 +83,59 @@ styles = {
 nodes_xml = ""
 node_id = 100
 
-# Widen layout to make room for attributes
 layout = {
-    "User": (1400, 200),
-    "ISA_User": (1400, 350),
-    "Admin": (600, 500),
-    "Headmaster": (1000, 500),
-    "Treasurer": (1400, 500),
-    "Student": (1800, 500),
-    "NewStudent": (2200, 500),
+    "User": (1800, 200),
+    "ISA_User": (1800, 350),
+    "Admin": (1000, 500),
+    "Headmaster": (1400, 500),
+    "Treasurer": (1800, 500),
+    "Student": (2200, 500),
+    "NewStudent": (2600, 500),
 
-    "Rel_Student_Class": (1800, 800),
-    "Class": (1400, 800),
+    "Rel_Student_Class": (2200, 800), # Not really needed if StudentClass is entity
+    "Class": (1800, 800),
     "AcademicYear": (1000, 800),
-    "StudentClass": (2200, 800),
+    "StudentClass": (2600, 800),
 
-    "BillingTemplate": (600, 1100),
-    "BillingItem": (600, 1400),
+    "BillingTemplate": (1000, 1100),
+    "BillingItem": (1000, 1400),
 
-    "Rel_Billing_Student": (1800, 1100),
-    "Billing": (1800, 1400),
-    "Installment": (1400, 1400),
+    "Rel_Billing_Student": (2200, 1100),
+    "Billing": (2200, 1400),
+    "Installment": (1800, 1400),
 
-    "Payment": (2200, 1400),
-    "PaymentDetail": (2600, 1400),
+    "Payment": (2600, 1400),
+    "PaymentDetail": (3000, 1400),
 
-    "Expense": (600, 1700),
-    "ExpenseCategoryOption": (600, 2000),
+    "Expense": (1000, 1700),
+    "ExpenseCategoryOption": (1000, 2000),
 
-    "CashLedgerEntry": (1400, 1700),
-    "ActivityLog": (2200, 1700),
-    "NotificationLog": (2600, 1700),
+    "CashLedgerEntry": (1800, 1700),
+    "ActivityLog": (2600, 1700),
+    "NotificationLog": (3000, 1700),
 
-    "NewStudentTransaction": (2600, 500),
-    "SystemSettings": (2600, 800),
-    "IncomeCategoryOption": (2600, 2000)
+    "NewStudentTransaction": (3000, 500),
+    "SystemSettings": (3000, 800),
+    "IncomeCategoryOption": (3000, 2000)
 }
 
 entity_id_map = {}
 
-def distribute_attributes(entity_name, pos_x, pos_y, attributes, e_width=120, e_height=60, radius=150):
+def distribute_attributes(entity_name, pos_x, pos_y, attributes, e_width=120, e_height=60, radius=160):
     global node_id, nodes_xml
     n = len(attributes)
     if n == 0: return
 
-    # We want to distribute attributes in a circle or semi-circle around the entity
-    # Start angle 0 is right, pi/2 is down, pi is left, 3pi/2 is up
     for i, attr in enumerate(attributes):
         name, atype = attr
 
-        # Add (FK) if it's a foreign key
         label = name
         if atype == 'FK':
             label += " (FK)"
 
-        # Calculate angle (avoiding bottom completely if there's a relationship going down, but a full circle is easier)
         angle = (2 * math.pi * i) / n
-        attr_x = pos_x + e_width/2 + radius * math.cos(angle) - 40 # 40 is half attr width
-        attr_y = pos_y + e_height/2 + radius * math.sin(angle) - 20 # 20 is half attr height
+        attr_x = pos_x + e_width/2 + radius * math.cos(angle) - 40
+        attr_y = pos_y + e_height/2 + radius * math.sin(angle) - 20
 
         node_id += 1
         attr_id = node_id
@@ -154,7 +154,6 @@ for entity, pos in layout.items():
 
     nodes_xml += add_node(f"node_{node_id}", entity, style, pos[0], pos[1], 120, 60)
 
-    # Draw attributes around entity
     if entity in entities_attributes:
         distribute_attributes(entity, pos[0], pos[1], entities_attributes[entity])
 
@@ -166,20 +165,35 @@ for role in ["Admin", "Headmaster", "Treasurer", "Student", "NewStudent"]:
     nodes_xml += add_edge(f"edge_isa_{role}", f"node_{entity_id_map[role]}", f"node_{isa_id}", styles["line"])
 
 relationships = [
-    ("mendaftar", "Student", "Class", "M:N", layout["Rel_Student_Class"]),
-    ("memiliki template", "Class", "BillingTemplate", "1:N", (1000, 950)),
-    ("berisi item", "BillingTemplate", "BillingItem", "1:N", (600, 1250)),
-    ("memiliki tagihan", "Student", "Billing", "1:N", layout["Rel_Billing_Student"]),
-    ("membayar", "Billing", "Payment", "1:N", (2000, 1400)),
-    ("memiliki cicilan", "Billing", "Installment", "1:N", (1600, 1400)),
-    ("memiliki detail", "Payment", "PaymentDetail", "1:N", (2400, 1400)),
-    ("membuat", "User", "Expense", "1:N", (1000, 950)), # Need better pos, roughly center
-    ("memiliki kategori", "Expense", "ExpenseCategoryOption", "1:N", (600, 1850)),
-    ("mencatat log", "User", "ActivityLog", "1:N", (1800, 950)),
-    ("menerima notif", "User", "NotificationLog", "1:N", (2000, 950)),
-    ("menghasilkan kas", "Payment", "CashLedgerEntry", "1:1", (1800, 1550)),
-    ("tahun ajaran", "Class", "AcademicYear", "N:1", (1200, 800)),
-    ("transaksi", "NewStudent", "NewStudentTransaction", "1:N", (2400, 500))
+    # Academic Year relations (user requested explicitly)
+    ("kelas tahun ajaran", "AcademicYear", "StudentClass", "1:N", (1800, 650)),
+    ("tagihan tahun ajaran", "AcademicYear", "Billing", "1:N", (1600, 1100)),
+    ("template tahun ajaran", "AcademicYear", "BillingTemplate", "1:N", (1000, 950)),
+    ("registrasi tahun ajaran", "AcademicYear", "NewStudent", "1:N", (1800, 550)),
+
+    # Class relations
+    ("memiliki kelas", "Student", "StudentClass", "1:N", (2400, 650)),
+    ("detail kelas", "Class", "StudentClass", "1:N", (2200, 800)),
+    ("memiliki template", "Class", "BillingTemplate", "1:N", (1400, 950)),
+
+    # Billing Template & Item
+    ("berisi item", "BillingTemplate", "BillingItem", "1:N", (1000, 1250)),
+
+    # Billing, Student, Payment, Installment
+    ("memiliki tagihan", "Student", "Billing", "1:N", (2200, 950)),
+    ("membayar", "Billing", "Payment", "1:N", (2400, 1400)),
+    ("memiliki cicilan", "Billing", "Installment", "1:N", (2000, 1400)),
+    ("memiliki detail", "Payment", "PaymentDetail", "1:N", (2800, 1400)),
+    ("menghasilkan kas", "Payment", "CashLedgerEntry", "1:1", (2200, 1550)),
+
+    # User, Logs, Expenses
+    ("membuat pengeluaran", "User", "Expense", "1:N", (1400, 1350)),
+    ("memiliki kategori", "Expense", "ExpenseCategoryOption", "1:N", (1000, 1850)),
+    ("mencatat log", "User", "ActivityLog", "1:N", (2200, 1350)),
+    ("menerima notif", "User", "NotificationLog", "1:N", (2400, 1350)),
+
+    # New Student
+    ("transaksi pendaftaran", "NewStudent", "NewStudentTransaction", "1:N", (2800, 500))
 ]
 
 rel_idx = 1
@@ -196,10 +210,6 @@ for rel in relationships:
         nodes_xml += add_edge(f"edge_rel_{rel_id}_e1", f"node_{entity_id_map[e1]}", f"node_{rel_id}", styles["line"], value="1" if card.startswith("1") else "M")
     if e2 in entity_id_map:
         nodes_xml += add_edge(f"edge_rel_{rel_id}_e2", f"node_{rel_id}", f"node_{entity_id_map[e2]}", styles["line"], value="1" if card.endswith("1") else "N")
-
-# Aggregation box
-agg_id = node_id + 900
-nodes_xml = f'        <mxCell id="node_{agg_id}" value="" style="rounded=0;whiteSpace=wrap;html=1;dashed=1;fillColor=none;strokeColor=#000000;" vertex="1" parent="1"><mxGeometry x="1350" y="700" width="900" height="250" as="geometry" /></mxCell>\n' + nodes_xml
 
 with open('docs/ERD-KASSMPIT-Chen-Indo.drawio', 'w') as f:
     f.write(drawio_header + "\n" + nodes_xml + drawio_footer)
