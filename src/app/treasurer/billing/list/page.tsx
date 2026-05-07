@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { fetchWithAuth } from '@/lib/api-client';
 import { TreasurerSidebar } from '@/components/layout/TreasurerSidebar';
@@ -9,12 +9,15 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Table } from '@/components/ui/Table';
-import { FileText, Search, Filter, Eye } from 'lucide-react';
+import { FileText, Search, Filter, Eye, Settings2, X, RotateCcw } from 'lucide-react';
+
+type BulkActionType = 'DISCOUNT' | 'INSTALLMENT';
 
 interface Billing {
   id: string;
   billNumber: string;
   student: {
+    id: string;
     nama: string;
     nisn: string;
     class?: string;
@@ -25,6 +28,7 @@ interface Billing {
   subtotal: number;
   totalAmount: number;
   discount: number;
+  discountSource: 'NONE' | 'MANUAL' | 'RECURRING';
   discountReason: string | null;
   paidAmount: number;
   remainingAmount: number;
@@ -35,21 +39,42 @@ interface Billing {
   dueDate: string;
 }
 
+interface UndoInfo {
+  logId: string;
+  actionType: BulkActionType;
+  batchId: string;
+  processedCount: number;
+  skippedCount: number;
+  createdAt: string;
+  undone: boolean;
+}
+
 export default function BillingListPage() {
   const router = useRouter();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [billings, setBillings] = useState<Billing[]>([]);
   const [loading, setLoading] = useState(true);
   const [bulkLoading, setBulkLoading] = useState(false);
+  const [bulkModalOpen, setBulkModalOpen] = useState(false);
+  const [bulkActionType, setBulkActionType] = useState<BulkActionType>('DISCOUNT');
+  const [selectedBillingIds, setSelectedBillingIds] = useState<string[]>([]);
+  const [bulkResultMessage, setBulkResultMessage] = useState<string | null>(null);
+  const [undoInfo, setUndoInfo] = useState<UndoInfo | null>(null);
+  const [undoLoading, setUndoLoading] = useState(false);
+
   const [bulkDiscountForm, setBulkDiscountForm] = useState({
     discountAmount: '',
     discountReason: '',
+    recurringMonths: '0',
+    enableRecurring: false,
   });
+  const [discountOverrides, setDiscountOverrides] = useState<Record<string, string>>({});
+
   const [bulkInstallmentForm, setBulkInstallmentForm] = useState({
     installmentCount: '3',
     respectAllowInstallments: true,
   });
-  const [bulkResultMessage, setBulkResultMessage] = useState<string | null>(null);
+
   const [filters, setFilters] = useState({
     status: '',
     type: '',
@@ -88,6 +113,20 @@ export default function BillingListPage() {
     }
   }, [filters]);
 
+  const loadUndoInfo = useCallback(async (action: BulkActionType) => {
+    try {
+      const response = await fetchWithAuth(`/api/billing/bulk/undo?action=${action}`);
+      const result = await response.json();
+      if (!response.ok || !result.success) {
+        setUndoInfo(null);
+        return;
+      }
+      setUndoInfo(result.data || null);
+    } catch {
+      setUndoInfo(null);
+    }
+  }, []);
+
   useEffect(() => {
     const userData = localStorage.getItem('user');
     if (!userData) {
@@ -104,6 +143,35 @@ export default function BillingListPage() {
     fetchBillings();
   }, [router, fetchBillings]);
 
+  useEffect(() => {
+    if (!bulkModalOpen) return;
+    loadUndoInfo(bulkActionType);
+  }, [bulkModalOpen, bulkActionType, loadUndoInfo]);
+
+  const eligibleDiscountBillings = useMemo(
+    () => billings.filter((billing) => !['PAID', 'WAIVED', 'CANCELLED'].includes(billing.status)),
+    [billings]
+  );
+
+  const eligibleInstallmentBillings = useMemo(
+    () => billings.filter((billing) => {
+      if (['PAID', 'WAIVED', 'CANCELLED'].includes(billing.status)) return false;
+      if (billing.remainingAmount <= 0) return false;
+      if (bulkInstallmentForm.respectAllowInstallments && !billing.allowInstallments) return false;
+      return true;
+    }),
+    [billings, bulkInstallmentForm.respectAllowInstallments]
+  );
+
+  const previewBillings = bulkActionType === 'DISCOUNT' ? eligibleDiscountBillings : eligibleInstallmentBillings;
+
+  const selectedPreviewBillings = useMemo(
+    () => previewBillings.filter((billing) => selectedBillingIds.includes(billing.id)),
+    [previewBillings, selectedBillingIds]
+  );
+
+  const allSelected = previewBillings.length > 0 && selectedBillingIds.length === previewBillings.length;
+
   const getStatusBadgeVariant = (status: string) => {
     switch (status) {
       case 'PAID':
@@ -119,13 +187,13 @@ export default function BillingListPage() {
 
   const getStatusLabel = (status: string) => {
     const labels: Record<string, string> = {
-      'UNBILLED': 'Belum Ditagih',
-      'BILLED': 'Ditagih',
-      'PARTIAL': 'Cicilan',
-      'PAID': 'Lunas',
-      'OVERDUE': 'Tunggakan',
-      'CANCELLED': 'Dibatalkan',
-      'WAIVED': 'Dibebaskan',
+      UNBILLED: 'Belum Ditagih',
+      BILLED: 'Ditagih',
+      PARTIAL: 'Cicilan',
+      PAID: 'Lunas',
+      OVERDUE: 'Tunggakan',
+      CANCELLED: 'Dibatalkan',
+      WAIVED: 'Dibebaskan',
     };
     return labels[status] || status;
   };
@@ -144,119 +212,135 @@ export default function BillingListPage() {
     }).format(amount);
   };
 
-  const eligibleDiscountBillings = billings.filter((billing) => !['PAID', 'WAIVED', 'CANCELLED'].includes(billing.status));
-  const eligibleInstallmentBillings = billings.filter((billing) => {
-    if (['PAID', 'WAIVED', 'CANCELLED'].includes(billing.status)) return false;
-    if (billing.remainingAmount <= 0) return false;
-    if (bulkInstallmentForm.respectAllowInstallments && !billing.allowInstallments) return false;
-    return true;
-  });
+  const openBulkModal = () => {
+    setBulkResultMessage(null);
+    setBulkActionType('DISCOUNT');
+    setSelectedBillingIds(eligibleDiscountBillings.map((billing) => billing.id));
+    setDiscountOverrides({});
+    setBulkModalOpen(true);
+  };
 
-  const submitBulkDiscount = async () => {
-    const discountAmount = Number(bulkDiscountForm.discountAmount || 0);
-    const discountReason = bulkDiscountForm.discountReason.trim();
-
-    if (!discountAmount || discountAmount <= 0) {
-      alert('Nominal diskon harus lebih dari 0.');
+  const toggleSelectAll = () => {
+    if (allSelected) {
+      setSelectedBillingIds([]);
       return;
     }
+    setSelectedBillingIds(previewBillings.map((billing) => billing.id));
+  };
 
-    if (!discountReason) {
-      alert('Alasan diskon wajib diisi.');
+  const toggleBillingSelection = (billingId: string) => {
+    setSelectedBillingIds((prev) => (
+      prev.includes(billingId)
+        ? prev.filter((id) => id !== billingId)
+        : [...prev, billingId]
+    ));
+  };
+
+  const submitBulkAction = async () => {
+    if (selectedBillingIds.length === 0) {
+      alert('Pilih minimal satu tagihan pada preview.');
       return;
     }
-
-    if (eligibleDiscountBillings.length === 0) {
-      alert('Tidak ada tagihan yang eligible untuk diskon massal pada hasil filter saat ini.');
-      return;
-    }
-
-    const confirmApply = window.confirm(
-      `Terapkan diskon Rp${discountAmount.toLocaleString('id-ID')} ke ${eligibleDiscountBillings.length} tagihan hasil filter?`
-    );
-
-    if (!confirmApply) return;
 
     setBulkLoading(true);
     setBulkResultMessage(null);
     try {
-      const response = await fetchWithAuth('/api/billing/bulk', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          action: 'DISCOUNT',
-          billingIds: eligibleDiscountBillings.map((billing) => billing.id),
-          discountAmount,
-          discountReason,
-        }),
-      });
+      if (bulkActionType === 'DISCOUNT') {
+        const discountAmount = Number(bulkDiscountForm.discountAmount || 0);
+        const discountReason = bulkDiscountForm.discountReason.trim();
+        const recurringMonths = Number(bulkDiscountForm.recurringMonths || 0);
 
-      const result = await response.json();
-      if (!response.ok || !result.success) {
-        throw new Error(result.error || 'Gagal menerapkan diskon massal');
+        if (!discountAmount || discountAmount <= 0) {
+          throw new Error('Nominal diskon harus lebih dari 0.');
+        }
+        if (!discountReason) {
+          throw new Error('Alasan diskon wajib diisi.');
+        }
+
+        const payloadOverrides = Object.entries(discountOverrides).reduce<Record<string, number>>((acc, [billingId, value]) => {
+          const parsed = Number(value);
+          if (Number.isFinite(parsed) && parsed > 0) {
+            acc[billingId] = parsed;
+          }
+          return acc;
+        }, {});
+
+        const response = await fetchWithAuth('/api/billing/bulk', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'DISCOUNT',
+            billingIds: selectedBillingIds,
+            discountAmount,
+            discountReason,
+            discountOverrides: payloadOverrides,
+            recurringMonths: bulkDiscountForm.enableRecurring ? recurringMonths : 0,
+          }),
+        });
+
+        const result = await response.json();
+        if (!response.ok || !result.success) {
+          throw new Error(result.error || 'Gagal memproses diskon massal');
+        }
+
+        setBulkResultMessage(result.message || 'Diskon massal berhasil diproses.');
+      } else {
+        const installmentCount = Number(bulkInstallmentForm.installmentCount || 0);
+        if (!Number.isInteger(installmentCount) || installmentCount < 1) {
+          throw new Error('Jumlah cicilan harus bilangan bulat minimal 1.');
+        }
+
+        const response = await fetchWithAuth('/api/billing/bulk', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'INSTALLMENT',
+            billingIds: selectedBillingIds,
+            installmentCount,
+            respectAllowInstallments: bulkInstallmentForm.respectAllowInstallments,
+          }),
+        });
+
+        const result = await response.json();
+        if (!response.ok || !result.success) {
+          throw new Error(result.error || 'Gagal memproses cicilan massal');
+        }
+
+        setBulkResultMessage(result.message || 'Cicilan massal berhasil diproses.');
       }
 
-      const skippedCount = result?.data?.skipped?.length || 0;
-      setBulkResultMessage(`${result.message}${skippedCount > 0 ? ` (${skippedCount} tagihan dilewati)` : ''}`);
       await fetchBillings();
+      await loadUndoInfo(bulkActionType);
     } catch (error) {
-      console.error('Bulk discount error:', error);
-      alert(error instanceof Error ? error.message : 'Gagal menerapkan diskon massal.');
+      console.error('Bulk action error:', error);
+      alert(error instanceof Error ? error.message : 'Gagal memproses aksi massal.');
     } finally {
       setBulkLoading(false);
     }
   };
 
-  const submitBulkInstallment = async () => {
-    const installmentCount = Number(bulkInstallmentForm.installmentCount || 0);
-
-    if (!Number.isInteger(installmentCount) || installmentCount < 1) {
-      alert('Jumlah cicilan harus bilangan bulat minimal 1.');
-      return;
-    }
-
-    if (eligibleInstallmentBillings.length === 0) {
-      alert('Tidak ada tagihan yang eligible untuk pengaturan cicilan massal pada hasil filter saat ini.');
-      return;
-    }
-
-    const confirmApply = window.confirm(
-      `Set cicilan ${installmentCount}x untuk ${eligibleInstallmentBillings.length} tagihan hasil filter?`
-    );
-
-    if (!confirmApply) return;
-
-    setBulkLoading(true);
-    setBulkResultMessage(null);
+  const undoLastBulkAction = async () => {
+    setUndoLoading(true);
     try {
-      const response = await fetchWithAuth('/api/billing/bulk', {
+      const response = await fetchWithAuth('/api/billing/bulk/undo', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          action: 'INSTALLMENT',
-          billingIds: eligibleInstallmentBillings.map((billing) => billing.id),
-          installmentCount,
-          respectAllowInstallments: bulkInstallmentForm.respectAllowInstallments,
-        }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ actionType: bulkActionType }),
       });
 
       const result = await response.json();
       if (!response.ok || !result.success) {
-        throw new Error(result.error || 'Gagal mengatur cicilan massal');
+        throw new Error(result.error || 'Gagal undo aksi massal.');
       }
 
-      const skippedCount = result?.data?.skipped?.length || 0;
-      setBulkResultMessage(`${result.message}${skippedCount > 0 ? ` (${skippedCount} tagihan dilewati)` : ''}`);
+      setBulkResultMessage(result.message || 'Undo berhasil.');
       await fetchBillings();
+      await loadUndoInfo(bulkActionType);
     } catch (error) {
-      console.error('Bulk installment error:', error);
-      alert(error instanceof Error ? error.message : 'Gagal mengatur cicilan massal.');
+      console.error('Undo bulk error:', error);
+      alert(error instanceof Error ? error.message : 'Gagal undo aksi massal.');
     } finally {
-      setBulkLoading(false);
+      setUndoLoading(false);
     }
   };
 
@@ -305,6 +389,9 @@ export default function BillingListPage() {
       render: (item: Billing) => (
         <div>
           <div className="font-medium text-neutral-900">{formatCurrency(item.totalAmount)}</div>
+          {item.discount > 0 && (
+            <div className="text-xs text-indigo-600">Diskon: {formatCurrency(item.discount)}</div>
+          )}
           {item.paidAmount > 0 && (
             <div className="text-sm text-green-600">Terbayar: {formatCurrency(item.paidAmount)}</div>
           )}
@@ -314,7 +401,7 @@ export default function BillingListPage() {
     {
       key: 'status',
       label: 'Status',
-      width: '12%',
+      width: '10%',
       render: (item: Billing) => (
         <Badge variant={getStatusBadgeVariant(item.status)}>
           {getStatusLabel(item.status)}
@@ -322,9 +409,25 @@ export default function BillingListPage() {
       ),
     },
     {
+      key: 'discountSource',
+      label: 'Sumber Diskon',
+      width: '13%',
+      render: (item: Billing) => {
+        if (item.discountSource === 'RECURRING') {
+          return <Badge variant="info">Berkelanjutan</Badge>;
+        }
+
+        if (item.discountSource === 'MANUAL') {
+          return <Badge variant="warning">Manual</Badge>;
+        }
+
+        return <span className="text-neutral-400 text-sm">-</span>;
+      },
+    },
+    {
       key: 'actions',
       label: 'Aksi',
-      width: '10%',
+      width: '8%',
       render: (item: Billing) => (
         <Button
           variant="secondary"
@@ -359,22 +462,26 @@ export default function BillingListPage() {
         <TreasurerHeader onMenuClick={() => setIsMobileMenuOpen(true)} />
         <main className="flex-1 p-4 md:p-6 lg:p-8 overflow-auto mt-16">
           <div className="max-w-6xl xl:max-w-7xl mx-auto space-y-6">
-            {/* Header */}
-            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
               <div>
                 <h1 className="text-3xl font-bold text-neutral-900">Daftar Tagihan</h1>
                 <p className="text-neutral-600 mt-1">Kelola semua tagihan siswa</p>
               </div>
-              <Button
-                variant="primary"
-                onClick={() => router.push('/treasurer/billing')}
-              >
-                <FileText className="w-4 h-4 mr-2" />
-                Generate Tagihan
-              </Button>
+              <div className="flex flex-col items-stretch gap-2 lg:min-w-[260px]">
+                <Button
+                  variant="primary"
+                  onClick={() => router.push('/treasurer/billing')}
+                >
+                  <FileText className="w-4 h-4 mr-2" />
+                  Generate Tagihan
+                </Button>
+                <Button variant="outline" onClick={openBulkModal}>
+                  <Settings2 className="w-4 h-4 mr-2" />
+                  Kelola Diskon & Cicilan Massal
+                </Button>
+              </div>
             </div>
 
-            {/* Filters */}
             <Card className="overflow-hidden">
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
                 <div>
@@ -461,85 +568,6 @@ export default function BillingListPage() {
               </div>
             </Card>
 
-            {/* Table */}
-            <Card className="overflow-hidden">
-              <div className="space-y-5">
-                <div>
-                  <h2 className="text-lg font-semibold text-neutral-900">Kelola Diskon & Cicilan Massal</h2>
-                  <p className="text-sm text-neutral-600 mt-1">
-                    Terapkan ke seluruh tagihan pada hasil filter saat ini agar tidak perlu set satu per satu.
-                  </p>
-                </div>
-
-                {bulkResultMessage && (
-                  <div className="rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-800 px-3 py-2 text-sm">
-                    {bulkResultMessage}
-                  </div>
-                )}
-
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-                  <div className="rounded-lg border border-neutral-200 p-4 space-y-3">
-                    <h3 className="font-medium text-neutral-900">Diskon Massal</h3>
-                    <p className="text-xs text-neutral-600">
-                      Eligible: {eligibleDiscountBillings.length} dari {billings.length} tagihan hasil filter.
-                    </p>
-                    <div>
-                      <label className="block text-sm font-medium text-neutral-700 mb-1">Nominal Diskon (Rp)</label>
-                      <input
-                        type="number"
-                        min={1}
-                        className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                        value={bulkDiscountForm.discountAmount}
-                        onChange={(e) => setBulkDiscountForm({ ...bulkDiscountForm, discountAmount: e.target.value })}
-                        placeholder="Contoh: 50000"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-neutral-700 mb-1">Alasan Diskon</label>
-                      <textarea
-                        rows={3}
-                        className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                        value={bulkDiscountForm.discountReason}
-                        onChange={(e) => setBulkDiscountForm({ ...bulkDiscountForm, discountReason: e.target.value })}
-                        placeholder="Contoh: Program keringanan semester genap"
-                      />
-                    </div>
-                    <Button variant="primary" onClick={submitBulkDiscount} disabled={bulkLoading || eligibleDiscountBillings.length === 0}>
-                      {bulkLoading ? 'Memproses...' : 'Terapkan Diskon Massal'}
-                    </Button>
-                  </div>
-
-                  <div className="rounded-lg border border-neutral-200 p-4 space-y-3">
-                    <h3 className="font-medium text-neutral-900">Cicilan Massal</h3>
-                    <p className="text-xs text-neutral-600">
-                      Eligible: {eligibleInstallmentBillings.length} dari {billings.length} tagihan hasil filter.
-                    </p>
-                    <div>
-                      <label className="block text-sm font-medium text-neutral-700 mb-1">Jumlah Cicilan</label>
-                      <input
-                        type="number"
-                        min={1}
-                        className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                        value={bulkInstallmentForm.installmentCount}
-                        onChange={(e) => setBulkInstallmentForm({ ...bulkInstallmentForm, installmentCount: e.target.value })}
-                      />
-                    </div>
-                    <label className="inline-flex items-center gap-2 text-sm text-neutral-700">
-                      <input
-                        type="checkbox"
-                        checked={bulkInstallmentForm.respectAllowInstallments}
-                        onChange={(e) => setBulkInstallmentForm({ ...bulkInstallmentForm, respectAllowInstallments: e.target.checked })}
-                      />
-                      Hanya untuk siswa yang diizinkan cicilan
-                    </label>
-                    <Button variant="primary" onClick={submitBulkInstallment} disabled={bulkLoading || eligibleInstallmentBillings.length === 0}>
-                      {bulkLoading ? 'Memproses...' : 'Terapkan Cicilan Massal'}
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </Card>
-
             <Card className="overflow-hidden">
               {loading ? (
                 <div className="text-center py-12">
@@ -563,6 +591,227 @@ export default function BillingListPage() {
           </div>
         </main>
       </div>
+
+      {bulkModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/50 p-4 flex items-center justify-center">
+          <div className="w-full max-w-7xl max-h-[92vh] bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col">
+            <div className="flex items-start justify-between px-5 py-4 border-b border-neutral-200">
+              <div>
+                <h2 className="text-xl font-semibold text-neutral-900">Kelola Diskon & Cicilan Massal</h2>
+                <p className="text-sm text-neutral-600 mt-1">Preview daftar tagihan sebelum submit, lalu pilih manual dengan checkbox.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setBulkModalOpen(false)}
+                className="text-neutral-500 hover:text-neutral-700"
+                aria-label="Tutup modal"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="px-5 py-4 border-b border-neutral-200 flex flex-wrap items-center gap-2">
+              <Button
+                size="sm"
+                variant={bulkActionType === 'DISCOUNT' ? 'primary' : 'outline'}
+                onClick={() => {
+                  setBulkActionType('DISCOUNT');
+                  setSelectedBillingIds(eligibleDiscountBillings.map((billing) => billing.id));
+                }}
+              >
+                Diskon Massal
+              </Button>
+              <Button
+                size="sm"
+                variant={bulkActionType === 'INSTALLMENT' ? 'primary' : 'outline'}
+                onClick={() => {
+                  setBulkActionType('INSTALLMENT');
+                  setSelectedBillingIds(eligibleInstallmentBillings.map((billing) => billing.id));
+                }}
+              >
+                Cicilan Massal
+              </Button>
+              <div className="ml-auto">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={undoLastBulkAction}
+                  disabled={undoLoading || !undoInfo || undoInfo.undone || undoInfo.processedCount === 0}
+                  icon={<RotateCcw className="w-4 h-4" />}
+                >
+                  Undo Terakhir ({bulkActionType === 'DISCOUNT' ? 'Diskon' : 'Cicilan'})
+                </Button>
+              </div>
+            </div>
+
+            <div className="p-5 overflow-auto space-y-4">
+              {undoInfo && (
+                <div className="rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2 text-xs text-neutral-700">
+                  Aksi terakhir: {undoInfo.processedCount} diproses, {undoInfo.skippedCount} dilewati ({new Date(undoInfo.createdAt).toLocaleString('id-ID')})
+                  {undoInfo.undone ? ' - sudah di-undo' : ''}
+                </div>
+              )}
+
+              {bulkResultMessage && (
+                <div className="rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-800 px-3 py-2 text-sm">
+                  {bulkResultMessage}
+                </div>
+              )}
+
+              {bulkActionType === 'DISCOUNT' ? (
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 mb-1">Nominal Diskon Default (Rp)</label>
+                    <input
+                      type="number"
+                      min={1}
+                      className="w-full px-3 py-2 border border-neutral-300 rounded-lg"
+                      value={bulkDiscountForm.discountAmount}
+                      onChange={(e) => setBulkDiscountForm({ ...bulkDiscountForm, discountAmount: e.target.value })}
+                    />
+                  </div>
+                  <div className="lg:col-span-2">
+                    <label className="block text-sm font-medium text-neutral-700 mb-1">Alasan Diskon</label>
+                    <input
+                      type="text"
+                      className="w-full px-3 py-2 border border-neutral-300 rounded-lg"
+                      value={bulkDiscountForm.discountReason}
+                      onChange={(e) => setBulkDiscountForm({ ...bulkDiscountForm, discountReason: e.target.value })}
+                      placeholder="Contoh: Program keringanan"
+                    />
+                  </div>
+                  <div className="lg:col-span-3 rounded-lg border border-neutral-200 p-3">
+                    <label className="inline-flex items-center gap-2 text-sm text-neutral-700">
+                      <input
+                        type="checkbox"
+                        checked={bulkDiscountForm.enableRecurring}
+                        onChange={(e) => setBulkDiscountForm({ ...bulkDiscountForm, enableRecurring: e.target.checked })}
+                      />
+                      Terapkan diskon berkelanjutan ke tagihan yang belum terbit
+                    </label>
+                    {bulkDiscountForm.enableRecurring && (
+                      <div className="mt-2 max-w-xs">
+                        <label className="block text-sm font-medium text-neutral-700 mb-1">Berlaku untuk berapa bulan ke depan</label>
+                        <input
+                          type="number"
+                          min={1}
+                          className="w-full px-3 py-2 border border-neutral-300 rounded-lg"
+                          value={bulkDiscountForm.recurringMonths}
+                          onChange={(e) => setBulkDiscountForm({ ...bulkDiscountForm, recurringMonths: e.target.value })}
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 mb-1">Jumlah Cicilan</label>
+                    <input
+                      type="number"
+                      min={1}
+                      className="w-full px-3 py-2 border border-neutral-300 rounded-lg"
+                      value={bulkInstallmentForm.installmentCount}
+                      onChange={(e) => setBulkInstallmentForm({ ...bulkInstallmentForm, installmentCount: e.target.value })}
+                    />
+                  </div>
+                  <div className="lg:col-span-2 flex items-end">
+                    <label className="inline-flex items-center gap-2 text-sm text-neutral-700">
+                      <input
+                        type="checkbox"
+                        checked={bulkInstallmentForm.respectAllowInstallments}
+                        onChange={(e) => setBulkInstallmentForm({ ...bulkInstallmentForm, respectAllowInstallments: e.target.checked })}
+                      />
+                      Hanya untuk siswa yang diizinkan cicilan
+                    </label>
+                  </div>
+                </div>
+              )}
+
+              <div className="rounded-xl border border-neutral-200 overflow-hidden">
+                <div className="flex items-center justify-between px-3 py-2 bg-neutral-50 border-b border-neutral-200">
+                  <div className="text-sm text-neutral-700">
+                    Preview target: {previewBillings.length} | Dipilih: {selectedBillingIds.length}
+                  </div>
+                  <button type="button" onClick={toggleSelectAll} className="text-sm text-primary-700 hover:text-primary-800 font-medium">
+                    {allSelected ? 'Uncheck Semua' : 'Check Semua'}
+                  </button>
+                </div>
+
+                <div className="overflow-auto max-h-[42vh]">
+                  <table className="w-full text-sm">
+                    <thead className="bg-neutral-100 border-b border-neutral-200 sticky top-0">
+                      <tr>
+                        <th className="px-3 py-2 text-left w-12">Pilih</th>
+                        <th className="px-3 py-2 text-left">No Tagihan</th>
+                        <th className="px-3 py-2 text-left">Siswa</th>
+                        <th className="px-3 py-2 text-left">Periode</th>
+                        <th className="px-3 py-2 text-left">Status</th>
+                        <th className="px-3 py-2 text-right">Nominal</th>
+                        {bulkActionType === 'DISCOUNT' && (
+                          <th className="px-3 py-2 text-left min-w-[180px]">Override Diskon Siswa</th>
+                        )}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-neutral-200">
+                      {previewBillings.map((billing) => {
+                        const isChecked = selectedBillingIds.includes(billing.id);
+                        return (
+                          <tr key={billing.id} className="hover:bg-neutral-50">
+                            <td className="px-3 py-2">
+                              <input
+                                type="checkbox"
+                                checked={isChecked}
+                                onChange={() => toggleBillingSelection(billing.id)}
+                              />
+                            </td>
+                            <td className="px-3 py-2 font-medium text-neutral-900">{billing.billNumber}</td>
+                            <td className="px-3 py-2">
+                              <div className="font-medium text-neutral-900">{billing.student.nama}</div>
+                              <div className="text-xs text-neutral-600">{billing.student.nisn}</div>
+                            </td>
+                            <td className="px-3 py-2">{billing.month ? `${getMonthName(billing.month)} ${billing.year}` : billing.year}</td>
+                            <td className="px-3 py-2">
+                              <Badge variant={getStatusBadgeVariant(billing.status)}>{getStatusLabel(billing.status)}</Badge>
+                            </td>
+                            <td className="px-3 py-2 text-right">{formatCurrency(billing.totalAmount)}</td>
+                            {bulkActionType === 'DISCOUNT' && (
+                              <td className="px-3 py-2">
+                                <input
+                                  type="number"
+                                  min={1}
+                                  disabled={!isChecked}
+                                  className="w-full px-2 py-1 border border-neutral-300 rounded-md"
+                                  placeholder="Kosong = default"
+                                  value={discountOverrides[billing.id] || ''}
+                                  onChange={(e) => setDiscountOverrides((prev) => ({ ...prev, [billing.id]: e.target.value }))}
+                                />
+                              </td>
+                            )}
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <p className="text-xs text-neutral-600">
+                Untuk edit diskon satu siswa agar lebih besar, centang hanya baris siswa tersebut lalu isi Override Diskon Siswa.
+              </p>
+            </div>
+
+            <div className="px-5 py-4 border-t border-neutral-200 flex flex-wrap justify-end gap-2">
+              <Button variant="ghost" onClick={() => setBulkModalOpen(false)}>
+                Tutup
+              </Button>
+              <Button variant="primary" isLoading={bulkLoading} onClick={submitBulkAction}>
+                Submit Aksi Massal
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -112,6 +112,7 @@ model User {
   createdAcademicYears AcademicYear[]    @relation("AcademicYearCreator")
   createdTemplates     BillingTemplate[] @relation("TemplateCreator")
   updatedSettings      SystemSettings[]  @relation("SettingsUpdater")
+  createdStudentDiscountPlans StudentDiscountPlan[] @relation("StudentDiscountPlanCreator")
 
   @@index([role, isActive])
   @@index([nama])
@@ -154,6 +155,7 @@ model Student {
   // Relasi ke sistem baru (PROFESIONAL)
   studentClasses StudentClass[]
   billings       Billing[]
+  discountPlans  StudentDiscountPlan[]
 
   // Relasi one-to-one
   user User? // One-to-one relation
@@ -653,4 +655,26 @@ model ActivityLog {
   @@index([action, createdAt])
   @@index([createdAt])
   @@map("activity_logs")
+}
+
+model StudentDiscountPlan {
+  id             String      @id @default(uuid())
+  studentId      String      @map("student_id")
+  student        Student     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  type           PaymentType
+  discountAmount Float       @map("discount_amount")
+  reason         String      @db.Text
+  monthsRemaining Int        @default(0) @map("months_remaining")
+  startMonth     Int         @map("start_month")
+  startYear      Int         @map("start_year")
+  isActive       Boolean     @default(true) @map("is_active")
+  createdById    String?     @map("created_by_id")
+  createdBy      User?       @relation("StudentDiscountPlanCreator", fields: [createdById], references: [id])
+  createdAt      DateTime    @default(now()) @map("created_at")
+  updatedAt      DateTime    @updatedAt @map("updated_at")
+
+  @@index([studentId, type])
+  @@index([type, isActive])
+  @@index([isActive, startYear, startMonth])
+  @@map("student_discount_plans")
 }

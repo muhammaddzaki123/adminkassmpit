@@ -151,6 +151,12 @@ export async function GET(request: NextRequest) {
 
     // Format billings
     const formattedBillings = billings.map(billing => ({
+      discountSource:
+        billing.discount > 0
+          ? (billing.discountReason || '').startsWith('[Diskon Berkelanjutan]')
+            ? 'RECURRING'
+            : 'MANUAL'
+          : 'NONE',
       id: billing.id,
       billNumber: billing.billNumber,
       student: {

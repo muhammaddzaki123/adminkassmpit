@@ -100,29 +100,29 @@ export default function LoginPage() {
         <div className="grid lg:grid-cols-5 gap-6 animate-slide-up">
           <Card className="lg:col-span-2 bg-neutral-900 text-white border-neutral-800 shadow-2xl">
             <div className="space-y-5">
-              <h2 className="text-2xl font-bold leading-tight">Akses Profesional Tanpa Pilih Role</h2>
+              <h2 className="text-2xl font-bold leading-tight">Pengumuman Cepat</h2>
               <p className="text-neutral-200 text-sm">
-                Cukup masukkan kredensial akun. Sistem akan mendeteksi otorisasi secara otomatis sesuai profil Anda.
+                Gunakan sistem ini dengan bijak cek untuk melakukan pengecekan teerkat dengan administrasi dan pembyaran
               </p>
 
               <div className="space-y-3 text-sm">
                 <div className="flex items-start gap-2">
                   <ShieldCheck className="w-4 h-4 mt-0.5 text-primary-300" />
-                  <span>Role ditentukan otomatis dari data akun tervalidasi.</span>
+                  <span>pembyaran spp</span>
                 </div>
                 <div className="flex items-start gap-2">
                   <ShieldCheck className="w-4 h-4 mt-0.5 text-primary-300" />
-                  <span>Semua aktivitas kritis tercatat untuk audit internal.</span>
+                  <span>Daftar ulang</span>
                 </div>
                 <div className="flex items-start gap-2">
                   <ShieldCheck className="w-4 h-4 mt-0.5 text-primary-300" />
                   <span>Perlindungan sesi dan validasi akses untuk data finansial.</span>
                 </div>
               </div>
-
+{/* 
               <div className="rounded-xl bg-white/10 border border-white/20 p-3 text-xs text-neutral-100">
                 Halaman ini khusus pengguna resmi SMP IT ANAK SOLEH MATARAM.
-              </div>
+              </div> */}
             </div>
           </Card>
 

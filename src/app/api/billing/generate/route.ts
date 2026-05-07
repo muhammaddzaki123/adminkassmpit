@@ -3,6 +3,12 @@ import prisma from '@/lib/prisma';
 import { getServerSession } from '@/lib/auth';
 import { Prisma } from '@prisma/client';
 
+function isPlanActiveForPeriod(startYear: number, startMonth: number, targetYear: number, targetMonth: number) {
+  if (startYear < targetYear) return true;
+  if (startYear > targetYear) return false;
+  return startMonth <= targetMonth;
+}
+
 /**
  * POST /api/billing/generate
  * Generate tagihan SPP bulanan untuk siswa aktif
@@ -131,29 +137,73 @@ export async function POST(request: NextRequest) {
           amount = sc.class.sppAmount;
         }
 
+        // Apply recurring discount plan if available
+        const discountPlan = await prisma.studentDiscountPlan.findFirst({
+          where: {
+            studentId: sc.student.id,
+            type,
+            isActive: true,
+            monthsRemaining: {
+              gt: 0,
+            },
+          },
+          orderBy: {
+            updatedAt: 'desc',
+          },
+        });
+
+        let appliedDiscount = 0;
+        let appliedDiscountReason: string | null = null;
+        if (
+          discountPlan &&
+          isPlanActiveForPeriod(discountPlan.startYear, discountPlan.startMonth, year, month)
+        ) {
+          const maxAllowedDiscount = Math.max(0, amount - 1);
+          appliedDiscount = Math.min(discountPlan.discountAmount, maxAllowedDiscount);
+          if (appliedDiscount > 0) {
+            appliedDiscountReason = `[Diskon Berkelanjutan] ${discountPlan.reason}`;
+          }
+        }
+
         // Set due date (tanggal 10 bulan berjalan)
         const dueDate = new Date(year, month - 1, 10);
 
         // Create billing
-        const billing = await prisma.billing.create({
-          data: {
-            billNumber,
-            studentId: sc.student.id,
-            academicYearId,
-            type,
-            month,
-            year,
-            subtotal: amount,
-            discount: 0,
-            totalAmount: amount,
-            paidAmount: 0,
-            allowInstallments: sc.student.allowInstallments,
-            status: 'BILLED',
-            dueDate,
-            billDate: new Date(),
-            description: description || `${type} ${getMonthName(month)} ${year}`,
-            issuedById: session.user.id,
-          },
+        const billing = await prisma.$transaction(async (tx) => {
+          const created = await tx.billing.create({
+            data: {
+              billNumber,
+              studentId: sc.student.id,
+              academicYearId,
+              type,
+              month,
+              year,
+              subtotal: amount,
+              discount: appliedDiscount,
+              discountReason: appliedDiscountReason,
+              totalAmount: amount - appliedDiscount,
+              paidAmount: 0,
+              allowInstallments: sc.student.allowInstallments,
+              status: 'BILLED',
+              dueDate,
+              billDate: new Date(),
+              description: description || `${type} ${getMonthName(month)} ${year}`,
+              issuedById: session.user.id,
+            },
+          });
+
+          if (discountPlan && appliedDiscount > 0) {
+            const nextMonths = Math.max(0, discountPlan.monthsRemaining - 1);
+            await tx.studentDiscountPlan.update({
+              where: { id: discountPlan.id },
+              data: {
+                monthsRemaining: nextMonths,
+                isActive: nextMonths > 0,
+              },
+            });
+          }
+
+          return created;
         });
 
         results.success.push({
