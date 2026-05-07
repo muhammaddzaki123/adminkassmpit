@@ -2,7 +2,19 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowRight, BadgeCheck, Building2, ChartPie, CircleDollarSign, LockKeyhole, Shield, Wallet } from 'lucide-react';
+import {
+  ArrowRight,
+  BookOpen,
+  CalendarDays,
+  CheckCircle2,
+  GraduationCap,
+  HeartHandshake,
+  Landmark,
+  MapPin,
+  School,
+  ShieldCheck,
+  UserRound,
+} from 'lucide-react';
 
 export default function LandingPage() {
   const router = useRouter();
@@ -39,132 +51,179 @@ export default function LandingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-neutral-50">
-      <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_20%_10%,rgba(126,194,66,0.18),transparent_35%),radial-gradient(circle_at_80%_15%,rgba(242,154,46,0.16),transparent_30%)]" />
+    <div className="min-h-screen bg-[linear-gradient(180deg,#f4f7ef_0%,#f7f5ef_35%,#ffffff_100%)] text-neutral-900">
+      <div className="absolute inset-0 -z-10 overflow-hidden">
+        <div className="absolute left-[-120px] top-[-120px] h-72 w-72 rounded-full bg-primary-200/40 blur-3xl" />
+        <div className="absolute -right-20 top-[10%] h-64 w-64 rounded-full bg-accent-200/35 blur-3xl" />
+        <div className="absolute left-[45%] top-[30%] h-72 w-72 -translate-x-1/2 rounded-full bg-primary-100/40 blur-3xl" />
+      </div>
 
-      <nav className="border-b border-neutral-200/80 bg-white/90 backdrop-blur-xl sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <nav className="sticky top-0 z-50 border-b border-neutral-200/70 bg-white/85 backdrop-blur-xl">
+        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-linear-to-br from-primary-600 to-primary-800 text-white flex items-center justify-center shadow-medium">
-              <Wallet className="w-5 h-5" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-linear-to-br from-primary-700 to-primary-900 text-white shadow-medium">
+              <School className="h-5 w-5" />
             </div>
             <div>
-              <p className="text-xs uppercase tracking-[0.2em] text-neutral-500">SMP IT ANAK SOLEH MATARAM</p>
-              <h1 className="text-sm sm:text-base font-bold text-neutral-900 leading-tight">T-SMART Finance Platform</h1>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-neutral-500">SMP IT ANAK SOLEH MATARAM</p>
+              <h1 className="text-sm font-bold leading-tight sm:text-base">Portal Informasi Sekolah</h1>
             </div>
           </div>
           <button
             onClick={handleGetStarted}
-            className="px-5 py-2.5 bg-neutral-900 hover:bg-neutral-800 text-white rounded-xl font-semibold transition-all duration-200 shadow-soft"
+            className="rounded-xl bg-neutral-900 px-5 py-2.5 font-semibold text-white shadow-soft transition-all duration-200 hover:bg-neutral-800"
           >
-            {isLoggedIn ? 'Ke Dashboard' : 'Masuk Sistem'}
+            {isLoggedIn ? 'Buka Dashboard' : 'Masuk Portal'}
           </button>
         </div>
       </nav>
 
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-10">
-        <div className="grid lg:grid-cols-2 gap-10 items-center">
-          <div className="animate-fade-in">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 mb-6 bg-white border border-primary-200 rounded-full text-xs font-semibold text-primary-800">
-              <BadgeCheck className="w-4 h-4" />
-              Platform Keuangan Internal Sekolah
-            </div>
+      <section className="mx-auto grid max-w-7xl gap-10 px-4 pb-10 pt-14 sm:px-6 lg:grid-cols-[1.2fr_0.8fr] lg:px-8">
+        <div className="animate-fade-in space-y-7">
+          <div className="inline-flex items-center gap-2 rounded-full border border-primary-300 bg-white px-3 py-1.5 text-xs font-semibold text-primary-800">
+            <CheckCircle2 className="h-4 w-4" />
+            Sekolah Islam Terpadu Berkarakter
+          </div>
 
-            <h2 className="text-4xl sm:text-5xl font-bold text-neutral-900 leading-tight">
-              Transparansi dan Kontrol Keuangan
-              <span className="block text-primary-700 mt-1">untuk SMP IT ANAK SOLEH MATARAM</span>
+          <div>
+            <h2 className="text-4xl font-bold leading-tight tracking-tight sm:text-5xl" style={{ fontFamily: 'var(--font-poppins)' }}>
+              Selamat Datang di
+              <span className="mt-2 block text-primary-800">SMP IT Anak Soleh Mataram</span>
             </h2>
-
-            <p className="mt-5 text-lg text-neutral-600 max-w-xl">
-              T-SMART adalah pusat operasional keuangan sekolah untuk pengelolaan tagihan, pembayaran, verifikasi, laporan, dan audit aktivitas secara terintegrasi.
+            <p className="mt-5 max-w-2xl text-lg text-neutral-600">
+              Halaman ini adalah pusat informasi resmi sekolah untuk siswa, orang tua, dan civitas.
+              Temukan profil sekolah, program unggulan, serta akses cepat ke portal akademik dan keuangan internal.
             </p>
+          </div>
 
-            <div className="mt-8 flex flex-wrap gap-3">
-              <button
-                onClick={handleGetStarted}
-                className="inline-flex items-center gap-2 px-6 py-3 bg-primary-700 hover:bg-primary-800 text-white rounded-xl font-semibold transition-all shadow-medium"
-              >
-                {isLoggedIn ? 'Buka Dashboard' : 'Masuk ke Portal'}
-                <ArrowRight className="w-4 h-4" />
-              </button>
-              <a
-                href="#kapabilitas"
-                className="inline-flex items-center gap-2 px-6 py-3 bg-white hover:bg-neutral-100 text-neutral-700 border border-neutral-200 rounded-xl font-semibold transition-all"
-              >
-                Lihat Kapabilitas
-              </a>
+          <div className="flex flex-wrap gap-3">
+            <button
+              onClick={handleGetStarted}
+              className="inline-flex items-center gap-2 rounded-xl bg-primary-700 px-6 py-3 font-semibold text-white shadow-medium transition-all hover:bg-primary-800"
+            >
+              {isLoggedIn ? 'Lanjut ke Dashboard' : 'Masuk Portal Sekolah'}
+              <ArrowRight className="h-4 w-4" />
+            </button>
+            <a
+              href="#profil"
+              className="inline-flex items-center gap-2 rounded-xl border border-neutral-300 bg-white px-6 py-3 font-semibold text-neutral-700 transition-all hover:bg-neutral-100"
+            >
+              Lihat Profil
+            </a>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div className="rounded-2xl border border-white/60 bg-white/90 p-4 shadow-soft">
+              <p className="text-xs uppercase tracking-wide text-neutral-500">Pendekatan</p>
+              <p className="mt-1 font-semibold">Tahfidz & Akademik Seimbang</p>
+            </div>
+            <div className="rounded-2xl border border-white/60 bg-white/90 p-4 shadow-soft">
+              <p className="text-xs uppercase tracking-wide text-neutral-500">Pembinaan</p>
+              <p className="mt-1 font-semibold">Karakter Islami Harian</p>
+            </div>
+            <div className="rounded-2xl border border-white/60 bg-white/90 p-4 shadow-soft">
+              <p className="text-xs uppercase tracking-wide text-neutral-500">Kolaborasi</p>
+              <p className="mt-1 font-semibold">Sinergi Guru & Orang Tua</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="animate-slide-up rounded-3xl border border-neutral-200/80 bg-white p-6 shadow-strong sm:p-8">
+          <div className="mb-6 flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-100 text-primary-800">
+              <Landmark className="h-5 w-5" />
+            </div>
+            <div>
+              <h3 className="text-lg font-bold" style={{ fontFamily: 'var(--font-poppins)' }}>Informasi Singkat Sekolah</h3>
+              <p className="text-sm text-neutral-500">SMP IT ANAK SOLEH MATARAM</p>
             </div>
           </div>
 
-          <div className="relative animate-slide-up">
-            <div className="absolute -inset-2 rounded-3xl bg-linear-to-br from-primary-200/40 to-accent-200/30 blur-xl" />
-            <div className="relative bg-white border border-neutral-200 rounded-3xl p-6 sm:p-8 shadow-strong">
-              <h3 className="text-xl font-bold text-neutral-900 mb-5">Operasional yang Terkendali</h3>
-              <div className="space-y-4">
-                <div className="flex items-start gap-3 p-4 rounded-2xl border border-neutral-200 bg-neutral-50">
-                  <Shield className="w-5 h-5 text-primary-700 mt-0.5" />
-                  <div>
-                    <p className="font-semibold text-neutral-800">Akses berbasis otorisasi</p>
-                    <p className="text-sm text-neutral-600">Hak akses otomatis sesuai akun tanpa pemilihan role manual.</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3 p-4 rounded-2xl border border-neutral-200 bg-neutral-50">
-                  <CircleDollarSign className="w-5 h-5 text-primary-700 mt-0.5" />
-                  <div>
-                    <p className="font-semibold text-neutral-800">Monitoring pembayaran real-time</p>
-                    <p className="text-sm text-neutral-600">Tagihan, histori, dan status pembayaran terpantau sepanjang waktu.</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3 p-4 rounded-2xl border border-neutral-200 bg-neutral-50">
-                  <LockKeyhole className="w-5 h-5 text-primary-700 mt-0.5" />
-                  <div>
-                    <p className="font-semibold text-neutral-800">Jejak audit aktivitas</p>
-                    <p className="text-sm text-neutral-600">Perubahan data kritis tercatat untuk kebutuhan kontrol dan pelaporan.</p>
-                  </div>
-                </div>
+          <div className="space-y-3">
+            <div className="flex items-start gap-3 rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
+              <MapPin className="mt-0.5 h-5 w-5 text-primary-700" />
+              <div>
+                <p className="font-semibold">Lokasi</p>
+                <p className="text-sm text-neutral-600">Mataram, Nusa Tenggara Barat</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3 rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
+              <GraduationCap className="mt-0.5 h-5 w-5 text-primary-700" />
+              <div>
+                <p className="font-semibold">Fokus Pendidikan</p>
+                <p className="text-sm text-neutral-600">Keislaman, akademik, dan pembentukan adab</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3 rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
+              <CalendarDays className="mt-0.5 h-5 w-5 text-primary-700" />
+              <div>
+                <p className="font-semibold">Layanan Portal</p>
+                <p className="text-sm text-neutral-600">Akses data administrasi dan keuangan sekolah secara terarah</p>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      <section id="kapabilitas" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid md:grid-cols-2 xl:grid-cols-4 gap-5">
-          <div className="bg-white border border-neutral-200 rounded-2xl p-5 shadow-soft">
-            <Building2 className="w-6 h-6 text-primary-700 mb-3" />
-            <h4 className="font-bold text-neutral-900 mb-2">Administrasi Terpusat</h4>
-            <p className="text-sm text-neutral-600">Kelola data pengguna, siswa, tahun ajaran, dan pengaturan sistem dari satu panel.</p>
-          </div>
-          <div className="bg-white border border-neutral-200 rounded-2xl p-5 shadow-soft">
-            <Wallet className="w-6 h-6 text-primary-700 mb-3" />
-            <h4 className="font-bold text-neutral-900 mb-2">Tagihan dan Pembayaran</h4>
-            <p className="text-sm text-neutral-600">Proses pembayaran manual maupun online dengan status transaksi yang konsisten.</p>
-          </div>
-          <div className="bg-white border border-neutral-200 rounded-2xl p-5 shadow-soft">
-            <ChartPie className="w-6 h-6 text-primary-700 mb-3" />
-            <h4 className="font-bold text-neutral-900 mb-2">Laporan Keuangan</h4>
-            <p className="text-sm text-neutral-600">Ringkasan pemasukan, tunggakan, dan realisasi untuk monitoring pimpinan sekolah.</p>
-          </div>
-          <div className="bg-white border border-neutral-200 rounded-2xl p-5 shadow-soft">
-            <Shield className="w-6 h-6 text-primary-700 mb-3" />
-            <h4 className="font-bold text-neutral-900 mb-2">Data Integrity</h4>
-            <p className="text-sm text-neutral-600">Kontrol validasi, jejak aktivitas, dan otorisasi untuk area data finansial yang krusial.</p>
+      <section id="profil" className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+        <div className="mb-6">
+          <h3 className="text-2xl font-bold" style={{ fontFamily: 'var(--font-poppins)' }}>Profil Singkat</h3>
+          <p className="mt-2 max-w-3xl text-neutral-600">
+            SMP IT Anak Soleh Mataram berkomitmen melahirkan generasi berilmu, berakhlak, dan berdaya saing.
+            Pembelajaran dirancang untuk menumbuhkan pemahaman diniyah sekaligus kecakapan akademik modern.
+          </p>
+        </div>
+        <div className="grid gap-5 md:grid-cols-3">
+          <article className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-soft">
+            <BookOpen className="mb-3 h-6 w-6 text-primary-700" />
+            <h4 className="mb-2 font-bold">Visi Pendidikan</h4>
+            <p className="text-sm text-neutral-600">Membentuk peserta didik yang bertakwa, berilmu, dan siap berkontribusi untuk umat serta bangsa.</p>
+          </article>
+          <article className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-soft">
+            <HeartHandshake className="mb-3 h-6 w-6 text-primary-700" />
+            <h4 className="mb-2 font-bold">Misi Pembinaan</h4>
+            <p className="text-sm text-neutral-600">Menguatkan adab, ibadah, literasi, dan kepemimpinan siswa melalui kegiatan terstruktur dan pembiasaan.</p>
+          </article>
+          <article className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-soft">
+            <UserRound className="mb-3 h-6 w-6 text-primary-700" />
+            <h4 className="mb-2 font-bold">Kolaborasi Orang Tua</h4>
+            <p className="text-sm text-neutral-600">Komunikasi dan pendampingan dilakukan bersama orang tua agar perkembangan siswa berjalan optimal.</p>
+          </article>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-7xl px-4 pb-14 sm:px-6 lg:px-8">
+        <div className="rounded-3xl border border-primary-200/70 bg-[linear-gradient(135deg,rgba(126,194,66,0.08),rgba(242,154,46,0.09))] p-6 sm:p-8">
+          <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+            <div>
+              <h3 className="text-2xl font-bold" style={{ fontFamily: 'var(--font-poppins)' }}>Akses Portal Internal Sekolah</h3>
+              <p className="mt-2 max-w-2xl text-neutral-700">
+                Untuk kebutuhan administrasi resmi, silakan masuk menggunakan akun yang telah diberikan sekolah.
+              </p>
+            </div>
+            <button
+              onClick={handleGetStarted}
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-neutral-900 px-6 py-3 font-semibold text-white transition-all hover:bg-neutral-800"
+            >
+              <ShieldCheck className="h-4 w-4" />
+              {isLoggedIn ? 'Masuk ke Dashboard' : 'Login Portal'}
+            </button>
           </div>
         </div>
       </section>
 
-      <footer className="mt-8 border-t border-neutral-200 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <footer className="border-t border-neutral-200 bg-white">
+        <div className="mx-auto flex max-w-7xl flex-col items-start justify-between gap-4 px-4 py-8 sm:flex-row sm:items-center sm:px-6 lg:px-8">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-linear-to-br from-primary-600 to-primary-800 text-white flex items-center justify-center">
-              <Wallet className="w-5 h-5" />
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-linear-to-br from-primary-700 to-primary-900 text-white">
+              <School className="h-5 w-5" />
             </div>
             <div>
-              <p className="font-semibold text-neutral-900">T-SMART Finance Platform</p>
-              <p className="text-sm text-neutral-500">SMP IT ANAK SOLEH MATARAM</p>
+              <p className="font-semibold">SMP IT ANAK SOLEH MATARAM</p>
+              <p className="text-sm text-neutral-500">Portal Informasi dan Administrasi Sekolah</p>
             </div>
           </div>
-          <p className="text-sm text-neutral-500">© 2026 Internal Financial Information System</p>
+          <p className="text-sm text-neutral-500">© 2026 SMP IT Anak Soleh Mataram</p>
         </div>
       </footer>
     </div>

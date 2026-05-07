@@ -2,10 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { CreditCard, Lock, User, AlertCircle, ShieldCheck } from 'lucide-react';
+import { Lock, User, AlertCircle, School, GraduationCap, BookOpen } from 'lucide-react';
 import { clearClientAuthSession } from '@/lib/client-auth';
 
 export default function LoginPage() {
@@ -79,129 +80,117 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-primary-50 via-white to-accent-50 flex items-center justify-center p-4 relative overflow-hidden">
+    <div className="min-h-screen bg-[linear-gradient(180deg,#f4f7ef_0%,#f7f5ef_35%,#ffffff_100%)] flex items-center justify-center p-4 relative overflow-hidden">
       {/* Decorative Elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary/10 rounded-full blur-3xl"></div>
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-accent/10 rounded-full blur-3xl"></div>
+        <div className="absolute -top-40 -right-40 h-80 w-80 rounded-full bg-primary-200/40 blur-3xl"></div>
+        <div className="absolute -bottom-40 -left-40 h-80 w-80 rounded-full bg-accent-200/35 blur-3xl"></div>
       </div>
 
-      <div className="max-w-5xl w-full relative z-10">
-        {/* Logo & Title */}
-        <div className="text-center mb-8">
-          <div className="w-20 h-20 bg-linear-to-br from-primary to-primary-700 rounded-2xl flex items-center justify-center text-white mx-auto mb-5 shadow-lg shadow-primary/30 animate-fade-in">
-            <CreditCard className="w-10 h-10" />
+      <div className="w-full max-w-md relative z-10">
+        {/* Header Section */}
+        <div className="mb-8 text-center animate-fade-in">
+          <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-2xl bg-linear-to-br from-primary-700 to-primary-900 text-white shadow-lg shadow-primary/30">
+            <School className="h-10 w-10" />
           </div>
-          <h1 className="text-4xl font-bold text-neutral-900 mb-2">T-SMART</h1>
-          <p className="text-lg text-neutral-700 font-medium">Portal Keuangan SMP IT ANAK SOLEH MATARAM</p>
-          <p className="text-sm text-neutral-500 mt-2">Sistem akses tunggal untuk operasional keuangan yang aman dan terkontrol.</p>
+          <h1 className="mb-1 text-3xl font-bold text-neutral-900">SMP IT ANAK SOLEH</h1>
+          <p className="text-base font-semibold text-neutral-700">Mataram</p>
+          <p className="mt-3 text-sm text-neutral-600">Portal Administrasi Sekolah</p>
         </div>
 
-        <div className="grid lg:grid-cols-5 gap-6 animate-slide-up">
-          <Card className="lg:col-span-2 bg-neutral-900 text-white border-neutral-800 shadow-2xl">
-            <div className="space-y-5">
-              <h2 className="text-2xl font-bold leading-tight">Pengumuman Cepat</h2>
-              <p className="text-neutral-200 text-sm">
-                Gunakan sistem ini dengan bijak cek untuk melakukan pengecekan teerkat dengan administrasi dan pembyaran
-              </p>
-
-              <div className="space-y-3 text-sm">
-                <div className="flex items-start gap-2">
-                  <ShieldCheck className="w-4 h-4 mt-0.5 text-primary-300" />
-                  <span>pembyaran spp</span>
-                </div>
-                <div className="flex items-start gap-2">
-                  <ShieldCheck className="w-4 h-4 mt-0.5 text-primary-300" />
-                  <span>Daftar ulang</span>
-                </div>
-                <div className="flex items-start gap-2">
-                  <ShieldCheck className="w-4 h-4 mt-0.5 text-primary-300" />
-                  <span>Perlindungan sesi dan validasi akses untuk data finansial.</span>
-                </div>
-              </div>
-{/* 
-              <div className="rounded-xl bg-white/10 border border-white/20 p-3 text-xs text-neutral-100">
-                Halaman ini khusus pengguna resmi SMP IT ANAK SOLEH MATARAM.
-              </div> */}
+        {/* Login Card */}
+        <Card padding="lg" className="animate-slide-up border-2 border-neutral-100 bg-white shadow-2xl">
+          <div className="mb-6 text-center">
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-primary-100 text-primary-800">
+              <Lock className="h-7 w-7" />
             </div>
-          </Card>
+            <h2 className="text-2xl font-bold text-neutral-900">Masuk ke Portal</h2>
+            <p className="mt-1 text-sm text-neutral-500">Gunakan username dan password resmi Anda</p>
+          </div>
 
-          <div className="lg:col-span-3">
-            <Card padding="lg" className="shadow-2xl border-2 border-neutral-100 bg-white">
-              <div className="text-center mb-6">
-                <div className="w-16 h-16 bg-primary rounded-xl flex items-center justify-center text-white mx-auto mb-4 shadow-md">
-                  <Lock className="w-8 h-8" />
-                </div>
-                <h2 className="text-2xl font-bold text-neutral-900">Masuk ke Sistem</h2>
-                <p className="text-sm text-neutral-500 mt-1">Gunakan username dan password resmi Anda</p>
+          <form onSubmit={handleLogin} className="space-y-5">
+            {error && (
+              <div className="flex items-center gap-2 rounded-xl border-2 border-red-200 bg-red-50 p-3 text-red-800">
+                <AlertCircle className="h-4 w-4 shrink-0" />
+                <span className="text-sm">{error}</span>
               </div>
+            )}
 
-              <form onSubmit={handleLogin} className="space-y-5">
-                {error && (
-                  <div className="bg-red-50 border-2 border-red-200 text-red-800 rounded-xl p-3 flex items-center gap-2">
-                    <AlertCircle className="w-4 h-4 shrink-0" />
-                    <span className="text-sm">{error}</span>
-                  </div>
-                )}
+            <Input
+              label="Username"
+              type="text"
+              placeholder="Masukkan username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              icon={<User className="h-4 w-4" />}
+              required
+            />
 
-                <Input
-                  label="Username"
-                  type="text"
-                  placeholder="Masukkan username"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  icon={<User className="w-4 h-4" />}
-                  required
+            <Input
+              label="Password"
+              type="password"
+              placeholder="Masukkan password"
+              icon={<Lock className="h-4 w-4" />}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+
+            <div className="flex items-center justify-between text-sm">
+              <label className="flex cursor-pointer items-center gap-2 group">
+                <input 
+                  type="checkbox" 
+                  className="cursor-pointer rounded border-neutral-300 text-primary focus:ring-primary" 
                 />
+                <span className="text-neutral-600 group-hover:text-neutral-900">Ingat saya</span>
+              </label>
+              <button 
+                type="button" 
+                className="font-semibold text-primary hover:text-primary-700 hover:underline"
+                onClick={() => router.push('/auth/forgot-password')}
+              >
+                Lupa password?
+              </button>
+            </div>
 
-                <Input
-                  label="Password"
-                  type="password"
-                  placeholder="Masukkan password"
-                  icon={<Lock className="w-4 h-4" />}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
+            <Button
+              type="submit"
+              fullWidth
+              size="lg"
+              isLoading={isLoading}
+              className="mt-6!"
+            >
+              {isLoading ? 'Memproses...' : 'Masuk ke Portal'}
+            </Button>
 
-                <div className="flex items-center justify-between text-sm">
-                  <label className="flex items-center gap-2 cursor-pointer group">
-                    <input 
-                      type="checkbox" 
-                      className="rounded border-neutral-300 text-primary focus:ring-primary cursor-pointer" 
-                    />
-                    <span className="text-neutral-600 group-hover:text-neutral-900">Ingat saya</span>
-                  </label>
-                  <button 
-                    type="button" 
-                    className="text-primary hover:text-primary-700 font-semibold hover:underline"
-                    onClick={() => router.push('/auth/forgot-password')}
-                  >
-                    Lupa password?
-                  </button>
-                </div>
-
-                <Button
-                  type="submit"
-                  fullWidth
-                  size="lg"
-                  isLoading={isLoading}
-                  className="mt-6!"
-                >
-                  {isLoading ? 'Memproses...' : 'Login'}
-                </Button>
-
-                <p className="text-center text-sm text-neutral-500 mt-4">
-                  Role akses akan dipetakan otomatis setelah login berhasil.
-                </p>
-              </form>
-            </Card>
-
-            <p className="text-center mt-6 text-sm text-neutral-600">
-              Butuh bantuan akun? <a href="#" className="text-primary font-semibold hover:underline">Hubungi Admin Sekolah</a>
+            <p className="mt-4 text-center text-xs text-neutral-500">
+              Akses portal akan ditampilkan sesuai role akun Anda setelah login berhasil.
             </p>
+          </form>
+        </Card>
+
+        {/* Info Section */}
+        <div className="mt-6 space-y-3 animate-slide-up">
+          <div className="flex items-start gap-3 rounded-xl border border-neutral-200 bg-white p-4 shadow-soft">
+            <GraduationCap className="mt-0.5 h-5 w-5 text-primary-700 shrink-0" />
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-neutral-600">Untuk Siswa</p>
+              <p className="text-sm text-neutral-700">Cek status akademik dan informasi sekolah</p>
+            </div>
+          </div>
+          <div className="flex items-start gap-3 rounded-xl border border-neutral-200 bg-white p-4 shadow-soft">
+            <BookOpen className="mt-0.5 h-5 w-5 text-primary-700 shrink-0" />
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-neutral-600">Untuk Orang Tua</p>
+              <p className="text-sm text-neutral-700">Monitor perkembangan dan pembayaran siswa</p>
+            </div>
           </div>
         </div>
+
+        {/* Help Link */}
+        <p className="mt-6 text-center text-sm text-neutral-600">
+          Butuh bantuan? <Link href="/" className="font-semibold text-primary hover:underline">Kembali ke halaman utama</Link>
+        </p>
       </div>
     </div>
   );
