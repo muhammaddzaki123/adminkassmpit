@@ -168,6 +168,7 @@ for role in ["Admin", "Headmaster", "Treasurer", "Student", "NewStudent"]:
 relationships = [
     # ADMIN TASKS
     ("membuat tahun ajaran", "Admin", "AcademicYear", "1:N", (1000, 650)),
+    ("menyetujui", "Headmaster", "Expense", "1:N", (1200, 1300)),
     ("mengatur sistem", "Admin", "SystemSettings", "1:1", (2000, 650)),
     ("mengelola data", "Admin", "Student", "1:N", (1600, 500)),
     ("memverifikasi", "Admin", "NewStudent", "1:N", (1800, 400)),
@@ -175,6 +176,7 @@ relationships = [
     # TREASURER (BENDAHARA) TASKS
     ("membuat template", "Treasurer", "BillingTemplate", "1:N", (1400, 800)),
     ("membuat pengeluaran", "Treasurer", "Expense", "1:N", (1400, 1100)),
+    ("mencatat kas manual", "Treasurer", "CashLedgerEntry", "1:N", (1600, 1500)),
 
     # USER (Semua Peran)
     ("mencatat log", "User", "ActivityLog", "1:N", (2200, 1350)),
