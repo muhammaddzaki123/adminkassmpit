@@ -88,7 +88,7 @@ node_id = 100
 layout = {
     "User": (1800, 200),
     "ISA_User": (1800, 350),
-    "Admin": (1000, 500),
+    "Admin": (1000, 400),
     "Headmaster": (1400, 500),
     "Treasurer": (1800, 500),
     "Student": (2200, 500),
@@ -169,6 +169,8 @@ relationships = [
     # ADMIN TASKS
     ("membuat tahun ajaran", "Admin", "AcademicYear", "1:N", (1000, 650)),
     ("mengatur sistem", "Admin", "SystemSettings", "1:1", (2000, 650)),
+    ("mengelola data", "Admin", "Student", "1:N", (1600, 500)),
+    ("memverifikasi", "Admin", "NewStudent", "1:N", (1800, 400)),
 
     # TREASURER (BENDAHARA) TASKS
     ("membuat template", "Treasurer", "BillingTemplate", "1:N", (1400, 800)),
