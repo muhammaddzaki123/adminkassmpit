@@ -230,10 +230,29 @@ if "Student" in entity_id_map:
     nodes_xml += add_edge(f"edge_pend_student", f"node_{entity_id_map['Student']}", f"node_{rel_pendaftaran_id}", styles["line"], value="M")
 if "Class" in entity_id_map:
     nodes_xml += add_edge(f"edge_pend_class", f"node_{rel_pendaftaran_id}", f"node_{entity_id_map['Class']}", styles["line"], value="N")
-if "AcademicYear" in entity_id_map:
-    nodes_xml += add_edge(f"edge_pend_ay", f"node_{entity_id_map['AcademicYear']}", f"node_{rel_pendaftaran_id}", styles["line"], value="1")
+# Removed direct link to AcademicYear to make way for Aggregation
 
 distribute_attributes(rel_pendaftaran_id, pos_pend[0], pos_pend[1], rel_student_class_attrs, e_width=120, e_height=50, radius=120)
+
+# ==========================================
+# IMPLEMENTASI AGREGASI (AGGREGATION)
+# ==========================================
+# 1. Gambar kotak putus-putus membungkus Student, Class, dan Relasi Pendaftaran
+# Koordinat disesuaikan agar membungkus area (x:1700 - x:2400)
+agg_id = node_id + 900
+nodes_xml = f'        <mxCell id="node_{agg_id}" value="" style="rounded=0;whiteSpace=wrap;html=1;dashed=1;fillColor=none;strokeColor=#000000;strokeWidth=2;" vertex="1" parent="1"><mxGeometry x="1750" y="450" width="600" height="450" as="geometry" /></mxCell>\n' + nodes_xml
+
+# 2. Tambahkan Relasi baru yang menghubungkan Agregasi (Kotak) ke AcademicYear
+rel_agg_id = node_id + 950
+nodes_xml += add_node(f"node_{rel_agg_id}", "untuk periode", styles["relationship"], 1400, 650, 120, 50)
+
+# Garis dari Kotak Agregasi ke Relasi
+nodes_xml += add_edge(f"edge_agg_to_rel", f"node_{agg_id}", f"node_{rel_agg_id}", styles["line"], value="M")
+
+# Garis dari Relasi ke AcademicYear
+if "AcademicYear" in entity_id_map:
+    nodes_xml += add_edge(f"edge_rel_to_ay", f"node_{rel_agg_id}", f"node_{entity_id_map['AcademicYear']}", styles["line"], value="1")
+
 
 with open('docs/ERD-KASSMPIT-Chen-Indo.drawio', 'w') as f:
     f.write(drawio_header + "\n" + nodes_xml + drawio_footer)

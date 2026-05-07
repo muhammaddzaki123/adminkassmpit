@@ -5,6 +5,7 @@
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
+        <mxCell id="node_1238" value="" style="rounded=0;whiteSpace=wrap;html=1;dashed=1;fillColor=none;strokeColor=#000000;strokeWidth=2;" vertex="1" parent="1"><mxGeometry x="1750" y="450" width="600" height="450" as="geometry" /></mxCell>
         <mxCell id="node_101" value="User" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="1800" y="200" width="120" height="60" as="geometry" /></mxCell>
         <mxCell id="node_102" value="id" style="ellipse;whiteSpace=wrap;html=1;align=center;fontStyle=4;" vertex="1" parent="1"><mxGeometry x="1980.0" y="210.0" width="80" height="40" as="geometry" /></mxCell>
         <mxCell id="edge_102" value="" style="endArrow=none;html=1;rounded=0;strokeColor=#000000;" edge="1" parent="1" source="node_101" target="node_102"><mxGeometry relative="1" as="geometry" /></mxCell>
@@ -530,7 +531,6 @@
         <mxCell id="node_1131" value="pendaftaran" style="rhombus;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1"><mxGeometry x="2200" y="800" width="120" height="50" as="geometry" /></mxCell>
         <mxCell id="edge_pend_student" value="M" style="endArrow=none;html=1;rounded=0;strokeColor=#000000;" edge="1" parent="1" source="node_110" target="node_1131"><mxGeometry relative="1" as="geometry" /></mxCell>
         <mxCell id="edge_pend_class" value="N" style="endArrow=none;html=1;rounded=0;strokeColor=#000000;" edge="1" parent="1" source="node_1131" target="node_234"><mxGeometry relative="1" as="geometry" /></mxCell>
-        <mxCell id="edge_pend_ay" value="1" style="endArrow=none;html=1;rounded=0;strokeColor=#000000;" edge="1" parent="1" source="node_227" target="node_1131"><mxGeometry relative="1" as="geometry" /></mxCell>
         <mxCell id="node_332" value="id" style="ellipse;whiteSpace=wrap;html=1;align=center;fontStyle=4;" vertex="1" parent="1"><mxGeometry x="2340.0" y="805.0" width="80" height="40" as="geometry" /></mxCell>
         <mxCell id="edge_332" value="" style="endArrow=none;html=1;rounded=0;strokeColor=#000000;" edge="1" parent="1" source="node_1131" target="node_332"><mxGeometry relative="1" as="geometry" /></mxCell>
         <mxCell id="node_333" value="studentId (FK)" style="ellipse;whiteSpace=wrap;html=1;align=center;fontStyle=0;" vertex="1" parent="1"><mxGeometry x="2294.818776223048" y="898.8197778961636" width="80" height="40" as="geometry" /></mxCell>
@@ -545,6 +545,9 @@
         <mxCell id="edge_337" value="" style="endArrow=none;html=1;rounded=0;strokeColor=#000000;" edge="1" parent="1" source="node_1131" target="node_337"><mxGeometry relative="1" as="geometry" /></mxCell>
         <mxCell id="node_338" value="notes" style="ellipse;whiteSpace=wrap;html=1;align=center;fontStyle=0;" vertex="1" parent="1"><mxGeometry x="2294.818776223048" y="711.1802221038364" width="80" height="40" as="geometry" /></mxCell>
         <mxCell id="edge_338" value="" style="endArrow=none;html=1;rounded=0;strokeColor=#000000;" edge="1" parent="1" source="node_1131" target="node_338"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="node_1288" value="untuk periode" style="rhombus;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1"><mxGeometry x="1400" y="650" width="120" height="50" as="geometry" /></mxCell>
+        <mxCell id="edge_agg_to_rel" value="M" style="endArrow=none;html=1;rounded=0;strokeColor=#000000;" edge="1" parent="1" source="node_1238" target="node_1288"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="edge_rel_to_ay" value="1" style="endArrow=none;html=1;rounded=0;strokeColor=#000000;" edge="1" parent="1" source="node_1288" target="node_227"><mxGeometry relative="1" as="geometry" /></mxCell>
       </root>
     </mxGraphModel>
   </diagram>
