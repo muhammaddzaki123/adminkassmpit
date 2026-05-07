@@ -31,9 +31,8 @@ for match in re.finditer(r'model\s+(\w+)\s+\{(.*?)\}', data, re.DOTALL):
             is_fk_relation = '@relation' in line and 'fields: [' in line
 
             if is_fk_relation:
-                continue # Skip the Prisma relation field itself
+                continue
 
-            # User wants FKs back on entities AND on relationship diamonds
             if name.endswith('Id') and name != 'id':
                 type_type = 'FK'
             elif is_pk:
@@ -41,12 +40,10 @@ for match in re.finditer(r'model\s+(\w+)\s+\{(.*?)\}', data, re.DOTALL):
             else:
                 type_type = 'ATTR'
 
-            # Keep PKs, FKs, and regular ATTRs
             fields.append((name, type_type))
 
     entities_attributes[model_name] = fields
 
-# Pendaftaran (StudentClass) is a relationship, so extract its attributes
 rel_student_class_attrs = entities_attributes.pop("StudentClass", [])
 
 entities = list(entities_attributes.keys())
@@ -177,20 +174,23 @@ relationships = [
     # Billing Template & Item
     ("berisi item", "BillingTemplate", "BillingItem", "1:N", (1000, 1250)),
     ("template kelas", "Class", "BillingTemplate", "1:N", (1400, 950)),
-    ("acuan template", "BillingTemplate", "Billing", "1:N", (1600, 1250)), # ADDED MISSING RELATIONSHIP
+    ("acuan template", "BillingTemplate", "Billing", "1:N", (1600, 1250)),
 
     # Billing, Student, Payment, Installment
     ("memiliki tagihan", "Student", "Billing", "1:N", (2200, 950)),
-    ("membayar", "Billing", "Payment", "1:N", (2400, 1400)),
+    ("dilunasi melalui", "Billing", "Payment", "1:N", (2400, 1400)), # UPDATED LABEL
     ("memiliki cicilan", "Billing", "Installment", "1:N", (2000, 1400)),
     ("memiliki detail", "Payment", "PaymentDetail", "1:N", (2800, 1400)),
-    ("menghasilkan kas", "Payment", "CashLedgerEntry", "1:1", (2200, 1550)),
+    ("mencatat kas masuk", "Payment", "CashLedgerEntry", "1:1", (2200, 1550)),
 
     # User, Logs, Expenses
     ("membuat pengeluaran", "User", "Expense", "1:N", (1400, 1350)),
     ("memiliki kategori", "Expense", "ExpenseCategoryOption", "1:N", (1000, 1850)),
     ("mencatat log", "User", "ActivityLog", "1:N", (2200, 1350)),
     ("menerima notif", "User", "NotificationLog", "1:N", (2400, 1350)),
+
+    # ---> EXPENSE TO CASH LEDGER ENTRY (ADDED PER USER REQUEST) <---
+    ("mencatat kas keluar", "Expense", "CashLedgerEntry", "1:1", (1400, 1700)),
 
     # New Student
     ("transaksi pendaftaran", "NewStudent", "NewStudentTransaction", "1:N", (2800, 500))
@@ -221,7 +221,6 @@ if "Class" in entity_id_map:
 if "AcademicYear" in entity_id_map:
     nodes_xml += add_edge(f"edge_pend_ay", f"node_{entity_id_map['AcademicYear']}", f"node_{rel_pendaftaran_id}", styles["line"], value="1")
 
-# Include FK attributes in the M:N relationship attributes as well
 distribute_attributes(rel_pendaftaran_id, pos_pend[0], pos_pend[1], rel_student_class_attrs, e_width=120, e_height=50, radius=120)
 
 with open('docs/ERD-KASSMPIT-Chen-Indo.drawio', 'w') as f:
