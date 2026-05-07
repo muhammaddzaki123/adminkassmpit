@@ -46,7 +46,7 @@ for match in re.finditer(r'model\s+(\w+)\s+\{(.*?)\}', data, re.DOTALL):
 
 rel_student_class_attrs = entities_attributes.pop("StudentClass", [])
 
-entities = list(entities_attributes.keys())
+entities = list(entities_attributes.keys()) + ["Admin", "Headmaster", "Treasurer"]
 weak_entities = ["BillingItem", "PaymentDetail", "Installment"]
 
 drawio_header = '''<?xml version="1.0" encoding="UTF-8"?>
@@ -166,6 +166,18 @@ for role in ["Admin", "Headmaster", "Treasurer", "Student", "NewStudent"]:
         nodes_xml += add_edge(f"edge_isa_{role}", f"node_{entity_id_map[role]}", f"node_{isa_id}", styles["line"])
 
 relationships = [
+    # ADMIN TASKS
+    ("membuat tahun ajaran", "Admin", "AcademicYear", "1:N", (1000, 650)),
+    ("mengatur sistem", "Admin", "SystemSettings", "1:1", (2000, 650)),
+
+    # TREASURER (BENDAHARA) TASKS
+    ("membuat template", "Treasurer", "BillingTemplate", "1:N", (1400, 800)),
+    ("membuat pengeluaran", "Treasurer", "Expense", "1:N", (1400, 1100)),
+
+    # USER (Semua Peran)
+    ("mencatat log", "User", "ActivityLog", "1:N", (2200, 1350)),
+    ("menerima notif", "User", "NotificationLog", "1:N", (2400, 1350)),
+
     # Academic Year relations
     ("tahun ajaran tagihan", "AcademicYear", "Billing", "1:N", (1600, 1100)),
     ("template tahun ajaran", "AcademicYear", "BillingTemplate", "1:N", (1000, 950)),
@@ -178,19 +190,15 @@ relationships = [
 
     # Billing, Student, Payment, Installment
     ("memiliki tagihan", "Student", "Billing", "1:N", (2200, 950)),
-    ("dilunasi melalui", "Billing", "Payment", "1:N", (2400, 1400)), # UPDATED LABEL
+    ("dilunasi melalui", "Billing", "Payment", "1:N", (2400, 1400)),
     ("memiliki cicilan", "Billing", "Installment", "1:N", (2000, 1400)),
     ("memiliki detail", "Payment", "PaymentDetail", "1:N", (2800, 1400)),
     ("mencatat kas masuk", "Payment", "CashLedgerEntry", "1:1", (2200, 1550)),
 
-    # User, Logs, Expenses
-    ("membuat pengeluaran", "User", "Expense", "1:N", (1400, 1350)),
+    # Expense
     ("memiliki kategori", "Expense", "ExpenseCategoryOption", "1:N", (1000, 1850)),
-    ("mencatat log", "User", "ActivityLog", "1:N", (2200, 1350)),
-    ("menerima notif", "User", "NotificationLog", "1:N", (2400, 1350)),
-
-    # ---> EXPENSE TO CASH LEDGER ENTRY (ADDED PER USER REQUEST) <---
     ("mencatat kas keluar", "Expense", "CashLedgerEntry", "1:1", (1400, 1700)),
+    ("mencatat kas", "Treasurer", "CashLedgerEntry", "1:N", (1600, 1100)),
 
     # New Student
     ("transaksi pendaftaran", "NewStudent", "NewStudentTransaction", "1:N", (2800, 500))
