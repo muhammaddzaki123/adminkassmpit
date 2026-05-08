@@ -95,27 +95,27 @@ export default function AdminStudentsPage() {
       <AdminSidebar />
       <div className="lg:ml-64">
         <AdminHeader />
-        <main className="pt-16 p-4 sm:p-6 lg:p-8">
+        <main className="pt-16 lg:pt-20 p-4 sm:p-6 lg:p-8">
           <div className="max-w-7xl mx-auto">
-            <div className="flex justify-between items-center mb-6">
+            <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
               <div>
-                <h1 className="text-3xl font-bold text-neutral-900">Data Siswa</h1>
-                <p className="text-neutral-600 mt-1">Kelola data siswa resmi yang telah terdaftar</p>
+                <h1 className="text-2xl font-bold text-neutral-900 sm:text-3xl">Data Siswa</h1>
+                <p className="mt-1 text-sm text-neutral-600 sm:text-base">Kelola data siswa resmi yang telah terdaftar</p>
               </div>
-              <div className="flex gap-3">
-                <Button variant="outline" icon={<Download className="w-4 h-4" />}>
+              <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+                <Button variant="outline" icon={<Download className="w-4 h-4" />} className="w-full sm:w-auto">
                   Export Data
                 </Button>
-                <Button variant="outline" icon={<Upload className="w-4 h-4" />} onClick={() => router.push('/admin/students/import')}>
+                <Button variant="outline" icon={<Upload className="w-4 h-4" />} onClick={() => router.push('/admin/students/import')} className="w-full sm:w-auto">
                   Import Data
                 </Button>
-                <Button icon={<Plus className="w-4 h-4" />} onClick={() => router.push('/admin/students/create')}>
+                <Button icon={<Plus className="w-4 h-4" />} onClick={() => router.push('/admin/students/create')} className="w-full sm:w-auto">
                   Tambah Siswa
                 </Button>
               </div>
             </div>
 
-            <div className="grid grid-cols-4 gap-4 mb-6">
+            <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
               <Card className="p-4">
                 <div className="flex items-center gap-3">
                   <div className="p-3 bg-emerald-100 rounded-lg">
@@ -171,7 +171,7 @@ export default function AdminStudentsPage() {
             </div>
 
             <Card className="mb-6">
-              <div className="flex gap-4">
+              <div className="flex flex-col gap-4 md:flex-row">
                 <div className="flex-1">
                   <Input
                     placeholder="Cari nama atau NISN..."
@@ -180,7 +180,7 @@ export default function AdminStudentsPage() {
                     icon={<Search className="w-4 h-4" />}
                   />
                 </div>
-                <div className="w-48">
+                <div className="w-full md:w-48">
                   <Select
                     value={kelasFilter}
                     onChange={(e) => setKelasFilter(e.target.value)}
@@ -190,7 +190,7 @@ export default function AdminStudentsPage() {
                     ]}
                   />
                 </div>
-                <div className="w-48">
+                <div className="w-full md:w-48">
                   <Select
                     value={statusFilter}
                     onChange={(e) => setStatusFilter(e.target.value)}
@@ -250,12 +250,13 @@ export default function AdminStudentsPage() {
                             </Badge>
                           </td>
                           <td className="px-6 py-4 text-right">
-                            <div className="flex gap-2 justify-end">
+                            <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-end">
                               <Button
                                 variant="ghost"
                                 size="sm"
                                 icon={<Edit className="w-4 h-4" />}
                                 onClick={() => router.push(`/admin/students/${student.id}/edit`)}
+                                className="w-full sm:w-auto"
                               >
                                 Edit
                               </Button>
@@ -264,6 +265,7 @@ export default function AdminStudentsPage() {
                                 size="sm"
                                 icon={<Trash2 className="w-4 h-4 text-red-600" />}
                                 onClick={() => handleArchiveStudent(student)}
+                                className="w-full sm:w-auto"
                               >
                               </Button>
                             </div>
@@ -277,7 +279,7 @@ export default function AdminStudentsPage() {
             </Card>
 
             {filteredStudents.length > 0 && (
-              <div className="flex justify-between items-center mt-4">
+              <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <p className="text-sm text-neutral-600">
                   Menampilkan {filteredStudents.length} dari {students.length} siswa
                 </p>

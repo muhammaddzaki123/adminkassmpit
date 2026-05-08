@@ -144,15 +144,15 @@ export default function AdminRegistrationsPage() {
   }
 
   return (
-    <div className="p-8">
+    <div className="p-4 sm:p-6 lg:p-8">
       {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Pendaftaran Siswa Baru</h1>
-        <p className="text-gray-600">Kelola dan setujui pendaftaran siswa baru</p>
+      <div className="mb-6 flex flex-col gap-2">
+        <h1 className="text-2xl font-bold text-gray-900 sm:text-3xl">Pendaftaran Siswa Baru</h1>
+        <p className="text-sm text-gray-600 sm:text-base">Kelola dan setujui pendaftaran siswa baru</p>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <Card className="p-4">
           <div className="flex items-center justify-between">
             <div>
@@ -196,7 +196,7 @@ export default function AdminRegistrationsPage() {
 
       {/* Filters */}
       <Card className="p-4 mb-6">
-        <div className="flex flex-col md:flex-row gap-4">
+        <div className="flex flex-col gap-4 md:flex-row md:items-start">
           <div className="flex-1">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -210,7 +210,7 @@ export default function AdminRegistrationsPage() {
             </div>
           </div>
 
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Button
               variant={statusFilter === 'ALL' ? 'primary' : 'outline'}
               onClick={() => setStatusFilter('ALL')}
@@ -314,11 +314,12 @@ export default function AdminRegistrationsPage() {
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <div className="flex gap-2">
+                      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
                         <Button
                           size="sm"
                           variant="outline"
                           onClick={() => setSelectedRegistration(reg)}
+                          className="w-full sm:w-auto"
                         >
                           <Eye className="w-4 h-4" />
                         </Button>
@@ -328,6 +329,7 @@ export default function AdminRegistrationsPage() {
                               size="sm"
                               variant="primary"
                               onClick={() => handleApprove(reg.id)}
+                                className="w-full sm:w-auto"
                             >
                               <CheckCircle className="w-4 h-4 mr-1" />
                               Setujui
@@ -336,6 +338,7 @@ export default function AdminRegistrationsPage() {
                               size="sm"
                               variant="danger"
                               onClick={() => handleReject(reg.id)}
+                                className="w-full sm:w-auto"
                             >
                               <XCircle className="w-4 h-4 mr-1" />
                               Tolak
@@ -354,17 +357,17 @@ export default function AdminRegistrationsPage() {
 
       {/* Detail Modal */}
       {selectedRegistration && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <Card className="max-w-2xl w-full mx-4 p-6">
-            <div className="flex justify-between items-start mb-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <Card className="max-w-2xl w-full max-h-[90vh] overflow-y-auto p-4 sm:p-6">
+            <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <h2 className="text-xl font-bold text-gray-900">Detail Pendaftaran</h2>
-              <Button variant="outline" size="sm" onClick={() => setSelectedRegistration(null)}>
+              <Button variant="outline" size="sm" onClick={() => setSelectedRegistration(null)} className="w-full sm:w-auto">
                 ✕
               </Button>
             </div>
 
             <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div>
                   <p className="text-sm text-gray-600">NISN</p>
                   <p className="font-medium">{selectedRegistration.nisn}</p>

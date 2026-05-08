@@ -192,7 +192,7 @@ export default function AdminAcademicYearsPage() {
       <AdminSidebar />
       <div className="lg:ml-64">
         <AdminHeader />
-        <main className="pt-16 p-4 sm:p-6 lg:p-8">
+        <main className="pt-16 lg:pt-20 p-4 sm:p-6 lg:p-8">
           <div className="max-w-7xl mx-auto space-y-6">
             <div>
               <h1 className="text-3xl font-bold text-neutral-900">Kelola Tahun Ajaran</h1>

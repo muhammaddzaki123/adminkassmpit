@@ -145,19 +145,19 @@ export default function NewStudentsPage() {
       <AdminSidebar />
       <div className="lg:ml-64">
         <AdminHeader />
-        <main className="pt-16 p-4 sm:p-6 lg:p-8">
+        <main className="pt-16 lg:pt-20 p-4 sm:p-6 lg:p-8">
           <div className="max-w-7xl mx-auto">
-            <div className="flex justify-between items-center mb-6">
+            <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
               <div>
-                <h1 className="text-3xl font-bold text-neutral-900">Kelola Calon Siswa</h1>
-                <p className="text-neutral-600 mt-1">Verifikasi dan approve pendaftaran siswa baru</p>
+                <h1 className="text-2xl font-bold text-neutral-900 sm:text-3xl">Kelola Calon Siswa</h1>
+                <p className="mt-1 text-sm text-neutral-600 sm:text-base">Verifikasi dan approve pendaftaran siswa baru</p>
               </div>
-              <Button icon={<Plus className="w-4 h-4" />} onClick={() => router.push('/admin/students/create')}>
+              <Button icon={<Plus className="w-4 h-4" />} onClick={() => router.push('/admin/students/create')} className="w-full md:w-auto">
                 Tambah Siswa Langsung
               </Button>
             </div>
 
-            <div className="grid grid-cols-4 gap-4 mb-6">
+            <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
               <Card className="p-4">
                 <div className="flex items-center gap-3">
                   <div className="p-3 bg-amber-100 rounded-lg">
@@ -205,7 +205,7 @@ export default function NewStudentsPage() {
             </div>
 
             <Card className="mb-6">
-              <div className="flex gap-4">
+              <div className="flex flex-col gap-4 md:flex-row">
                 <div className="flex-1">
                   <Input
                     placeholder="Cari nama atau NISN..."
@@ -214,7 +214,7 @@ export default function NewStudentsPage() {
                     icon={<Search className="w-4 h-4" />}
                   />
                 </div>
-                <div className="w-56">
+                <div className="w-full md:w-56">
                   <Select
                     value={statusFilter}
                     onChange={(e) => setStatusFilter(e.target.value)}
@@ -274,7 +274,7 @@ export default function NewStudentsPage() {
                             </Badge>
                           </td>
                           <td className="px-6 py-4 text-right">
-                            <div className="flex gap-2 justify-end">
+                            <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-end">
                               {student.approvalStatus === 'PENDING' && (
                                 <>
                                   <Button
@@ -283,6 +283,7 @@ export default function NewStudentsPage() {
                                     icon={<CheckCircle className="w-4 h-4" />}
                                     onClick={() => handleApprove(student)}
                                     disabled={!student.registrationPaid}
+                                    className="w-full sm:w-auto"
                                   >
                                     Terima
                                   </Button>
@@ -294,6 +295,7 @@ export default function NewStudentsPage() {
                                       setSelectedStudent(student);
                                       setShowRejectModal(true);
                                     }}
+                                    className="w-full sm:w-auto"
                                   >
                                     Tolak
                                   </Button>
@@ -314,7 +316,7 @@ export default function NewStudentsPage() {
         {/* Approve Modal */}
         {showApproveModal && selectedStudent && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-            <Card className="w-full max-w-md">
+            <Card className="w-full max-w-md p-4 sm:p-6">
               <h3 className="text-xl font-bold mb-4">Terima Calon Siswa</h3>
               <p className="text-neutral-600 mb-4">
                 Menerima <strong>{selectedStudent.nama}</strong> sebagai siswa resmi?
@@ -326,7 +328,7 @@ export default function NewStudentsPage() {
                 onChange={(e) => setKelas(e.target.value)}
                 required
               />
-              <div className="flex gap-3 mt-6">
+              <div className="mt-6 flex flex-col gap-3 sm:flex-row">
                 <Button onClick={submitApproval} isLoading={isLoading} fullWidth>
                   Terima Siswa
                 </Button>
@@ -341,7 +343,7 @@ export default function NewStudentsPage() {
         {/* Reject Modal */}
         {showRejectModal && selectedStudent && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-            <Card className="w-full max-w-md">
+            <Card className="w-full max-w-md p-4 sm:p-6">
               <h3 className="text-xl font-bold mb-4">Tolak Pendaftaran</h3>
               <p className="text-neutral-600 mb-4">
                 Menolak pendaftaran <strong>{selectedStudent.nama}</strong>?
@@ -359,7 +361,7 @@ export default function NewStudentsPage() {
                   required
                 />
               </div>
-              <div className="flex gap-3 mt-6">
+              <div className="mt-6 flex flex-col gap-3 sm:flex-row">
                 <Button onClick={submitRejection} isLoading={isLoading} fullWidth variant="outline">
                   Tolak Pendaftaran
                 </Button>

@@ -124,7 +124,7 @@ export default function AdminDashboard() {
       <div className="lg:ml-64">
         <AdminHeader />
         
-        <main className="pt-16 p-4 sm:p-6 lg:p-8">
+        <main className="pt-16 lg:pt-20 p-4 sm:p-6 lg:p-8">
           <div className="max-w-7xl mx-auto space-y-8">
             <div className="animate-fade-in rounded-2xl border border-neutral-200 bg-white p-6 shadow-soft">
               <p className="text-xs uppercase tracking-[0.16em] text-neutral-500 mb-2">Pusat Kontrol Admin</p>

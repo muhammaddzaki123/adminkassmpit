@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Menu, Bell, User } from 'lucide-react';
+import { AdminSidebar } from '@/components/layout/AdminSidebar';
 
 interface AdminHeaderProps {
   onMenuClick?: () => void;
@@ -9,6 +10,7 @@ interface AdminHeaderProps {
 
 export function AdminHeader({ onMenuClick }: AdminHeaderProps) {
   const [userName, setUserName] = useState('Admin');
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     const userData = localStorage.getItem('user');
@@ -18,21 +20,41 @@ export function AdminHeader({ onMenuClick }: AdminHeaderProps) {
     }
   }, []);
 
+  const handleMenuClick = () => {
+    onMenuClick?.();
+    setIsMobileMenuOpen(true);
+  };
+
   return (
-    <header className="fixed top-0 left-0 right-0 lg:left-64 h-16 bg-white/95 backdrop-blur-xl border-b border-neutral-200 z-40 shadow-soft">
+    <>
+      {isMobileMenuOpen && (
+        <>
+          <div
+            className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm lg:hidden"
+            onClick={() => setIsMobileMenuOpen(false)}
+          />
+          <div className="fixed inset-y-0 left-0 z-50 lg:hidden">
+            <AdminSidebar mobile onNavigate={() => setIsMobileMenuOpen(false)} />
+          </div>
+        </>
+      )}
+
+      <header className="fixed top-0 left-0 right-0 lg:left-64 h-16 bg-white/95 backdrop-blur-xl border-b border-neutral-200 z-40 shadow-soft">
       <div className="h-full px-4 md:px-6 flex items-center justify-between">
         {/* Mobile Menu Button */}
         <button
-          onClick={onMenuClick}
+          type="button"
+          onClick={handleMenuClick}
           className="lg:hidden p-2 hover:bg-neutral-100 rounded-lg transition-colors"
+          aria-label="Buka menu admin"
         >
           <Menu className="w-6 h-6 text-neutral-700" />
         </button>
 
         <div className="hidden md:flex items-center flex-1 max-w-lg">
-          <div className="rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-2.5 leading-tight">
-            <p className="text-[11px] uppercase tracking-[0.14em] text-neutral-500">Panel Administrasi</p>
-            <p className="text-sm font-semibold text-neutral-800">SMP IT ANAK SOLEH MATARAM</p>
+          <div className="max-w-68 rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2 leading-tight">
+            <p className="text-[10px] uppercase tracking-[0.14em] text-neutral-500">Panel Administrasi</p>
+            <p className="text-xs font-semibold leading-tight text-neutral-800 sm:text-sm">SMP IT ANAK SOLEH MATARAM</p>
           </div>
         </div>
 
@@ -56,7 +78,8 @@ export function AdminHeader({ onMenuClick }: AdminHeaderProps) {
           </div>
         </div>
       </div>
-    </header>
+      </header>
+    </>
   );
 }
 

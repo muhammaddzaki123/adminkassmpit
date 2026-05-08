@@ -101,7 +101,7 @@ export default function ActivityLog() {
       <div className="lg:ml-64">
         <AdminHeader />
 
-        <main className="pt-16 p-4 sm:p-6 lg:p-8">
+        <main className="pt-16 lg:pt-20 p-4 sm:p-6 lg:p-8">
           <div className="max-w-7xl mx-auto space-y-6">
             {/* Header */}
             <Card className="bg-linear-to-r from-white via-primary-50 to-accent-50 border-primary-100 shadow-sm">
@@ -124,12 +124,12 @@ export default function ActivityLog() {
 
             {/* Filters */}
             <Card className="border-neutral-200 shadow-sm">
-              <div className="flex items-center gap-4">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-center">
                 <div className="w-9 h-9 rounded-lg bg-neutral-100 flex items-center justify-center">
                   <Filter className="w-5 h-5 text-neutral-600" />
                 </div>
-                <div className="flex gap-4 flex-1">
-                  <div className="w-48">
+                <div className="flex flex-col gap-4 flex-1 md:flex-row">
+                  <div className="w-full md:w-48">
                     <Select
                       value={filterType}
                       onChange={(e) => setFilterType(e.target.value)}
@@ -143,7 +143,7 @@ export default function ActivityLog() {
                       ]}
                     />
                   </div>
-                  <div className="w-48">
+                  <div className="w-full md:w-48">
                     <Select
                       value={filterStatus}
                       onChange={(e) => setFilterStatus(e.target.value)}
@@ -155,7 +155,7 @@ export default function ActivityLog() {
                     />
                   </div>
                 </div>
-                <span className="text-sm text-neutral-600">
+                <span className="text-sm text-neutral-600 lg:ml-auto">
                   {filteredLogs.length} aktivitas
                 </span>
               </div>
@@ -173,7 +173,7 @@ export default function ActivityLog() {
                 const actionBadge = getActionBadge(log.action);
                 return (
                   <Card key={log.id} className="hover:shadow-md transition-shadow border-neutral-200">
-                    <div className="flex items-start gap-4">
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
                       {/* Icon */}
                       <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
                         log.status === 'success' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'
@@ -183,7 +183,7 @@ export default function ActivityLog() {
 
                       {/* Content */}
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
+                        <div className="flex flex-wrap items-center gap-2 mb-1">
                           <span className="font-semibold text-neutral-900">{log.user}</span>
                           <Badge variant={actionBadge.color}>{actionBadge.label}</Badge>
                           <span className="text-neutral-600">→</span>
@@ -196,7 +196,7 @@ export default function ActivityLog() {
                       </div>
 
                       {/* Timestamp */}
-                      <div className="flex items-center gap-2 text-sm text-neutral-500">
+                      <div className="flex items-center gap-2 text-sm text-neutral-500 sm:justify-end">
                         <Calendar className="w-4 h-4" />
                         {formatTimestamp(log.timestamp)}
                       </div>

@@ -214,12 +214,12 @@ export default function UsersManagement() {
       <div className="lg:ml-64">
         <AdminHeader />
 
-        <main className="pt-16 p-4 sm:p-6 lg:p-8">
+        <main className="pt-16 lg:pt-20 p-4 sm:p-6 lg:p-8">
           <div className="max-w-7xl mx-auto">{/* Header */}
-            <div className="flex justify-between items-center mb-6">
+            <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
               <div>
-                <h1 className="text-3xl font-bold text-neutral-900">Kelola User</h1>
-                <p className="text-neutral-600 mt-1">Manajemen akun pengguna sistem</p>
+                <h1 className="text-2xl font-bold text-neutral-900 sm:text-3xl">Kelola User</h1>
+                <p className="mt-1 text-sm text-neutral-600 sm:text-base">Manajemen akun pengguna sistem</p>
               </div>
               <Button
                 icon={<Plus className="w-4 h-4" />}
@@ -227,6 +227,7 @@ export default function UsersManagement() {
                   resetForm();
                   setShowModal(true);
                 }}
+                className="w-full md:w-auto"
               >
                 Tambah User
               </Button>
@@ -234,7 +235,7 @@ export default function UsersManagement() {
 
           {/* Filters */}
           <Card className="mb-6">
-            <div className="flex gap-4">
+            <div className="flex flex-col gap-4 md:flex-row">
               <div className="flex-1">
                 <Input
                   placeholder="Cari nama, username, atau email..."
@@ -243,7 +244,7 @@ export default function UsersManagement() {
                   icon={<Search className="w-4 h-4" />}
                 />
               </div>
-              <div className="w-48">
+              <div className="w-full md:w-48">
                 <Select
                   value={roleFilter}
                   onChange={(e) => setRoleFilter(e.target.value)}
@@ -267,12 +268,13 @@ export default function UsersManagement() {
               data={filteredUsers}
               isLoading={isLoading}
               actions={(item) => (
-                <div className="flex gap-2 justify-end">
+                <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-end">
                   <Button
                     variant="ghost"
                     size="sm"
                     icon={item.isActive ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     onClick={() => toggleUserStatus(item.id, item.isActive)}
+                    className="w-full sm:w-auto"
                   >
                     {item.isActive ? 'Nonaktifkan' : 'Aktifkan'}
                   </Button>
@@ -281,6 +283,7 @@ export default function UsersManagement() {
                     size="sm"
                     icon={<Edit className="w-4 h-4" />}
                     onClick={() => handleEdit(item)}
+                    className="w-full sm:w-auto"
                   >
                     Edit
                   </Button>
@@ -289,6 +292,7 @@ export default function UsersManagement() {
                     size="sm"
                     icon={<Trash2 className="w-4 h-4" />}
                     onClick={() => handleDelete(item.id)}
+                    className="w-full sm:w-auto"
                   >
                     Hapus
                   </Button>
@@ -302,7 +306,7 @@ export default function UsersManagement() {
       {/* Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+          <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto p-4 sm:p-6">
             <h3 className="text-neutral-900 mb-6 text-xl font-bold">
               {editingUser ? 'Edit User' : 'Tambah User Baru'}
             </h3>
@@ -315,7 +319,7 @@ export default function UsersManagement() {
                 onChange={(e) => setFormData({ ...formData, nama: e.target.value })}
               />
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <Input
                   label="Username"
                   required
@@ -367,7 +371,7 @@ export default function UsersManagement() {
                 </label>
               </div>
 
-              <div className="flex gap-3 pt-4">
+              <div className="flex flex-col gap-3 pt-4 sm:flex-row">
                 <Button type="submit" fullWidth isLoading={isLoading}>
                   {editingUser ? 'Update' : 'Simpan'}
                 </Button>

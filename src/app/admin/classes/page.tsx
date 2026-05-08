@@ -174,12 +174,12 @@ export default function AdminClassesPage() {
       <AdminSidebar />
       <div className="lg:ml-64">
         <AdminHeader />
-        <main className="pt-16 p-4 sm:p-6 lg:p-8">
+        <main className="pt-16 lg:pt-20 p-4 sm:p-6 lg:p-8">
           <div className="max-w-7xl mx-auto space-y-6">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
               <div>
-                <h1 className="text-3xl font-bold text-neutral-900">Kelola Kelas</h1>
-                <p className="text-neutral-600 mt-1">Tambah dan hapus kelas untuk manajemen data siswa</p>
+                <h1 className="text-2xl font-bold text-neutral-900 sm:text-3xl">Kelola Kelas</h1>
+                <p className="mt-1 text-sm text-neutral-600 sm:text-base">Tambah dan hapus kelas untuk manajemen data siswa</p>
               </div>
             </div>
 
@@ -216,12 +216,12 @@ export default function AdminClassesPage() {
             </div>
 
             <Card>
-              <div className="flex items-center justify-between mb-4">
+              <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                 <h2 className="text-xl font-semibold text-neutral-900">
                   {editingId ? 'Edit Kelas' : 'Tambah Kelas Baru'}
                 </h2>
                 {editingId && (
-                  <Button variant="secondary" size="sm" onClick={resetForm}>
+                  <Button variant="secondary" size="sm" onClick={resetForm} className="w-full md:w-auto">
                     Batal Edit
                   </Button>
                 )}

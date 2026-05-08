@@ -215,7 +215,7 @@ export default function EditStudentPage() {
       <AdminSidebar />
       <div className="lg:ml-64">
         <AdminHeader />
-        <main className="pt-16 p-4 sm:p-6 lg:p-8">
+        <main className="pt-16 lg:pt-20 p-4 sm:p-6 lg:p-8">
           <div className="max-w-4xl mx-auto">
             <Button
               variant="ghost"

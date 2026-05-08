@@ -4,7 +4,12 @@ import { usePathname, useRouter } from 'next/navigation';
 import { Users, Shield, Activity, Settings, LogOut, LayoutDashboard, UserCog, UserPlus, GraduationCap, School, CalendarRange } from 'lucide-react';
 import { clearClientAuthSession } from '@/lib/client-auth';
 
-export function AdminSidebar() {
+interface AdminSidebarProps {
+  mobile?: boolean;
+  onNavigate?: () => void;
+}
+
+export function AdminSidebar({ mobile = false, onNavigate }: AdminSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
 
@@ -64,19 +69,32 @@ export function AdminSidebar() {
   const handleLogout = async () => {
     await clearClientAuthSession();
     router.push('/auth/login');
+    onNavigate?.();
+  };
+
+  const handleNavigate = (path: string) => {
+    router.push(path);
+    onNavigate?.();
   };
 
   return (
-    <div className="hidden lg:flex w-64 bg-white h-screen flex-col border-r border-neutral-200 shadow-soft fixed left-0 top-0 z-50">
+    <div
+      className={mobile
+        ? 'flex h-full w-64 flex-col border-r border-neutral-200 bg-white shadow-soft'
+        : 'hidden lg:flex w-64 bg-white h-screen flex-col border-r border-neutral-200 shadow-soft fixed left-0 top-0 z-50'
+      }
+    >
       {/* Logo & Brand */}
-      <div className="p-6 border-b border-neutral-100">
+      <div className="border-b border-neutral-100 px-4 py-5">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-linear-to-br from-primary to-primary-700 rounded-xl flex items-center justify-center shadow-soft">
-            <Shield className="w-6 h-6 text-white" />
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-linear-to-br from-primary to-primary-700 shadow-soft">
+            <Shield className="h-5 w-5 text-white" />
           </div>
-          <div>
-            <h1 className="font-bold text-neutral-900 text-xl leading-none tracking-tight">T-SMART</h1>
-            <p className="text-xs text-neutral-600 mt-1 font-medium">Admin Panel - ANAK SOLEH MATARAM</p>
+          <div className="min-w-0">
+            <h1 className="text-lg font-bold leading-none tracking-tight text-neutral-900">T-SMART</h1>
+            <p className="mt-1 max-w-44 text-[10px] font-medium leading-tight text-neutral-600 sm:text-[11px]">
+              Admin Panel - ANAK SOLEH MATARAM
+            </p>
           </div>
         </div>
       </div>
@@ -88,7 +106,7 @@ export function AdminSidebar() {
           return (
             <button
               key={item.path}
-              onClick={() => router.push(item.path)}
+              onClick={() => handleNavigate(item.path)}
               className={`flex items-center gap-3 px-4 py-3 w-full rounded-xl transition-all duration-200 font-semibold text-sm ${
                 isActive
                   ? 'bg-primary text-white shadow-soft'
