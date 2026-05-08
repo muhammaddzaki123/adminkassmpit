@@ -31,7 +31,6 @@ export default function UsersManagement() {
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
 
-  // Form state
   const [formData, setFormData] = useState({
     username: '',
     email: '',
@@ -160,13 +159,13 @@ export default function UsersManagement() {
   };
 
   const columns = [
-    { key: 'nama', label: 'Nama', width: '20%' },
-    { key: 'username', label: 'Username', width: '15%' },
-    { key: 'email', label: 'Email', width: '20%' },
+    { key: 'nama', label: 'Nama', width: '22%' },
+    { key: 'username', label: 'Username', width: '15%', hideOnMobile: true },
+    { key: 'email', label: 'Email', width: '20%', hideOnMobile: true },
     {
       key: 'role',
       label: 'Role',
-      width: '12%',
+      width: '13%',
       render: (item: User) => {
         const roleMap = {
           ADMIN: { label: 'Admin', color: 'primary' as const },
@@ -193,6 +192,7 @@ export default function UsersManagement() {
       key: 'createdAt',
       label: 'Dibuat',
       width: '13%',
+      hideOnMobile: true,
       render: (item: User) => new Date(item.createdAt).toLocaleDateString('id-ID'),
     },
   ];
@@ -208,7 +208,6 @@ export default function UsersManagement() {
     return matchSearch && matchRole;
   });
 
-  // quick stats for small stat boxes
   const totalUsers = users.length;
   const activeUsers = users.filter((u) => u.isActive).length;
   const inactiveUsers = users.filter((u) => !u.isActive).length;
@@ -220,12 +219,13 @@ export default function UsersManagement() {
       <div className="lg:ml-64">
         <AdminHeader />
 
-        <main className="pt-16 lg:pt-20 p-4 sm:p-6 lg:p-8">
-          <div className="max-w-7xl mx-auto">{/* Header */}
-            <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <main className="pt-16 lg:pt-20 p-3 sm:p-5 lg:p-8">
+          <div className="max-w-7xl mx-auto space-y-3 sm:space-y-5">
+            {/* Header */}
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <h1 className="text-2xl font-bold text-neutral-900 sm:text-3xl">Kelola User</h1>
-                <p className="mt-1 text-sm text-neutral-600 sm:text-base">Manajemen akun pengguna sistem</p>
+                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-neutral-900">Kelola User</h1>
+                <p className="mt-0.5 text-xs sm:text-sm text-neutral-600">Manajemen akun pengguna sistem</p>
               </div>
               <Button
                 icon={<Plus className="w-4 h-4" />}
@@ -233,178 +233,175 @@ export default function UsersManagement() {
                   resetForm();
                   setShowModal(true);
                 }}
-                className="w-full md:w-auto"
+                className="w-full sm:w-auto"
               >
                 Tambah User
               </Button>
             </div>
 
-          {/* Small stat boxes */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-            <SmallStatCard title="Total Users" value={totalUsers.toString()} icon={<Users className="w-4 h-4" />} color="primary" />
-            <SmallStatCard title="Akun Aktif" value={activeUsers.toString()} icon={<UserCheck className="w-4 h-4" />} color="accent" />
-            <SmallStatCard title="Non-Aktif" value={inactiveUsers.toString()} icon={<UserX className="w-4 h-4" />} color="danger" />
-            <SmallStatCard title="Admin" value={adminUsers.toString()} icon={<Shield className="w-4 h-4" />} color="info" />
-          </div>
-
-          {/* Filters */}
-          <Card className="mb-6">
-            <div className="flex flex-col gap-4 md:flex-row">
-              <div className="flex-1">
-                <Input
-                  placeholder="Cari nama, username, atau email..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  icon={<Search className="w-4 h-4" />}
-                />
-              </div>
-              <div className="w-full md:w-48">
-                <Select
-                  value={roleFilter}
-                  onChange={(e) => setRoleFilter(e.target.value)}
-                  options={[
-                    { value: 'all', label: 'Semua Role' },
-                    { value: 'ADMIN', label: 'Admin' },
-                    { value: 'TREASURER', label: 'Bendahara' },
-                    { value: 'HEADMASTER', label: 'Kepala Sekolah' },
-                    { value: 'STUDENT', label: 'Siswa' },
-                    { value: 'NEW_STUDENT', label: 'Calon Siswa' },
-                  ]}
-                />
-              </div>
+            {/* Stats */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3">
+              <SmallStatCard title="Total Users" value={totalUsers.toString()} icon={<Users className="w-4 h-4" />} color="primary" />
+              <SmallStatCard title="Akun Aktif" value={activeUsers.toString()} icon={<UserCheck className="w-4 h-4" />} color="accent" />
+              <SmallStatCard title="Non-Aktif" value={inactiveUsers.toString()} icon={<UserX className="w-4 h-4" />} color="danger" />
+              <SmallStatCard title="Admin" value={adminUsers.toString()} icon={<Shield className="w-4 h-4" />} color="info" />
             </div>
-          </Card>
 
-          {/* Table */}
-          <Card padding="none">
-            <Table
-              columns={columns}
-              data={filteredUsers}
-              isLoading={isLoading}
-              actions={(item) => (
-                <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-end">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    icon={item.isActive ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    onClick={() => toggleUserStatus(item.id, item.isActive)}
-                    className="w-full sm:w-auto"
-                  >
-                    {item.isActive ? 'Nonaktifkan' : 'Aktifkan'}
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    icon={<Edit className="w-4 h-4" />}
-                    onClick={() => handleEdit(item)}
-                    className="w-full sm:w-auto"
-                  >
-                    Edit
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    icon={<Trash2 className="w-4 h-4" />}
-                    onClick={() => handleDelete(item.id)}
-                    className="w-full sm:w-auto"
-                  >
-                    Hapus
-                  </Button>
+            {/* Filters */}
+            <Card padding="sm">
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <div className="flex-1">
+                  <Input
+                    placeholder="Cari nama, username, atau email..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    icon={<Search className="w-4 h-4" />}
+                  />
                 </div>
-              )}
-            />
-          </Card>
-        </div>
-      </main>
-
-      {/* Modal */}
-      {showModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto p-4 sm:p-6">
-            <h3 className="text-neutral-900 mb-6 text-xl font-bold">
-              {editingUser ? 'Edit User' : 'Tambah User Baru'}
-            </h3>
-
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <Input
-                label="Nama Lengkap"
-                required
-                value={formData.nama}
-                onChange={(e) => setFormData({ ...formData, nama: e.target.value })}
-              />
-
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <Input
-                  label="Username"
-                  required
-                  value={formData.username}
-                  onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                  disabled={!!editingUser}
-                />
-
-                <Input
-                  label="Email"
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                />
+                <div className="w-full sm:w-44">
+                  <Select
+                    value={roleFilter}
+                    onChange={(e) => setRoleFilter(e.target.value)}
+                    options={[
+                      { value: 'all', label: 'Semua Role' },
+                      { value: 'ADMIN', label: 'Admin' },
+                      { value: 'TREASURER', label: 'Bendahara' },
+                      { value: 'HEADMASTER', label: 'Kepala Sekolah' },
+                      { value: 'STUDENT', label: 'Siswa' },
+                      { value: 'NEW_STUDENT', label: 'Calon Siswa' },
+                    ]}
+                  />
+                </div>
               </div>
+            </Card>
 
-              <Input
-                label={editingUser ? 'Password Baru (kosongkan jika tidak diubah)' : 'Password'}
-                type="password"
-                required={!editingUser}
-                value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                icon={<Lock className="w-4 h-4" />}
+            {/* Table */}
+            <Card padding="none">
+              <Table
+                columns={columns}
+                data={filteredUsers}
+                isLoading={isLoading}
+                actions={(item) => (
+                  <div className="flex items-center justify-end gap-1 sm:gap-2">
+                    {/* Mobile: icon-only buttons */}
+                    <button
+                      title={item.isActive ? 'Nonaktifkan' : 'Aktifkan'}
+                      onClick={() => toggleUserStatus(item.id, item.isActive)}
+                      className="p-1.5 sm:p-2 rounded-lg hover:bg-neutral-100 text-neutral-600 transition-colors"
+                    >
+                      {item.isActive ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                    <button
+                      title="Edit"
+                      onClick={() => handleEdit(item)}
+                      className="p-1.5 sm:p-2 rounded-lg hover:bg-primary-50 text-primary transition-colors"
+                    >
+                      <Edit className="w-4 h-4" />
+                    </button>
+                    <button
+                      title="Hapus"
+                      onClick={() => handleDelete(item.id)}
+                      className="p-1.5 sm:p-2 rounded-lg hover:bg-red-50 text-red-600 transition-colors"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
               />
+            </Card>
+          </div>
+        </main>
 
-              <Select
-                label="Role"
-                value={formData.role}
-                onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                options={[
-                  { value: 'ADMIN', label: 'Admin' },
-                  { value: 'TREASURER', label: 'Bendahara' },
-                  { value: 'HEADMASTER', label: 'Kepala Sekolah' },
-                  { value: 'STUDENT', label: 'Siswa' },
-                  { value: 'NEW_STUDENT', label: 'Calon Siswa' },
-                ]}
-              />
+        {/* Modal */}
+        {showModal && (
+          <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center p-0 sm:p-4 z-50">
+            <Card className="w-full sm:max-w-2xl max-h-[92vh] overflow-y-auto rounded-t-2xl sm:rounded-2xl !rounded-b-none sm:!rounded-b-2xl">
+              <div className="p-4 sm:p-6">
+                <h3 className="text-neutral-900 mb-5 text-lg font-bold">
+                  {editingUser ? 'Edit User' : 'Tambah User Baru'}
+                </h3>
 
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  id="isActive"
-                  checked={formData.isActive}
-                  onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
-                  className="rounded border-neutral-300 text-primary focus:ring-primary"
-                />
-                <label htmlFor="isActive" className="text-sm text-neutral-700">
-                  Akun Aktif
-                </label>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <Input
+                    label="Nama Lengkap"
+                    required
+                    value={formData.nama}
+                    onChange={(e) => setFormData({ ...formData, nama: e.target.value })}
+                  />
+
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <Input
+                      label="Username"
+                      required
+                      value={formData.username}
+                      onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                      disabled={!!editingUser}
+                    />
+
+                    <Input
+                      label="Email"
+                      type="email"
+                      value={formData.email}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    />
+                  </div>
+
+                  <Input
+                    label={editingUser ? 'Password Baru (kosongkan jika tidak diubah)' : 'Password'}
+                    type="password"
+                    required={!editingUser}
+                    value={formData.password}
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    icon={<Lock className="w-4 h-4" />}
+                  />
+
+                  <Select
+                    label="Role"
+                    value={formData.role}
+                    onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                    options={[
+                      { value: 'ADMIN', label: 'Admin' },
+                      { value: 'TREASURER', label: 'Bendahara' },
+                      { value: 'HEADMASTER', label: 'Kepala Sekolah' },
+                      { value: 'STUDENT', label: 'Siswa' },
+                      { value: 'NEW_STUDENT', label: 'Calon Siswa' },
+                    ]}
+                  />
+
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      id="isActive"
+                      checked={formData.isActive}
+                      onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
+                      className="rounded border-neutral-300 text-primary focus:ring-primary"
+                    />
+                    <label htmlFor="isActive" className="text-sm text-neutral-700">
+                      Akun Aktif
+                    </label>
+                  </div>
+
+                  <div className="flex flex-col gap-2 pt-3 sm:flex-row">
+                    <Button type="submit" fullWidth isLoading={isLoading}>
+                      {editingUser ? 'Update' : 'Simpan'}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      fullWidth
+                      onClick={() => {
+                        setShowModal(false);
+                        resetForm();
+                      }}
+                    >
+                      Batal
+                    </Button>
+                  </div>
+                </form>
               </div>
-
-              <div className="flex flex-col gap-3 pt-4 sm:flex-row">
-                <Button type="submit" fullWidth isLoading={isLoading}>
-                  {editingUser ? 'Update' : 'Simpan'}
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  fullWidth
-                  onClick={() => {
-                    setShowModal(false);
-                    resetForm();
-                  }}
-                >
-                  Batal
-                </Button>
-              </div>
-            </form>
-          </Card>
-        </div>
-      )}
+            </Card>
+          </div>
+        )}
       </div>
     </div>
   );

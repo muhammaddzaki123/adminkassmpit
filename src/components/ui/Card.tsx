@@ -16,9 +16,9 @@ interface CardProps {
 export function Card({ children, className, padding = 'lg', onClick }: CardProps) {
   const paddings = {
     none: 'p-0',
-    sm: 'p-4',
-    md: 'p-6',
-    lg: 'p-8',
+    sm: 'p-3 sm:p-4',
+    md: 'p-4 sm:p-5',
+    lg: 'p-4 sm:p-6 lg:p-8',
   };
 
   return (

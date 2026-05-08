@@ -124,131 +124,114 @@ export default function AdminDashboard() {
       <div className="lg:ml-64">
         <AdminHeader />
         
-        <main className="pt-16 lg:pt-20 p-4 sm:p-6 lg:p-8">
-          <div className="max-w-7xl mx-auto space-y-8">
-            <div className="animate-fade-in rounded-2xl border border-neutral-200 bg-white p-6 shadow-soft">
-              <p className="text-xs uppercase tracking-[0.16em] text-neutral-500 mb-2">Pusat Kontrol Admin</p>
-              <h1 className="text-3xl font-bold text-neutral-900 mb-2">
+        <main className="pt-16 lg:pt-20 p-3 sm:p-5 lg:p-8">
+          <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">
+            {/* Welcome Banner — compact on mobile */}
+            <div className="animate-fade-in rounded-xl sm:rounded-2xl border border-neutral-200 bg-white p-3 sm:p-5 shadow-soft">
+              <p className="text-[10px] sm:text-xs uppercase tracking-[0.16em] text-neutral-500 mb-1">Pusat Kontrol Admin</p>
+              <h1 className="text-xl sm:text-3xl font-bold text-neutral-900 mb-1">
                 Selamat Datang, {user.nama}
               </h1>
-              <p className="text-neutral-600">Kelola pengguna, otorisasi, dan audit aktivitas untuk SMP IT ANAK SOLEH MATARAM.</p>
+              <p className="text-xs sm:text-sm text-neutral-600 leading-snug">
+                Kelola pengguna, otorisasi, dan audit aktivitas untuk SMP IT ANAK SOLEH MATARAM.
+              </p>
             </div>
 
-            {/* Stats Cards */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 animate-slide-up">
+            {/* Stats Cards — 2x2 grid */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 animate-slide-up">
               <SmallStatCard
                 title="Total Users"
                 value={stats.total.toString()}
-                icon={<Users className="w-6 h-6" />}
+                icon={<Users className="w-5 h-5" />}
                 color="primary"
               />
               <SmallStatCard
                 title="Akun Aktif"
                 value={stats.active.toString()}
-                icon={<UserCheck className="w-6 h-6" />}
+                icon={<UserCheck className="w-5 h-5" />}
                 color="accent"
               />
               <SmallStatCard
-                title="Akun Non-Aktif"
+                title="Non-Aktif"
                 value={stats.inactive.toString()}
-                icon={<UserX className="w-6 h-6" />}
+                icon={<UserX className="w-5 h-5" />}
                 color="danger"
               />
               <SmallStatCard
-                title="Administrator"
+                title="Admin"
                 value={stats.byRole.admin.toString()}
-                icon={<Shield className="w-6 h-6" />}
+                icon={<Shield className="w-5 h-5" />}
                 color="info"
               />
             </div>
 
-            {/* Role Distribution & Quick Actions */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Role Distribution & Quick Actions — 2 kolom di semua ukuran */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               {/* Role Distribution */}
-              <Card>
-                <h3 className="text-lg font-semibold mb-4 text-neutral-900 flex items-center gap-2">
-                  <TrendingUp className="w-5 h-5 text-primary" />
+              <Card padding="md">
+                <h3 className="text-sm sm:text-base font-semibold mb-3 text-neutral-900 flex items-center gap-2">
+                  <TrendingUp className="w-4 h-4 text-primary" />
                   Distribusi Role
                 </h3>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between p-3 bg-neutral-50 rounded-xl">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
-                        <Shield className="w-5 h-5 text-red-600" />
+                <div className="space-y-2">
+                  {[
+                    { label: 'Admin', count: stats.byRole.admin, bg: 'bg-red-100', icon: <Shield className="w-4 h-4 text-red-600" /> },
+                    { label: 'Bendahara', count: stats.byRole.treasurer, bg: 'bg-primary-100', icon: <Users className="w-4 h-4 text-primary" /> },
+                    { label: 'Kepsek', count: stats.byRole.headmaster, bg: 'bg-accent-100', icon: <Shield className="w-4 h-4 text-accent" /> },
+                    { label: 'Orang Tua', count: stats.byRole.parent, bg: 'bg-blue-100', icon: <Users className="w-4 h-4 text-blue-600" /> },
+                  ].map((item) => (
+                    <div key={item.label} className="flex items-center justify-between p-2 sm:p-3 bg-neutral-50 rounded-lg">
+                      <div className="flex items-center gap-2">
+                        <div className={`w-7 h-7 sm:w-8 sm:h-8 ${item.bg} rounded-md flex items-center justify-center flex-shrink-0`}>
+                          {item.icon}
+                        </div>
+                        <span className="text-xs sm:text-sm font-medium text-neutral-900">{item.label}</span>
                       </div>
-                      <span className="font-medium text-neutral-900">Admin</span>
+                      <span className="text-lg sm:text-2xl font-bold text-neutral-900">{item.count}</span>
                     </div>
-                    <span className="text-2xl font-bold text-neutral-900">{stats.byRole.admin}</span>
-                  </div>
-                  <div className="flex items-center justify-between p-3 bg-neutral-50 rounded-xl">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-primary-100 rounded-lg flex items-center justify-center">
-                        <Users className="w-5 h-5 text-primary" />
-                      </div>
-                      <span className="font-medium text-neutral-900">Bendahara</span>
-                    </div>
-                    <span className="text-2xl font-bold text-neutral-900">{stats.byRole.treasurer}</span>
-                  </div>
-                  <div className="flex items-center justify-between p-3 bg-neutral-50 rounded-xl">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-accent-100 rounded-lg flex items-center justify-center">
-                        <Shield className="w-5 h-5 text-accent" />
-                      </div>
-                      <span className="font-medium text-neutral-900">Kepala Sekolah</span>
-                    </div>
-                    <span className="text-2xl font-bold text-neutral-900">{stats.byRole.headmaster}</span>
-                  </div>
-                  <div className="flex items-center justify-between p-3 bg-neutral-50 rounded-xl">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                        <Users className="w-5 h-5 text-blue-600" />
-                      </div>
-                      <span className="font-medium text-neutral-900">Orang Tua</span>
-                    </div>
-                    <span className="text-2xl font-bold text-neutral-900">{stats.byRole.parent}</span>
-                  </div>
+                  ))}
                 </div>
               </Card>
 
               {/* Quick Actions */}
-              <Card>
-                <h3 className="text-lg font-semibold mb-4 text-neutral-900">Menu Admin</h3>
-                <div className="space-y-3">
+              <Card padding="md">
+                <h3 className="text-sm sm:text-base font-semibold mb-3 text-neutral-900">Menu Admin</h3>
+                <div className="space-y-2">
                   <button
                     onClick={() => router.push('/admin/users')}
-                    className="w-full p-4 bg-linear-to-br from-primary to-primary-700 text-white rounded-xl hover:shadow-lg transition-all hover:scale-105 text-left"
+                    className="w-full p-3 sm:p-4 bg-linear-to-br from-primary to-primary-700 text-white rounded-xl hover:shadow-lg transition-all hover:scale-[1.02] text-left"
                   >
-                    <div className="flex items-center gap-3">
-                      <Users className="w-6 h-6" />
+                    <div className="flex items-center gap-2 sm:gap-3">
+                      <Users className="w-5 h-5 flex-shrink-0" />
                       <div>
-                        <h4 className="font-bold mb-1">Kelola User</h4>
-                        <p className="text-sm opacity-90">Tambah, edit, hapus akun pengguna</p>
+                        <h4 className="font-bold text-sm mb-0.5">Kelola User</h4>
+                        <p className="text-xs opacity-90 leading-tight">Tambah, edit, hapus akun</p>
                       </div>
                     </div>
                   </button>
 
                   <button
                     onClick={() => router.push('/admin/roles')}
-                    className="w-full p-4 bg-linear-to-br from-accent to-accent-700 text-white rounded-xl hover:shadow-lg transition-all hover:scale-105 text-left"
+                    className="w-full p-3 sm:p-4 bg-linear-to-br from-accent to-accent-700 text-white rounded-xl hover:shadow-lg transition-all hover:scale-[1.02] text-left"
                   >
-                    <div className="flex items-center gap-3">
-                      <Shield className="w-6 h-6" />
+                    <div className="flex items-center gap-2 sm:gap-3">
+                      <Shield className="w-5 h-5 flex-shrink-0" />
                       <div>
-                        <h4 className="font-bold mb-1">Role Management</h4>
-                        <p className="text-sm opacity-90">Atur hak akses pengguna</p>
+                        <h4 className="font-bold text-sm mb-0.5">Role Management</h4>
+                        <p className="text-xs opacity-90 leading-tight">Atur hak akses pengguna</p>
                       </div>
                     </div>
                   </button>
 
                   <button
                     onClick={() => router.push('/admin/activity-log')}
-                    className="w-full p-4 bg-linear-to-br from-blue-500 to-blue-700 text-white rounded-xl hover:shadow-lg transition-all hover:scale-105 text-left"
+                    className="w-full p-3 sm:p-4 bg-linear-to-br from-blue-500 to-blue-700 text-white rounded-xl hover:shadow-lg transition-all hover:scale-[1.02] text-left"
                   >
-                    <div className="flex items-center gap-3">
-                      <Activity className="w-6 h-6" />
+                    <div className="flex items-center gap-2 sm:gap-3">
+                      <Activity className="w-5 h-5 flex-shrink-0" />
                       <div>
-                        <h4 className="font-bold mb-1">Activity Log</h4>
-                        <p className="text-sm opacity-90">Pantau aktivitas pengguna</p>
+                        <h4 className="font-bold text-sm mb-0.5">Activity Log</h4>
+                        <p className="text-xs opacity-90 leading-tight">Pantau aktivitas pengguna</p>
                       </div>
                     </div>
                   </button>
@@ -256,23 +239,27 @@ export default function AdminDashboard() {
               </Card>
             </div>
 
-            {/* Recent Activities */}
-            <Card>
-              <h3 className="text-lg font-semibold mb-4 text-neutral-900 flex items-center gap-2">
-                <Activity className="w-5 h-5 text-primary" />
+            {/* Recent Activities — dibatasi tinggi & scrollable */}
+            <Card padding="md">
+              <h3 className="text-sm sm:text-base font-semibold mb-3 text-neutral-900 flex items-center gap-2">
+                <Activity className="w-4 h-4 text-primary" />
                 Aktivitas Terbaru
               </h3>
-              <div className="space-y-3">
-                {recentActivities.map((activity) => (
-                  <div key={activity.id} className="flex items-start gap-3 p-3 bg-neutral-50 rounded-xl hover:bg-neutral-100 transition-colors">
-                    <div className="w-2 h-2 bg-primary rounded-full mt-2"></div>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-neutral-900">{activity.action}</p>
-                      <p className="text-xs text-neutral-600 mt-1">{activity.time}</p>
+              {recentActivities.length === 0 ? (
+                <p className="text-xs text-neutral-500 text-center py-4">Belum ada aktivitas</p>
+              ) : (
+                <div className="space-y-2 max-h-52 overflow-y-auto">
+                  {recentActivities.map((activity) => (
+                    <div key={activity.id} className="flex items-start gap-2 p-2 sm:p-3 bg-neutral-50 rounded-lg hover:bg-neutral-100 transition-colors">
+                      <div className="w-1.5 h-1.5 bg-primary rounded-full mt-1.5 flex-shrink-0"></div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs sm:text-sm font-medium text-neutral-900 truncate">{activity.action}</p>
+                        <p className="text-[10px] sm:text-xs text-neutral-500 mt-0.5">{activity.time}</p>
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </Card>
           </div>
         </main>

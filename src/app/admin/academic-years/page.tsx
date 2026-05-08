@@ -141,6 +141,7 @@ export default function AdminAcademicYearsPage() {
       isActive: item.isActive,
       description: item.description || '',
     });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleSetActive = async (item: AcademicYearItem) => {
@@ -192,24 +193,36 @@ export default function AdminAcademicYearsPage() {
       <AdminSidebar />
       <div className="lg:ml-64">
         <AdminHeader />
-        <main className="pt-16 lg:pt-20 p-4 sm:p-6 lg:p-8">
-          <div className="max-w-7xl mx-auto space-y-6">
+        <main className="pt-16 lg:pt-20 p-3 sm:p-5 lg:p-8">
+          <div className="max-w-7xl mx-auto space-y-3 sm:space-y-5">
+            {/* Page Header */}
             <div>
-              <h1 className="text-3xl font-bold text-neutral-900">Kelola Tahun Ajaran</h1>
-              <p className="text-neutral-600 mt-1">Atur periode tahun ajaran dan tandai periode aktif</p>
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-neutral-900">Kelola Tahun Ajaran</h1>
+              <p className="mt-0.5 text-xs sm:text-sm text-neutral-600">Atur periode tahun ajaran dan tandai periode aktif</p>
             </div>
 
+            {/* Message */}
             {message && (
-              <Card padding="md" className={message.type === 'success' ? 'border-primary-300 bg-primary-50' : 'border-red-300 bg-red-50'}>
-                <p className={message.type === 'success' ? 'text-primary-800' : 'text-red-800'}>{message.text}</p>
+              <Card padding="sm" className={message.type === 'success' ? 'border-primary-300 bg-primary-50' : 'border-red-300 bg-red-50'}>
+                <p className={`text-sm ${message.type === 'success' ? 'text-primary-800' : 'text-red-800'}`}>{message.text}</p>
               </Card>
             )}
 
+            {/* Form */}
             <Card>
-              <h2 className="text-xl font-semibold text-neutral-900 mb-4">
-                {editingId ? 'Edit Tahun Ajaran' : 'Tambah Tahun Ajaran'}
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
+              <div className="mb-3 flex items-center justify-between gap-2">
+                <h2 className="text-base sm:text-lg font-semibold text-neutral-900">
+                  {editingId ? 'Edit Tahun Ajaran' : 'Tambah Tahun Ajaran'}
+                </h2>
+                {editingId && (
+                  <Button variant="secondary" size="sm" onClick={resetForm}>
+                    Batal
+                  </Button>
+                )}
+              </div>
+
+              {/* Form: 2 kolom di mobile, lebih banyak di desktop */}
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
                 <Input
                   label="Label Tahun"
                   placeholder="2026/2027"
@@ -234,61 +247,74 @@ export default function AdminAcademicYearsPage() {
                   value={form.description}
                   onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))}
                 />
-                <div className="flex items-end gap-2">
-                  <Button onClick={handleSave} isLoading={saving} icon={<Plus className="w-4 h-4" />}>
-                    {editingId ? 'Simpan' : 'Tambah'}
-                  </Button>
-                  {editingId && (
-                    <Button variant="secondary" onClick={resetForm}>
-                      Batal
-                    </Button>
-                  )}
-                </div>
               </div>
-              <label className="inline-flex items-center gap-2 mt-4 text-sm text-neutral-700">
-                <input
-                  type="checkbox"
-                  checked={form.isActive}
-                  onChange={(e) => setForm((prev) => ({ ...prev, isActive: e.target.checked }))}
-                />
-                Jadikan tahun ajaran aktif
-              </label>
+
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-3">
+                <label className="inline-flex items-center gap-2 text-sm text-neutral-700 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={form.isActive}
+                    onChange={(e) => setForm((prev) => ({ ...prev, isActive: e.target.checked }))}
+                    className="rounded border-neutral-300 text-primary focus:ring-primary"
+                  />
+                  Jadikan tahun ajaran aktif
+                </label>
+                <Button onClick={handleSave} isLoading={saving} icon={<Plus className="w-4 h-4" />} className="w-full sm:w-auto">
+                  {editingId ? 'Simpan Perubahan' : 'Tambah'}
+                </Button>
+              </div>
             </Card>
 
+            {/* Daftar Tahun Ajaran */}
             <Card>
-              <h2 className="text-xl font-semibold text-neutral-900 mb-4">Daftar Tahun Ajaran</h2>
+              <h2 className="text-base sm:text-lg font-semibold text-neutral-900 mb-3">Daftar Tahun Ajaran</h2>
               {loading ? (
-                <p className="text-sm text-neutral-600">Memuat tahun ajaran...</p>
+                <p className="text-sm text-neutral-600 py-4 text-center">Memuat tahun ajaran...</p>
               ) : items.length === 0 ? (
-                <p className="text-sm text-neutral-600">Belum ada data tahun ajaran.</p>
+                <p className="text-sm text-neutral-600 py-4 text-center">Belum ada data tahun ajaran.</p>
               ) : (
-                <div className="space-y-3">
+                <div className="space-y-2">
                   {items.map((item) => (
-                    <div key={item.id} className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 p-4 bg-neutral-50 rounded-lg">
-                      <div>
-                        <p className="font-medium text-neutral-900 flex items-center gap-2">
-                          <CalendarRange className="w-4 h-4" />
+                    <div key={item.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-3 bg-neutral-50 rounded-lg">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-neutral-900 text-sm flex items-center gap-1.5">
+                          <CalendarRange className="w-3.5 h-3.5 flex-shrink-0 text-neutral-500" />
                           {item.year}
                         </p>
-                        <p className="text-sm text-neutral-600 mt-1">
-                          {new Date(item.startDate).toLocaleDateString('id-ID')} - {new Date(item.endDate).toLocaleDateString('id-ID')} • Siswa: {item.studentCount} • Tagihan: {item.billingCount}
+                        <p className="text-xs text-neutral-500 mt-0.5">
+                          {new Date(item.startDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
+                          {' – '}
+                          {new Date(item.endDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
+                          {' · '}{item.studentCount} siswa · {item.billingCount} tagihan
                         </p>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1.5 flex-shrink-0">
                         <Badge variant={item.isActive ? 'success' : 'default'}>
                           {item.isActive ? 'Aktif' : 'Nonaktif'}
                         </Badge>
                         {!item.isActive && (
-                          <Button size="sm" variant="secondary" icon={<CheckCircle className="w-4 h-4" />} onClick={() => handleSetActive(item)}>
-                            Aktifkan
-                          </Button>
+                          <button
+                            title="Aktifkan"
+                            onClick={() => handleSetActive(item)}
+                            className="p-1.5 rounded-lg hover:bg-green-50 text-green-600 transition-colors"
+                          >
+                            <CheckCircle className="w-4 h-4" />
+                          </button>
                         )}
-                        <Button size="sm" variant="secondary" icon={<Edit className="w-4 h-4" />} onClick={() => handleEdit(item)}>
-                          Edit
-                        </Button>
-                        <Button size="sm" variant="danger" icon={<Trash2 className="w-4 h-4" />} onClick={() => handleDelete(item)}>
-                          Hapus
-                        </Button>
+                        <button
+                          title="Edit"
+                          onClick={() => handleEdit(item)}
+                          className="p-1.5 rounded-lg hover:bg-primary-50 text-primary transition-colors"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </button>
+                        <button
+                          title="Hapus"
+                          onClick={() => handleDelete(item)}
+                          className="p-1.5 rounded-lg hover:bg-red-50 text-red-600 transition-colors"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
                       </div>
                     </div>
                   ))}

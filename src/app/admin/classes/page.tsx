@@ -174,59 +174,62 @@ export default function AdminClassesPage() {
       <AdminSidebar />
       <div className="lg:ml-64">
         <AdminHeader />
-        <main className="pt-16 lg:pt-20 p-4 sm:p-6 lg:p-8">
-          <div className="max-w-7xl mx-auto space-y-6">
-            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-              <div>
-                <h1 className="text-2xl font-bold text-neutral-900 sm:text-3xl">Kelola Kelas</h1>
-                <p className="mt-1 text-sm text-neutral-600 sm:text-base">Tambah dan hapus kelas untuk manajemen data siswa</p>
-              </div>
+        <main className="pt-16 lg:pt-20 p-3 sm:p-5 lg:p-8">
+          <div className="max-w-7xl mx-auto space-y-3 sm:space-y-5">
+            {/* Page Header */}
+            <div>
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-neutral-900">Kelola Kelas</h1>
+              <p className="mt-0.5 text-xs sm:text-sm text-neutral-600">Tambah dan hapus kelas untuk manajemen data siswa</p>
             </div>
 
+            {/* Message */}
             {message && (
-              <Card padding="md" className={message.type === 'success' ? 'border-primary-300 bg-primary-50' : 'border-red-300 bg-red-50'}>
-                <p className={message.type === 'success' ? 'text-primary-800' : 'text-red-800'}>{message.text}</p>
+              <Card padding="sm" className={message.type === 'success' ? 'border-primary-300 bg-primary-50' : 'border-red-300 bg-red-50'}>
+                <p className={`text-sm ${message.type === 'success' ? 'text-primary-800' : 'text-red-800'}`}>{message.text}</p>
               </Card>
             )}
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-              <Card padding="md" className="text-center">
-                <div className="flex items-center justify-center gap-2 mb-2">
-                  <School className="w-5 h-5 text-blue-600" />
-                  <p className="text-2xl font-bold text-neutral-900">{classes.length}</p>
+            {/* Stats — 3 kolom di semua ukuran */}
+            <div className="grid grid-cols-3 gap-2 sm:gap-3">
+              <Card padding="sm" className="text-center">
+                <div className="flex items-center justify-center gap-1.5 mb-1">
+                  <School className="w-4 h-4 text-blue-600" />
+                  <p className="text-xl sm:text-2xl font-bold text-neutral-900">{classes.length}</p>
                 </div>
-                <p className="text-sm text-neutral-600">Total Kelas Aktif</p>
+                <p className="text-[10px] sm:text-xs text-neutral-600 leading-tight">Total Kelas</p>
               </Card>
-              <Card padding="md" className="text-center">
-                <div className="flex items-center justify-center gap-2 mb-2">
-                  <Users className="w-5 h-5 text-green-600" />
-                  <p className="text-2xl font-bold text-neutral-900">
+              <Card padding="sm" className="text-center">
+                <div className="flex items-center justify-center gap-1.5 mb-1">
+                  <Users className="w-4 h-4 text-green-600" />
+                  <p className="text-xl sm:text-2xl font-bold text-neutral-900">
                     {classes.reduce((sum, item) => sum + item.currentStudents, 0)}
                   </p>
                 </div>
-                <p className="text-sm text-neutral-600">Total Siswa Dalam Kelas</p>
+                <p className="text-[10px] sm:text-xs text-neutral-600 leading-tight">Total Siswa</p>
               </Card>
-              <Card padding="md" className="text-center">
-                <div className="flex items-center justify-center gap-2 mb-2">
-                  <Plus className="w-5 h-5 text-yellow-600" />
-                  <p className="text-2xl font-bold text-neutral-900">{filteredClasses.length}</p>
+              <Card padding="sm" className="text-center">
+                <div className="flex items-center justify-center gap-1.5 mb-1">
+                  <Plus className="w-4 h-4 text-yellow-600" />
+                  <p className="text-xl sm:text-2xl font-bold text-neutral-900">{filteredClasses.length}</p>
                 </div>
-                <p className="text-sm text-neutral-600">Hasil Pencarian</p>
+                <p className="text-[10px] sm:text-xs text-neutral-600 leading-tight">Hasil Cari</p>
               </Card>
             </div>
 
+            {/* Form Tambah/Edit Kelas */}
             <Card>
-              <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                <h2 className="text-xl font-semibold text-neutral-900">
+              <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <h2 className="text-base sm:text-lg font-semibold text-neutral-900">
                   {editingId ? 'Edit Kelas' : 'Tambah Kelas Baru'}
                 </h2>
                 {editingId && (
-                  <Button variant="secondary" size="sm" onClick={resetForm} className="w-full md:w-auto">
+                  <Button variant="secondary" size="sm" onClick={resetForm} className="w-full sm:w-auto">
                     Batal Edit
                   </Button>
                 )}
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
+              {/* Form: 2 kolom di mobile, 5 kolom di desktop */}
+              <div className="grid grid-cols-2 lg:grid-cols-5 gap-2 sm:gap-3">
                 <Input
                   label="Tingkat"
                   type="number"
@@ -258,7 +261,7 @@ export default function AdminClassesPage() {
                   value={form.maxCapacity}
                   onChange={(e) => setForm((prev) => ({ ...prev, maxCapacity: e.target.value }))}
                 />
-                <div className="flex items-end">
+                <div className="flex items-end col-span-2 lg:col-span-1">
                   <Button onClick={handleCreateOrUpdateClass} isLoading={isSaving} fullWidth icon={<Plus className="w-4 h-4" />}>
                     {editingId ? 'Simpan' : 'Tambah'}
                   </Button>
@@ -266,10 +269,11 @@ export default function AdminClassesPage() {
               </div>
             </Card>
 
+            {/* Daftar Kelas */}
             <Card>
-              <div className="flex items-center justify-between mb-4 gap-4">
-                <h2 className="text-xl font-semibold text-neutral-900">Daftar Kelas</h2>
-                <div className="w-72">
+              <div className="flex items-center justify-between mb-3 gap-3">
+                <h2 className="text-base sm:text-lg font-semibold text-neutral-900 whitespace-nowrap">Daftar Kelas</h2>
+                <div className="flex-1 max-w-xs sm:max-w-[18rem]">
                   <Input
                     placeholder="Cari kelas..."
                     value={search}
@@ -279,39 +283,37 @@ export default function AdminClassesPage() {
               </div>
 
               {isLoading ? (
-                <p className="text-sm text-neutral-600">Memuat data kelas...</p>
+                <p className="text-sm text-neutral-600 py-4 text-center">Memuat data kelas...</p>
               ) : filteredClasses.length === 0 ? (
-                <p className="text-sm text-neutral-600">Belum ada kelas atau tidak ada hasil pencarian.</p>
+                <p className="text-sm text-neutral-600 py-4 text-center">Belum ada kelas atau tidak ada hasil pencarian.</p>
               ) : (
-                <div className="space-y-3">
+                <div className="space-y-2">
                   {filteredClasses.map((item) => (
-                    <div key={item.id} className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 p-4 bg-neutral-50 rounded-lg">
-                      <div>
-                        <p className="font-medium text-neutral-900">Kelas {item.grade} - {item.name}</p>
-                        <p className="text-sm text-neutral-600 mt-1">
-                          SPP: Rp {Math.round(item.sppAmount || 0).toLocaleString('id-ID')} • Kapasitas: {item.maxCapacity ?? '-'} • Siswa aktif: {item.currentStudents}
+                    <div key={item.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-3 bg-neutral-50 rounded-lg">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-neutral-900 text-sm">Kelas {item.grade} - {item.name}</p>
+                        <p className="text-xs text-neutral-500 mt-0.5">
+                          SPP: Rp {Math.round(item.sppAmount || 0).toLocaleString('id-ID')} • Kap: {item.maxCapacity ?? '-'} • Siswa: {item.currentStudents}
                         </p>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-shrink-0">
                         <Badge variant={item.currentStudents > 0 ? 'warning' : 'success'}>
-                          {item.currentStudents > 0 ? 'Masih Dipakai' : 'Bisa Dihapus'}
+                          {item.currentStudents > 0 ? 'Aktif' : 'Kosong'}
                         </Badge>
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          icon={<Edit className="w-4 h-4" />}
+                        <button
+                          title="Edit"
                           onClick={() => handleEditClass(item)}
+                          className="p-1.5 rounded-lg hover:bg-primary-50 text-primary transition-colors"
                         >
-                          Edit
-                        </Button>
-                        <Button
-                          variant="danger"
-                          size="sm"
-                          icon={<Trash2 className="w-4 h-4" />}
+                          <Edit className="w-4 h-4" />
+                        </button>
+                        <button
+                          title="Hapus"
                           onClick={() => handleDeleteClass(item)}
+                          className="p-1.5 rounded-lg hover:bg-red-50 text-red-600 transition-colors"
                         >
-                          Hapus
-                        </Button>
+                          <Trash2 className="w-4 h-4" />
+                        </button>
                       </div>
                     </div>
                   ))}

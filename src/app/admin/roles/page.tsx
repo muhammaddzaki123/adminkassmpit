@@ -83,60 +83,60 @@ export default function RoleManagement() {
       <div className="lg:ml-64">
         <AdminHeader />
 
-        <main className="pt-16 lg:pt-20 p-4 sm:p-6 lg:p-8">
-          <div className="max-w-7xl mx-auto space-y-6">
+        <main className="pt-16 lg:pt-20 p-3 sm:p-5 lg:p-8">
+          <div className="max-w-7xl mx-auto space-y-3 sm:space-y-5">
             {/* Header */}
             <div>
-              <h1 className="text-3xl font-bold text-neutral-900 mb-2">Role Management</h1>
-              <p className="text-neutral-600">Kelola role dan hak akses pengguna sistem</p>
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-neutral-900">Role Management</h1>
+              <p className="mt-0.5 text-xs sm:text-sm text-neutral-600">Kelola role dan hak akses pengguna sistem</p>
             </div>
 
-            {/* Roles Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Roles Grid — 2 kolom di semua ukuran */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               {roles.map((role) => (
-                <Card key={role.name} className="hover:shadow-lg transition-shadow">
-                  <div className="space-y-4">
+                <Card key={role.name} padding="md" className="hover:shadow-md transition-shadow">
+                  <div className="space-y-3">
                     {/* Role Header */}
                     <div className="flex items-start justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${getColorClass(role.color)}`}>
-                          <Shield className="w-6 h-6" />
+                      <div className="flex items-center gap-2.5">
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${getColorClass(role.color)}`}>
+                          <Shield className="w-5 h-5" />
                         </div>
                         <div>
-                          <h3 className="text-lg font-bold text-neutral-900">{role.displayName}</h3>
-                          <p className="text-sm text-neutral-600">{role.name}</p>
+                          <h3 className="text-sm sm:text-base font-bold text-neutral-900">{role.displayName}</h3>
+                          <p className="text-[10px] sm:text-xs text-neutral-500">{role.name}</p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2 px-3 py-1 bg-neutral-100 rounded-full">
-                        <Users className="w-4 h-4 text-neutral-600" />
-                        <span className="text-sm font-semibold text-neutral-900">{role.userCount}</span>
+                      <div className="flex items-center gap-1.5 px-2 py-1 bg-neutral-100 rounded-full flex-shrink-0">
+                        <Users className="w-3.5 h-3.5 text-neutral-600" />
+                        <span className="text-xs font-semibold text-neutral-900">{role.userCount}</span>
                       </div>
                     </div>
 
                     {/* Description */}
-                    <p className="text-sm text-neutral-600">{role.description}</p>
+                    <p className="text-xs sm:text-sm text-neutral-600 leading-snug">{role.description}</p>
 
                     {/* Permissions */}
                     <div>
-                      <h4 className="text-sm font-semibold text-neutral-900 mb-2">Hak Akses:</h4>
-                      <div className="space-y-1">
+                      <h4 className="text-xs font-semibold text-neutral-700 mb-1.5">Hak Akses:</h4>
+                      <div className="grid grid-cols-1 gap-1">
                         {role.permissions.map((permission) => (
-                          <div key={permission} className="flex items-center gap-2 text-sm text-neutral-700">
-                            <Check className="w-4 h-4 text-green-600" />
-                            <span>{permission.replace('.', ' › ')}</span>
+                          <div key={permission} className="flex items-center gap-1.5 text-xs text-neutral-600">
+                            <Check className="w-3.5 h-3.5 text-green-600 flex-shrink-0" />
+                            <span className="truncate">{permission.replace('.', ' › ')}</span>
                           </div>
                         ))}
                       </div>
                     </div>
 
                     {/* Actions */}
-                    <div className="flex gap-2 pt-4 border-t border-neutral-200">
-                      <button className="flex-1 px-4 py-2 bg-neutral-100 hover:bg-neutral-200 text-neutral-900 rounded-lg font-medium text-sm transition-colors flex items-center justify-center gap-2">
-                        <Eye className="w-4 h-4" />
+                    <div className="flex gap-2 pt-2 border-t border-neutral-100">
+                      <button className="flex-1 px-3 py-2 bg-neutral-100 hover:bg-neutral-200 text-neutral-900 rounded-lg font-medium text-xs transition-colors flex items-center justify-center gap-1.5">
+                        <Eye className="w-3.5 h-3.5" />
                         Detail
                       </button>
-                      <button className="flex-1 px-4 py-2 bg-primary hover:bg-primary-700 text-white rounded-lg font-medium text-sm transition-colors flex items-center justify-center gap-2">
-                        <Settings className="w-4 h-4" />
+                      <button className="flex-1 px-3 py-2 bg-primary hover:bg-primary-700 text-white rounded-lg font-medium text-xs transition-colors flex items-center justify-center gap-1.5">
+                        <Settings className="w-3.5 h-3.5" />
                         Edit Permissions
                       </button>
                     </div>
@@ -146,15 +146,15 @@ export default function RoleManagement() {
             </div>
 
             {/* Permission Matrix */}
-            <Card>
-              <h3 className="text-lg font-bold text-neutral-900 mb-4">Permission Matrix</h3>
-              <div className="overflow-x-auto">
-                <table className="w-full">
+            <Card padding="md">
+              <h3 className="text-sm sm:text-base font-bold text-neutral-900 mb-3">Permission Matrix</h3>
+              <div className="overflow-x-auto rounded-lg border border-neutral-100">
+                <table className="w-full min-w-[420px]">
                   <thead>
-                    <tr className="border-b border-neutral-200">
-                      <th className="text-left p-3 text-sm font-semibold text-neutral-900">Permission</th>
+                    <tr className="border-b border-neutral-200 bg-neutral-50">
+                      <th className="text-left p-2.5 text-xs font-semibold text-neutral-700 sticky left-0 bg-neutral-50 min-w-[130px]">Permission</th>
                       {roles.map((role) => (
-                        <th key={role.name} className="text-center p-3 text-sm font-semibold text-neutral-900">
+                        <th key={role.name} className="text-center p-2.5 text-xs font-semibold text-neutral-700 whitespace-nowrap">
                           {role.displayName}
                         </th>
                       ))}
@@ -169,13 +169,15 @@ export default function RoleManagement() {
                       'system.settings'
                     ].map((permission) => (
                       <tr key={permission} className="border-b border-neutral-100 hover:bg-neutral-50">
-                        <td className="p-3 text-sm text-neutral-700">{permission.replace('.', ' › ')}</td>
+                        <td className="p-2.5 text-xs text-neutral-700 sticky left-0 bg-white hover:bg-neutral-50 font-medium">
+                          {permission.replace('.', ' › ')}
+                        </td>
                         {roles.map((role) => (
-                          <td key={role.name} className="p-3 text-center">
+                          <td key={role.name} className="p-2.5 text-center">
                             {role.permissions.includes(permission) ? (
-                              <Check className="w-5 h-5 text-green-600 mx-auto" />
+                              <Check className="w-4 h-4 text-green-600 mx-auto" />
                             ) : (
-                              <X className="w-5 h-5 text-neutral-300 mx-auto" />
+                              <X className="w-4 h-4 text-neutral-300 mx-auto" />
                             )}
                           </td>
                         ))}
