@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { fetchWithAuth } from '@/lib/api-client';
 import { AdminHeader } from '@/components/layout/AdminHeader';
 import { AdminSidebar } from '@/components/layout/AdminSidebar';
-import { StatCard, Card } from '@/components/ui/Card';
+import { SmallStatCard, Card } from '@/components/ui/Card';
 import { Users, UserCheck, UserX, Shield, Activity, TrendingUp } from 'lucide-react';
 
 interface UserStats {
@@ -135,30 +135,26 @@ export default function AdminDashboard() {
             </div>
 
             {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 animate-slide-up">
-              <StatCard
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 animate-slide-up">
+              <SmallStatCard
                 title="Total Users"
                 value={stats.total.toString()}
-                trend={`${stats.active} aktif`}
-                trendUp={true}
                 icon={<Users className="w-6 h-6" />}
                 color="primary"
               />
-              <StatCard
+              <SmallStatCard
                 title="Akun Aktif"
                 value={stats.active.toString()}
-                trend={`${((stats.active / stats.total) * 100 || 0).toFixed(0)}% dari total`}
-                trendUp={true}
                 icon={<UserCheck className="w-6 h-6" />}
                 color="accent"
               />
-              <StatCard
+              <SmallStatCard
                 title="Akun Non-Aktif"
                 value={stats.inactive.toString()}
                 icon={<UserX className="w-6 h-6" />}
                 color="danger"
               />
-              <StatCard
+              <SmallStatCard
                 title="Administrator"
                 value={stats.byRole.admin.toString()}
                 icon={<Shield className="w-6 h-6" />}

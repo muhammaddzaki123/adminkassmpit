@@ -77,3 +77,36 @@ export function StatCard({ title, value, icon, trend, trendUp, color = 'primary'
     </Card>
   );
 }
+
+interface SmallStatCardProps {
+  title: string;
+  value: string;
+  icon?: React.ReactNode;
+  color?: 'primary' | 'warning' | 'danger' | 'info' | 'accent';
+}
+
+export function SmallStatCard({ title, value, icon, color = 'primary' }: SmallStatCardProps) {
+  const colors = {
+    primary: 'bg-primary-100 text-primary-700',
+    accent: 'bg-accent-100 text-accent-700',
+    warning: 'bg-yellow-100 text-yellow-700',
+    danger: 'bg-red-100 text-red-700',
+    info: 'bg-blue-100 text-blue-700',
+  };
+
+  return (
+    <Card padding="sm" className="hover:shadow-md">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex-1 min-w-0">
+          <p className="text-xs font-medium text-neutral-600 truncate">{title}</p>
+          <h4 className="text-xl font-bold text-neutral-900 truncate">{value}</h4>
+        </div>
+        {icon && (
+          <div className={`p-2 rounded-md shadow-sm ${colors[color]}`}>
+            {icon}
+          </div>
+        )}
+      </div>
+    </Card>
+  );
+}

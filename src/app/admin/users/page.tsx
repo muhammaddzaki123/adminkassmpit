@@ -5,12 +5,12 @@ import { useRouter } from 'next/navigation';
 import { fetchWithAuth } from '@/lib/api-client';
 import { AdminHeader } from '@/components/layout/AdminHeader';
 import { AdminSidebar } from '@/components/layout/AdminSidebar';
-import { Card } from '@/components/ui/Card';
+import { Card, SmallStatCard } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input, Select } from '@/components/ui/Input';
 import { Table } from '@/components/ui/Table';
 import { Badge } from '@/components/ui/Badge';
-import { Plus, Search, Edit, Trash2, Eye, EyeOff, Lock } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, Eye, EyeOff, Lock, Users, UserCheck, UserX, Shield } from 'lucide-react';
 
 interface User {
   id: string;
@@ -208,6 +208,12 @@ export default function UsersManagement() {
     return matchSearch && matchRole;
   });
 
+  // quick stats for small stat boxes
+  const totalUsers = users.length;
+  const activeUsers = users.filter((u) => u.isActive).length;
+  const inactiveUsers = users.filter((u) => !u.isActive).length;
+  const adminUsers = users.filter((u) => u.role === 'ADMIN').length;
+
   return (
     <div className="min-h-screen bg-neutral-50">
       <AdminSidebar />
@@ -232,6 +238,14 @@ export default function UsersManagement() {
                 Tambah User
               </Button>
             </div>
+
+          {/* Small stat boxes */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+            <SmallStatCard title="Total Users" value={totalUsers.toString()} icon={<Users className="w-4 h-4" />} color="primary" />
+            <SmallStatCard title="Akun Aktif" value={activeUsers.toString()} icon={<UserCheck className="w-4 h-4" />} color="accent" />
+            <SmallStatCard title="Non-Aktif" value={inactiveUsers.toString()} icon={<UserX className="w-4 h-4" />} color="danger" />
+            <SmallStatCard title="Admin" value={adminUsers.toString()} icon={<Shield className="w-4 h-4" />} color="info" />
+          </div>
 
           {/* Filters */}
           <Card className="mb-6">
