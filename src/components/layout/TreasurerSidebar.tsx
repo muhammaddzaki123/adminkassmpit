@@ -63,16 +63,16 @@ export function TreasurerSidebar() {
         icon: CreditCard,
         items: [
           {
-            label: 'Lihat Semua Tagihan',
+            label: 'kelola Tagihan',
             path: '/treasurer/billing/list',
             matchPrefixes: ['/treasurer/billing'],
           },
           {
-            label: 'Pembayaran SPP',
+            label: 'Kelola Pembayaran SPP',
             path: '/treasurer/spp',
           },
           {
-            label: 'Input Pembayaran',
+            label: 'Input Pembayaran ',
             path: '/treasurer/payment',
           },
           {
@@ -83,9 +83,14 @@ export function TreasurerSidebar() {
       },
       {
         id: 'expenses',
-        label: 'Kelola Pengeluaran',
+        label: 'Kelola Kas',
         icon: TrendingDown,
         items: [
+          {
+            label: 'Buku Besar',
+            path: '/treasurer/buku-besar',
+            matchPrefixes: ['/treasurer/buku-besar'],
+          },
           {
             label: 'Pengeluaran',
             path: '/treasurer/expenses',
@@ -100,11 +105,6 @@ export function TreasurerSidebar() {
           {
             label: 'Laporan',
             path: '/treasurer/reports',
-          },
-          {
-            label: 'Buku Besar',
-            path: '/treasurer/buku-besar',
-            matchPrefixes: ['/treasurer/buku-besar'],
           },
           {
             label: 'Riwayat Transaksi',

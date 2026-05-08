@@ -79,8 +79,8 @@ export function TreasurerHeader({ onMenuClick }: TreasurerHeaderProps) {
   };
 
   return (
-    <header className="h-16 bg-white/95 backdrop-blur-xl border-b border-neutral-200 fixed top-0 left-64 right-0 z-40 shadow-soft">
-      <div className="h-full px-6 flex items-center justify-between">
+    <header className="fixed top-0 left-0 right-0 lg:left-64 h-16 bg-white/95 backdrop-blur-xl border-b border-neutral-200 z-40 shadow-soft">
+      <div className="h-full px-4 md:px-6 flex items-center justify-between">
         {/* Mobile Menu Button */}
         <button
           onClick={onMenuClick}

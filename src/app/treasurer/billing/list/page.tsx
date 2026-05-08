@@ -165,11 +165,6 @@ export default function BillingListPage() {
 
   const previewBillings = bulkActionType === 'DISCOUNT' ? eligibleDiscountBillings : eligibleInstallmentBillings;
 
-  const selectedPreviewBillings = useMemo(
-    () => previewBillings.filter((billing) => selectedBillingIds.includes(billing.id)),
-    [previewBillings, selectedBillingIds]
-  );
-
   const allSelected = previewBillings.length > 0 && selectedBillingIds.length === previewBillings.length;
 
   const getStatusBadgeVariant = (status: string) => {

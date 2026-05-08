@@ -132,7 +132,7 @@ export async function POST(request: NextRequest) {
               discount: Number(old.discount || 0),
               discountReason: old.discountReason ?? null,
               totalAmount: Number(old.totalAmount || 0),
-              status: (old.status as any) || 'BILLED',
+              status: (old.status as 'BILLED' | 'PARTIAL' | 'PAID' | 'OVERDUE' | 'CANCELLED' | 'WAIVED' | 'UNBILLED') || 'BILLED',
             },
           });
         }

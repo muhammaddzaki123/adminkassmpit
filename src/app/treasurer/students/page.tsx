@@ -179,7 +179,7 @@ export default function StudentsPage() {
     });
 
     return rows;
-  }, [filteredStudents, sppSortByOverdue]);
+  }, [filteredStudents, sppSortByOverdue, sppLatestStatusFilter]);
 
   const sppAggregateSummary = useMemo(() => {
     return displayedStudents.reduce(

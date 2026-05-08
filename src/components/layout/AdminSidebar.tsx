@@ -67,7 +67,7 @@ export function AdminSidebar() {
   };
 
   return (
-    <div className="w-64 bg-white h-screen flex flex-col border-r border-neutral-200 shadow-soft fixed left-0 top-0 z-50">
+    <div className="hidden lg:flex w-64 bg-white h-screen flex-col border-r border-neutral-200 shadow-soft fixed left-0 top-0 z-50">
       {/* Logo & Brand */}
       <div className="p-6 border-b border-neutral-100">
         <div className="flex items-center gap-3">

@@ -98,10 +98,10 @@ export default function ActivityLog() {
   return (
     <div className="min-h-screen bg-neutral-50">
       <AdminSidebar />
-      <div className="ml-64">
+      <div className="lg:ml-64">
         <AdminHeader />
 
-        <main className="pt-16 p-8">
+        <main className="pt-16 p-4 sm:p-6 lg:p-8">
           <div className="max-w-7xl mx-auto space-y-6">
             {/* Header */}
             <Card className="bg-linear-to-r from-white via-primary-50 to-accent-50 border-primary-100 shadow-sm">
