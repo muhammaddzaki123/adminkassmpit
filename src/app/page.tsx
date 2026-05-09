@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import {
   ArrowRight,
   BookOpen,
@@ -11,7 +12,6 @@ import {
   HeartHandshake,
   Landmark,
   MapPin,
-  School,
   ShieldCheck,
   UserRound,
 } from 'lucide-react';
@@ -61,8 +61,8 @@ export default function LandingPage() {
       <nav className="sticky top-0 z-50 border-b border-neutral-200/70 bg-white/85 backdrop-blur-xl">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-linear-to-br from-primary-700 to-primary-900 text-white shadow-medium">
-              <School className="h-5 w-5" />
+            <div className="relative h-10 w-10 overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-medium">
+              <Image src="/logo.jpg" alt="Logo SMP IT Anak Soleh Mataram" fill sizes="40px" className="object-contain p-1" priority />
             </div>
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-neutral-500">SMP IT ANAK SOLEH MATARAM</p>
@@ -215,8 +215,8 @@ export default function LandingPage() {
       <footer className="border-t border-neutral-200 bg-white">
         <div className="mx-auto flex max-w-7xl flex-col items-start justify-between gap-4 px-4 py-8 sm:flex-row sm:items-center sm:px-6 lg:px-8">
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-linear-to-br from-primary-700 to-primary-900 text-white">
-              <School className="h-5 w-5" />
+            <div className="relative h-9 w-9 overflow-hidden rounded-lg border border-neutral-200 bg-white">
+              <Image src="/logo.jpg" alt="Logo SMP IT Anak Soleh Mataram" fill sizes="36px" className="object-contain p-1" />
             </div>
             <div>
               <p className="font-semibold">SMP IT ANAK SOLEH MATARAM</p>

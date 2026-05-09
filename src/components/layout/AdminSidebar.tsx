@@ -1,6 +1,7 @@
 'use client';
 
 import { usePathname, useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { Users, Shield, Activity, Settings, LogOut, LayoutDashboard, UserCog, UserPlus, GraduationCap, School, CalendarRange } from 'lucide-react';
 import { clearClientAuthSession } from '@/lib/client-auth';
 
@@ -87,8 +88,8 @@ export function AdminSidebar({ mobile = false, onNavigate }: AdminSidebarProps) 
       {/* Logo & Brand */}
       <div className="border-b border-neutral-100 px-4 py-5">
         <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-linear-to-br from-primary to-primary-700 shadow-soft">
-            <Shield className="h-5 w-5 text-white" />
+          <div className="relative h-9 w-9 overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-soft">
+            <Image src="/logo.jpg" alt="Logo SMP IT Anak Soleh Mataram" fill sizes="36px" className="object-contain p-1" />
           </div>
           <div className="min-w-0">
             <h1 className="text-lg font-bold leading-none tracking-tight text-neutral-900">T-SMART</h1>

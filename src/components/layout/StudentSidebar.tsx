@@ -2,6 +2,7 @@
 
 import { usePathname, useRouter } from 'next/navigation';
 import { clearClientAuthSession } from '@/lib/client-auth';
+import Image from 'next/image';
 import {
   LayoutDashboard,
   CreditCard,
@@ -39,8 +40,8 @@ export function StudentSidebar() {
       {/* Logo */}
       <div className="p-6 border-b border-neutral-200">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-linear-to-br from-primary to-primary-700 flex items-center justify-center shadow-soft">
-            <span className="text-white font-bold text-sm">TS</span>
+          <div className="relative w-10 h-10 overflow-hidden rounded-xl border border-neutral-200 bg-white flex items-center justify-center shadow-soft">
+            <Image src="/logo.jpg" alt="Logo SMP IT Anak Soleh Mataram" fill sizes="40px" className="object-contain p-1" />
           </div>
           <div>
             <h1 className="font-bold text-lg text-neutral-900">T-SMART Siswa</h1>

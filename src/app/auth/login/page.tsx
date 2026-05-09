@@ -2,11 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import Link from 'next/link';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { Lock, User, AlertCircle, School, GraduationCap, BookOpen } from 'lucide-react';
+import { Lock, User, AlertCircle, GraduationCap, BookOpen } from 'lucide-react';
 import { clearClientAuthSession } from '@/lib/client-auth';
 
 export default function LoginPage() {
@@ -90,8 +91,8 @@ export default function LoginPage() {
       <div className="w-full max-w-md relative z-10">
         {/* Header Section */}
         <div className="mb-8 text-center animate-fade-in">
-          <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-2xl bg-linear-to-br from-primary-700 to-primary-900 text-white shadow-lg shadow-primary/30">
-            <School className="h-10 w-10" />
+          <div className="relative mx-auto mb-4 h-20 w-20 overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-lg shadow-primary/30">
+            <Image src="/logo.jpg" alt="Logo SMP IT Anak Soleh Mataram" fill sizes="80px" className="object-contain p-2" priority />
           </div>
           <h1 className="mb-1 text-3xl font-bold text-neutral-900">SMP IT ANAK SOLEH</h1>
           <p className="text-base font-semibold text-neutral-700">Mataram</p>

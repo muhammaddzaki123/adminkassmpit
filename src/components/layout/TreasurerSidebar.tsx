@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { clearClientAuthSession } from '@/lib/client-auth';
+import Image from 'next/image';
 import { 
   LayoutDashboard, 
   Users, 
@@ -171,8 +172,8 @@ export function TreasurerSidebar() {
       {/* Logo & Brand */}
       <div className="p-6 border-b border-neutral-100">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-linear-to-br from-primary to-primary-700 rounded-xl flex items-center justify-center shadow-soft">
-            <Wallet className="w-6 h-6 text-white" />
+          <div className="relative w-10 h-10 overflow-hidden rounded-xl border border-neutral-200 bg-white flex items-center justify-center shadow-soft">
+            <Image src="/logo.jpg" alt="Logo SMP IT Anak Soleh Mataram" fill sizes="40px" className="object-contain p-1" />
           </div>
           <div>
             <h1 className="font-bold text-neutral-900 text-xl leading-none tracking-tight">T-SMART</h1>
