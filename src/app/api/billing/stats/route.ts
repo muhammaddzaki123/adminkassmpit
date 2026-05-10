@@ -38,8 +38,11 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    // Get monthly stats (current year)
-    const currentYear = new Date().getFullYear();
+    const searchParams = request.nextUrl.searchParams;
+    const requestedYear = Number(searchParams.get('year') || new Date().getFullYear());
+    const currentYear = Number.isFinite(requestedYear) ? requestedYear : new Date().getFullYear();
+
+    // Get monthly stats for the requested year
     const monthlyBillings = await prisma.billing.groupBy({
       by: ['month', 'status'],
       where: {

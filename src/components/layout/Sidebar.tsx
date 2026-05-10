@@ -74,7 +74,7 @@ export function Sidebar({ userRole = 'treasurer' }: SidebarProps) {
   const menuItems = getMenuItems(userRole);
 
   return (
-    <div className="w-64 bg-white h-screen flex flex-col border-r border-neutral-200 shadow-soft">
+    <div className="w-64 bg-white h-screen flex flex-col border-r border-neutral-200 shadow-soft lg:sticky lg:top-0 lg:self-start overflow-y-auto">
       {/* Logo & Brand */}
       <div className="p-6 border-b border-neutral-100">
         <div className="flex items-center gap-3">
