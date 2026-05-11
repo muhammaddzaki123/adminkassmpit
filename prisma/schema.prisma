@@ -110,6 +110,7 @@ model User {
   waivedBillings       Billing[]         @relation("BillingWaiver")
   createdCashLedgerEntries CashLedgerEntry[] @relation("CashLedgerCreator")
   createdAcademicYears AcademicYear[]    @relation("AcademicYearCreator")
+  approvedExpenses     Expense[]         @relation("ExpenseApprover")
   createdTemplates     BillingTemplate[] @relation("TemplateCreator")
   updatedSettings      SystemSettings[]  @relation("SettingsUpdater")
   createdStudentDiscountPlans StudentDiscountPlan[] @relation("StudentDiscountPlanCreator")
@@ -263,6 +264,12 @@ model Expense {
   amount      Float
   status      ExpenseStatus   @default(PENDING)
   receipt     String? // URL to receipt
+
+  // Approval Tracking
+  approvedById String?         @map("approved_by_id")
+  approvedBy   User?           @relation("ExpenseApprover", fields: [approvedById], references: [id])
+  approvedAt   DateTime?       @map("approved_at")
+
   createdAt   DateTime        @default(now()) @map("created_at")
   updatedAt   DateTime        @updatedAt @map("updated_at")
 
