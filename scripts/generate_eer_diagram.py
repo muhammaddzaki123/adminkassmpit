@@ -2,10 +2,27 @@ import re
 import math
 from xml.sax.saxutils import escape
 
-schema_file = 'tmp_models.txt'
-entities_attributes = {}
+# Baca langsung dari prisma/schema.prisma
+schema_file = 'prisma/schema.prisma'
 with open(schema_file) as f:
-    data = f.read()
+    full_data = f.read()
+
+# Ekstrak hanya blok model
+import re
+models_text = ""
+in_model = False
+for line in full_data.split('\n'):
+    if line.startswith('model '):
+        in_model = True
+        models_text += line + '\n'
+    elif in_model and line.strip() == '}':
+        models_text += line + '\n'
+        in_model = False
+    elif in_model:
+        models_text += line + '\n'
+data = models_text
+
+entities_attributes = {}
 
 exclude_attrs = ['createdAt', 'updatedAt', 'isActive', 'processedById', 'issuedById', 'waivedById']
 
