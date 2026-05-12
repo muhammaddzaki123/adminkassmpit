@@ -8,6 +8,7 @@ import { Input, Select } from '@/components/ui/Input';
 import { Table } from '@/components/ui/Table';
 import { Badge } from '@/components/ui/Badge';
 import { fetchWithAuth } from '@/lib/api-client';
+import { AuditPayloadViewer, type AuditRawValue } from './AuditPayloadViewer';
 
 interface Student {
   id: string;
@@ -67,9 +68,9 @@ interface PaymentDetail extends Payment {
     events: Array<{
       source: string;
       status: string;
-      message?: string;
+      message?: string | null;
       recordedAt: string;
-      raw: unknown;
+      raw?: AuditRawValue | null;
     }>;
   } | null;
 }
@@ -479,13 +480,11 @@ export function SPPPayment() {
                 </div>
 
                 <Card padding="md" className="border-neutral-200">
-                  <div className="flex items-center gap-2 mb-3">
+                  <div className="flex items-center gap-2 mb-4">
                     <FileText className="w-4 h-4 text-[#4b5563]" />
-                    <h4 className="font-semibold text-[#1c1c1c]">Payload Audit Mentah</h4>
+                    <h4 className="font-semibold text-[#1c1c1c]">Riwayat Audit Pembayaran</h4>
                   </div>
-                  <pre className="whitespace-pre-wrap wrap-break-word rounded-lg bg-neutral-950 text-neutral-100 text-xs p-4 overflow-x-auto">
-{JSON.stringify(detailPayment.auditPayload, null, 2)}
-                  </pre>
+                  <AuditPayloadViewer payload={detailPayment.auditPayload} />
                 </Card>
 
                 <Card padding="md" className="border-neutral-200">
@@ -512,54 +511,63 @@ export function SPPPayment() {
 
       {/* Input Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 backdrop-blur-sm">
+          <Card className="w-full max-w-2xl">
+            {/* Header */}
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-[#1c1c1c] text-xl font-bold">Input Pembayaran SPP</h3>
+              <div>
+                <h3 className="text-[#1c1c1c] text-2xl font-bold">Input Pembayaran SPP</h3>
+              </div>
               <button onClick={() => { setShowModal(false); setMessage(null); }} className="text-[#4b5563] hover:text-[#1c1c1c]">
                 <X className="w-6 h-6" />
               </button>
             </div>
 
+            {/* Message Alert */}
             {message && (
-              <div className={`mb-4 p-3 rounded-lg flex items-center gap-2 ${
-                message.type === 'success' ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'
+              <div className={`mb-6 p-4 rounded-lg flex items-center gap-3 ${
+                message.type === 'success' ? 'bg-green-50 border border-green-200 text-green-800' : 'bg-red-50 border border-red-200 text-red-800'
               }`}>
                 {message.type === 'success' ? (
                   <CheckCircle className="w-5 h-5" />
                 ) : (
                   <AlertCircle className="w-5 h-5" />
                 )}
-                <span>{message.text}</span>
+                <span className="text-sm">{message.text}</span>
               </div>
             )}
 
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <Select
-                  label="Pilih Siswa"
-                  value={formData.studentId}
-                  onChange={(e) => setFormData({ ...formData, studentId: e.target.value })}
-                  options={[
-                    { value: '', label: 'Pilih Siswa' },
-                    ...students.map(s => ({
-                      value: s.id,
-                      label: `${s.nama} - ${s.kelas}`
-                    }))
-                  ]}
-                  required
-                />
+              {/* Grid Layout - Simple */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Siswa */}
+                <div className="md:col-span-2">
+                  <Select
+                    label="Nama Siswa"
+                    value={formData.studentId}
+                    onChange={(e) => setFormData({ ...formData, studentId: e.target.value })}
+                    options={[
+                      { value: '', label: '-- Pilih Siswa --' },
+                      ...students.map(s => ({
+                        value: s.id,
+                        label: `${s.nama} (${s.nisn}) - ${s.kelas}`
+                      }))
+                    ]}
+                    required
+                  />
+                </div>
+
+                {/* Nominal */}
                 <Input
                   type="number"
-                  label="Nominal"
+                  label="Nominal (Rp)"
                   placeholder="500000"
                   value={formData.amount}
                   onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
                   required
                 />
-              </div>
 
-              <div className="grid grid-cols-2 gap-4">
+                {/* Bulan */}
                 <Select
                   label="Bulan"
                   value={formData.month}
@@ -580,6 +588,8 @@ export function SPPPayment() {
                   ]}
                   required
                 />
+
+                {/* Tahun */}
                 <Select
                   label="Tahun"
                   value={formData.year}
@@ -592,21 +602,43 @@ export function SPPPayment() {
                   ]}
                   required
                 />
+
+                {/* Metode */}
+                <Select
+                  label="Metode Pembayaran"
+                  value={formData.paymentMethod}
+                  onChange={(e) => setFormData({ ...formData, paymentMethod: e.target.value })}
+                  options={[
+                    { value: 'transfer', label: 'Transfer Bank' },
+                    { value: 'tunai', label: 'Tunai' },
+                    { value: 'ewallet', label: 'E-Wallet' },
+                    { value: 'va', label: 'Virtual Account' },
+                  ]}
+                  required
+                />
               </div>
 
-              <Select
-                label="Metode Pembayaran"
-                value={formData.paymentMethod}
-                onChange={(e) => setFormData({ ...formData, paymentMethod: e.target.value })}
-                options={[
-                  { value: 'transfer', label: 'Transfer Bank' },
-                  { value: 'tunai', label: 'Tunai' },
-                  { value: 'ewallet', label: 'E-Wallet' },
-                  { value: 'va', label: 'Virtual Account' },
-                ]}
-                required
-              />
+              {/* Preview Data */}
+              {formData.studentId && (
+                <div className="rounded-lg bg-blue-50 border border-blue-200 p-4">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <div>
+                      <p className="text-xs text-blue-600 font-medium">TOTAL</p>
+                      <p className="text-lg font-bold text-blue-900">Rp {parseFloat(formData.amount || '0').toLocaleString('id-ID')}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-blue-600 font-medium">PERIODE</p>
+                      <p className="text-sm font-bold text-blue-900">{getMonthName(parseInt(formData.month))} {formData.year}</p>
+                    </div>
+                    <div className="md:col-span-2">
+                      <p className="text-xs text-blue-600 font-medium">SISWA</p>
+                      <p className="text-sm font-bold text-blue-900">{students.find(s => s.id === formData.studentId)?.nama}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
 
+              {/* Buttons */}
               <div className="flex gap-3 pt-4">
                 <Button 
                   type="button" 
@@ -621,10 +653,9 @@ export function SPPPayment() {
                   type="submit" 
                   variant="primary" 
                   fullWidth 
-                  icon={<CheckCircle className="w-5 h-5" />}
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || !formData.studentId}
                 >
-                  {isSubmitting ? 'Menyimpan...' : 'Simpan Pembayaran'}
+                  {isSubmitting ? 'Menyimpan...' : 'Simpan'}
                 </Button>
               </div>
             </form>

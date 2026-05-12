@@ -22,6 +22,28 @@ interface AcademicYear {
   isActive: boolean;
 }
 
+interface FailedBilling {
+  studentId: string;
+  studentName: string;
+  error: string;
+}
+
+interface SkippedBilling {
+  studentId: string;
+  studentName: string;
+  reason: string;
+  billNumber: string;
+}
+
+interface SuccessBilling {
+  studentId: string;
+  studentName: string;
+  nisn: string;
+  class: string;
+  billNumber: string;
+  amount: number;
+}
+
 export default function BillingManagementPage() {
   const router = useRouter();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -141,7 +163,8 @@ export default function BillingManagementPage() {
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorData = await response.json();
+        throw new Error(errorData.details || errorData.error || `HTTP error! status: ${response.status}`);
       }
       
       if (!response.headers.get('content-type')?.includes('application/json')) {
@@ -151,16 +174,42 @@ export default function BillingManagementPage() {
       const result = await response.json();
 
       if (result.success) {
+        // Build detailed failure message if any failed
+        let failedDetails = '';
+        if (result.data.details?.failed?.length > 0) {
+          failedDetails = '\n\n❌ Detail Kegagalan:\n' + result.data.details.failed
+            .map((f: FailedBilling) => `• ${f.studentName} (${f.studentId}): ${f.error}`)
+            .join('\n');
+        }
+
+        let skippedDetails = '';
+        if (result.data.details?.skipped?.length > 0) {
+          skippedDetails = '\n\n⏭️ Yang Dilewati:\n' + result.data.details.skipped
+            .map((s: SkippedBilling) => `• ${s.studentName}: ${s.reason}`)
+            .join('\n');
+        }
+
+        const successDetails = result.data.details?.success?.length > 0 
+          ? `\n\n✅ Berhasil:\n` + result.data.details.success
+            .slice(0, 5) // Show first 5
+            .map((s: SuccessBilling) => `• ${s.studentName}: ${s.billNumber}`)
+            .join('\n') + (result.data.details.success.length > 5 ? `\n• ... dan ${result.data.details.success.length - 5} lainnya` : '')
+          : '';
+        
+        const messageText = `Berhasil generate ${result.data.generated} tagihan! Skipped: ${result.data.skipped}, Failed: ${result.data.failed}${successDetails}${skippedDetails}${failedDetails}`;
+        
         setMessage({
-          type: 'success',
-          text: `Berhasil generate ${result.data.generated} tagihan! Skipped: ${result.data.skipped}, Failed: ${result.data.failed}`,
+          type: result.data.failed > 0 ? 'error' : 'success',
+          text: messageText,
         });
         fetchStats();
       } else {
-        setMessage({ type: 'error', text: result.error || 'Gagal generate tagihan' });
+        throw new Error(result.error || 'Gagal generate tagihan');
       }
-    } catch {
-      setMessage({ type: 'error', text: 'Terjadi kesalahan saat generate tagihan' });
+    } catch (error) {
+      console.error('Error generating billings:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Terjadi kesalahan saat generate tagihan';
+      setMessage({ type: 'error', text: errorMessage });
     } finally {
       setLoading(false);
     }
@@ -265,10 +314,10 @@ export default function BillingManagementPage() {
 
             {/* Message */}
             {message && (
-              <div className={`p-4 rounded-lg ${message.type === 'success' ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'}`}>
-                <p className={message.type === 'success' ? 'text-green-800' : 'text-red-800'}>
+              <div className={`p-4 rounded-lg max-h-96 overflow-y-auto ${message.type === 'success' ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'}`}>
+                <pre className={`whitespace-pre-wrap text-sm font-mono ${message.type === 'success' ? 'text-green-800' : 'text-red-800'}`}>
                   {message.text}
-                </p>
+                </pre>
               </div>
             )}
 

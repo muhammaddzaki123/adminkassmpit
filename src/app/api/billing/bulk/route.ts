@@ -466,10 +466,13 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error('Bulk billing action error:', error);
+    console.error('❌ Bulk billing action error:', error);
+    console.error('Error stack:', error instanceof Error ? error.stack : 'N/A');
     return NextResponse.json(
       {
         error: 'Failed to process bulk billing action',
+        details: error instanceof Error ? error.message : 'Unknown error',
+        stack: process.env.NODE_ENV === 'development' ? (error instanceof Error ? error.stack : null) : undefined,
       },
       { status: 500 }
     );

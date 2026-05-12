@@ -98,9 +98,17 @@ export async function POST(request: NextRequest) {
     };
 
     for (const sc of studentClasses) {
-      if (!sc.student) continue;
+      if (!sc.student) {
+        console.warn(`⚠️ Student data missing for studentClass ${sc.id}`);
+        continue;
+      }
 
       try {
+        // Validate student has required fields
+        if (!sc.student.id || !sc.student.nama || !sc.student.nisn) {
+          throw new Error(`Student data incomplete: ${sc.student.id}`);
+        }
+
         // Check if billing already exists
         const existing = await prisma.billing.findFirst({
           where: {
@@ -131,26 +139,49 @@ export async function POST(request: NextRequest) {
         });
         const billNumber = `INV/${year}/${String(month).padStart(2, '0')}/${String(billCount + 1).padStart(4, '0')}`;
 
+        // Validate bill number is unique (safety check)
+        const existingBillNumber = await prisma.billing.findUnique({
+          where: { billNumber },
+        });
+        if (existingBillNumber) {
+          throw new Error(`Bill number already exists: ${billNumber}`);
+        }
+
         // Get amount from class sppAmount (untuk SPP) or use default
         let amount = 500000; // Default
+        if (!sc.class) {
+          throw new Error('Class data missing for this student enrollment');
+        }
+
         if (type === 'SPP' && sc.class.sppAmount > 0) {
           amount = sc.class.sppAmount;
         }
 
+        // Validate amount is positive
+        if (!Number.isFinite(amount) || amount <= 0) {
+          throw new Error(`Invalid billing amount: ${amount}`);
+        }
+
         // Apply recurring discount plan if available
-        const discountPlan = await prisma.studentDiscountPlan.findFirst({
-          where: {
-            studentId: sc.student.id,
-            type,
-            isActive: true,
-            monthsRemaining: {
-              gt: 0,
+        let discountPlan = null;
+        try {
+          discountPlan = await prisma.studentDiscountPlan.findFirst({
+            where: {
+              studentId: sc.student.id,
+              type,
+              isActive: true,
+              monthsRemaining: {
+                gt: 0,
+              },
             },
-          },
-          orderBy: {
-            updatedAt: 'desc',
-          },
-        });
+            orderBy: {
+              updatedAt: 'desc',
+            },
+          });
+        } catch (discountError) {
+          console.warn(`⚠️ Could not fetch discount plan for student ${sc.student.nisn}:`, discountError);
+          // Continue without discount plan - don't fail the entire billing
+        }
 
         let appliedDiscount = 0;
         let appliedDiscountReason: string | null = null;
@@ -168,53 +199,70 @@ export async function POST(request: NextRequest) {
         // Set due date (tanggal 10 bulan berjalan)
         const dueDate = new Date(year, month - 1, 10);
 
+        // Validate dates
+        if (!dueDate || isNaN(dueDate.getTime())) {
+          throw new Error(`Invalid due date: year=${year}, month=${month}`);
+        }
+
+        // Validate session user
+        if (!session.user || !session.user.id) {
+          throw new Error('Invalid session user');
+        }
+
         // Create billing
         const billing = await prisma.$transaction(async (tx) => {
-          const created = await tx.billing.create({
-            data: {
-              billNumber,
-              studentId: sc.student.id,
-              academicYearId,
-              type,
-              month,
-              year,
-              subtotal: amount,
-              discount: appliedDiscount,
-              discountReason: appliedDiscountReason,
-              totalAmount: amount - appliedDiscount,
-              paidAmount: 0,
-              allowInstallments: sc.student.allowInstallments,
-              status: 'BILLED',
-              dueDate,
-              billDate: new Date(),
-              description: description || `${type} ${getMonthName(month)} ${year}`,
-              issuedById: session.user.id,
-            },
-          });
-
-          if (discountPlan && appliedDiscount > 0) {
-            const nextMonths = Math.max(0, discountPlan.monthsRemaining - 1);
-            await tx.studentDiscountPlan.update({
-              where: { id: discountPlan.id },
+          try {
+            const created = await tx.billing.create({
               data: {
-                monthsRemaining: nextMonths,
-                isActive: nextMonths > 0,
+                billNumber,
+                studentId: sc.student.id,
+                academicYearId,
+                type,
+                month,
+                year,
+                subtotal: amount,
+                discount: appliedDiscount,
+                discountReason: appliedDiscountReason,
+                totalAmount: amount - appliedDiscount,
+                paidAmount: 0,
+                allowInstallments: sc.student.allowInstallments || false,
+                status: 'BILLED',
+                dueDate,
+                billDate: new Date(),
+                description: description || `${type} ${getMonthName(month)} ${year}`,
+                issuedById: session.user.id,
               },
             });
-          }
 
-          return created;
+            if (discountPlan && appliedDiscount > 0) {
+              const nextMonths = Math.max(0, discountPlan.monthsRemaining - 1);
+              await tx.studentDiscountPlan.update({
+                where: { id: discountPlan.id },
+                data: {
+                  monthsRemaining: nextMonths,
+                  isActive: nextMonths > 0,
+                  updatedAt: new Date(),
+                },
+              });
+            }
+
+            return created;
+          } catch (txError) {
+            console.error(`❌ Transaction error for student ${sc.student.nisn}:`, txError);
+            throw txError;
+          }
         });
 
         results.success.push({
           studentId: sc.student.id,
           studentName: sc.student.nama,
           nisn: sc.student.nisn,
-          class: sc.class.name,
+          class: sc.class?.name || 'Unknown',
           billNumber: billing.billNumber,
           amount: billing.totalAmount,
         });
       } catch (error) {
+        console.error(`❌ Billing generation failed for student ${sc.student.nisn}:`, error);
         results.failed.push({
           studentId: sc.student.id,
           studentName: sc.student.nama,
@@ -234,9 +282,15 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error('Error generating billings:', error);
+    console.error('❌ Error generating billings:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error('Stack:', error instanceof Error ? error.stack : 'N/A');
     return NextResponse.json(
-      { error: 'Failed to generate billings', details: error instanceof Error ? error.message : 'Unknown error' },
+      { 
+        error: 'Failed to generate billings', 
+        details: errorMessage,
+        stack: process.env.NODE_ENV === 'development' ? (error instanceof Error ? error.stack : null) : undefined
+      },
       { status: 500 }
     );
   }
