@@ -73,6 +73,10 @@ export function TreasurerSidebar() {
             path: '/treasurer/spp',
           },
           {
+            label: 'Daftar Ulang',
+            path: '/treasurer/re-registration',
+          },
+          {
             label: 'Input Pembayaran ',
             path: '/treasurer/payment',
           },
@@ -110,10 +114,6 @@ export function TreasurerSidebar() {
           {
             label: 'Riwayat Transaksi',
             path: '/treasurer/history',
-          },
-          {
-            label: 'Daftar Ulang',
-            path: '/treasurer/re-registration',
           },
           {
             label: 'Reminder WA',

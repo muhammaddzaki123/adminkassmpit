@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { fetchWithAuth } from '@/lib/api-client';
 import { TreasurerSidebar } from '@/components/layout/TreasurerSidebar';
 import { TreasurerHeader } from '@/components/layout/TreasurerHeader';
@@ -44,8 +44,9 @@ interface SuccessBilling {
   amount: number;
 }
 
-export default function BillingManagementPage() {
+function BillingManagementContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [classes, setClasses] = useState<Class[]>([]);
   const [academicYears, setAcademicYears] = useState<AcademicYear[]>([]);
@@ -59,6 +60,7 @@ export default function BillingManagementPage() {
     academicYearId: '',
     classIds: [] as string[],
     type: 'SPP',
+    amount: '',
     description: '',
   });
 
@@ -87,6 +89,23 @@ export default function BillingManagementPage() {
     fetchAcademicYears();
     fetchStats();
   }, [router]);
+
+  useEffect(() => {
+    const presetType = searchParams.get('type');
+    const presetMonth = searchParams.get('month');
+    const presetYear = searchParams.get('year');
+    const presetAmount = searchParams.get('amount');
+    const presetDescription = searchParams.get('description');
+
+    setFormData((prev) => ({
+      ...prev,
+      type: presetType || prev.type,
+      month: presetMonth ? Number(presetMonth) : prev.month,
+      year: presetYear ? Number(presetYear) : prev.year,
+      amount: presetAmount ?? prev.amount,
+      description: presetDescription ?? prev.description,
+    }));
+  }, [searchParams]);
 
   const fetchClasses = async () => {
     try {
@@ -235,6 +254,17 @@ export default function BillingManagementPage() {
     setFormData(prev => ({ ...prev, classIds: [] }));
   };
 
+  const billingTypeOptions = [
+    { value: 'SPP', label: 'SPP Bulanan' },
+    { value: 'DAFTAR_ULANG', label: 'Daftar Ulang' },
+    { value: 'KEGIATAN', label: 'Kegiatan' },
+    { value: 'SERAGAM', label: 'Seragam' },
+    { value: 'BUKU', label: 'Buku' },
+    { value: 'LAINNYA', label: 'Lainnya' },
+  ];
+
+  const isSppBilling = formData.type === 'SPP';
+
   return (
     <div className="flex min-h-screen bg-neutral-50">
       <div className="hidden lg:block">
@@ -325,7 +355,7 @@ export default function BillingManagementPage() {
             <Card>
               <div className="flex items-center gap-3 mb-6">
                 <PlusCircle className="w-6 h-6 text-primary-600" />
-                <h2 className="text-xl font-bold text-neutral-900">Generate Tagihan SPP Bulanan</h2>
+                <h2 className="text-xl font-bold text-neutral-900">Generate Tagihan SPP / Daftar Ulang</h2>
               </div>
               <div className="space-y-6">
                 {/* Periode */}
@@ -378,6 +408,46 @@ export default function BillingManagementPage() {
                     ))}
                   </select>
                 </div>
+
+                {/* Billing Type */}
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                    Jenis Tagihan
+                  </label>
+                  <select
+                    className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    value={formData.type}
+                    onChange={(e) => setFormData({ ...formData, type: e.target.value, amount: e.target.value === 'SPP' ? '' : formData.amount })}
+                  >
+                    {billingTypeOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-xs text-neutral-500 mt-2">
+                    SPP memakai tarif kelas. Daftar ulang dan jenis lain bisa diatur nominalnya oleh bendahara.
+                  </p>
+                </div>
+
+                {!isSppBilling && (
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 mb-2">
+                      Nominal Tagihan
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                      value={formData.amount}
+                      onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+                      placeholder="Misal: 2000000"
+                    />
+                    <p className="text-xs text-neutral-500 mt-2">
+                      Kosongkan jika ingin memakai nominal default dari pengaturan sistem.
+                    </p>
+                  </div>
+                )}
 
                 {/* Class Selection */}
                 <div>
@@ -442,7 +512,7 @@ export default function BillingManagementPage() {
                     rows={3}
                     value={formData.description}
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    placeholder="Misal: SPP Bulan Januari 2024"
+                    placeholder={formData.type === 'SPP' ? 'Misal: SPP Bulan Januari 2024' : 'Misal: Daftar ulang kenaikan kelas'}
                   />
                 </div>
 
@@ -462,5 +532,13 @@ export default function BillingManagementPage() {
         </main>
       </div>
     </div>
+  );
+}
+
+export default function BillingManagementPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><p className="text-neutral-500">Memuat...</p></div>}>
+      <BillingManagementContent />
+    </Suspense>
   );
 }

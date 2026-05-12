@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { month, year, academicYearId, classIds, type, description } = await request.json();
+    const { month, year, academicYearId, classIds, type, description, amount: requestedAmount } = await request.json();
 
     // Validate required fields
     if (!month || !year || !academicYearId || !type) {
@@ -60,6 +60,12 @@ export async function POST(request: NextRequest) {
         { status: 404 }
       );
     }
+
+    const reregFeeSetting = await prisma.systemSettings.findFirst({
+      where: { key: 'REREG_FEE' },
+      select: { value: true },
+    });
+    const defaultReregFee = reregFeeSetting ? Number(reregFeeSetting.value) : 500000;
 
     // Get active students in specified classes (or all)
     const studentClassWhere: Prisma.StudentClassWhereInput = {
@@ -147,7 +153,7 @@ export async function POST(request: NextRequest) {
           throw new Error(`Bill number already exists: ${billNumber}`);
         }
 
-        // Get amount from class sppAmount (untuk SPP) or use default
+        // Get amount from class sppAmount (untuk SPP) or use configured/default amount
         let amount = 500000; // Default
         if (!sc.class) {
           throw new Error('Class data missing for this student enrollment');
@@ -155,6 +161,13 @@ export async function POST(request: NextRequest) {
 
         if (type === 'SPP' && sc.class.sppAmount > 0) {
           amount = sc.class.sppAmount;
+        } else if (type === 'DAFTAR_ULANG') {
+          const parsedRequestedAmount = Number(requestedAmount);
+          amount = Number.isFinite(parsedRequestedAmount) && parsedRequestedAmount > 0
+            ? parsedRequestedAmount
+            : defaultReregFee;
+        } else if (Number.isFinite(Number(requestedAmount)) && Number(requestedAmount) > 0) {
+          amount = Number(requestedAmount);
         }
 
         // Validate amount is positive

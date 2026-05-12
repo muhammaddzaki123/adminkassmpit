@@ -31,6 +31,19 @@ export async function GET(req: NextRequest) {
             noTelp: true,
             enrollmentType: true,
             email: true,
+            studentClasses: {
+              where: { isActive: true },
+              orderBy: { enrollmentDate: 'desc' },
+              take: 1,
+              include: {
+                class: {
+                  select: { name: true },
+                },
+                academicYear: {
+                  select: { year: true },
+                },
+              },
+            },
           },
         },
       },
@@ -139,7 +152,8 @@ export async function GET(req: NextRequest) {
           nisn: student.nisn,
           email: student.email,
           phone: student.noTelp,
-          className: student.enrollmentType || '-',
+          className: user.student?.studentClasses?.[0]?.class?.name ?? student?.enrollmentType ?? '-',
+          academicYear: user.student?.studentClasses?.[0]?.academicYear?.year ?? '-',
         },
         billings: result,
         summary,

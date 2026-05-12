@@ -67,7 +67,9 @@ export async function GET(request: NextRequest) {
         },
         billings: {
           where: {
-            type: PaymentType.SPP,
+            type: {
+              in: [PaymentType.SPP, PaymentType.DAFTAR_ULANG],
+            },
           },
           orderBy: [
             { year: 'asc' },
@@ -78,12 +80,19 @@ export async function GET(request: NextRequest) {
             id: true,
             billNumber: true,
             status: true,
+            type: true,
             month: true,
             year: true,
             totalAmount: true,
             paidAmount: true,
             dueDate: true,
             billDate: true,
+            payments: {
+              where: { status: 'COMPLETED' },
+              select: { paidAt: true },
+              orderBy: { paidAt: 'desc' },
+              take: 1,
+            },
           },
         },
       },
@@ -92,9 +101,11 @@ export async function GET(request: NextRequest) {
 
     const data = students.map((student) => {
       const currentClass = student.studentClasses[0];
-      const sppBillings = student.billings;
+      const sppBillings = student.billings.filter((billing) => billing.type === PaymentType.SPP);
+      const reregBillings = student.billings.filter((billing) => billing.type === PaymentType.DAFTAR_ULANG);
       const firstSpp = sppBillings[0];
       const latestSpp = sppBillings[sppBillings.length - 1];
+      const latestRereg = reregBillings[reregBillings.length - 1];
 
       const statusCounts = sppBillings.reduce<Record<string, number>>((acc, billing) => {
         acc[billing.status] = (acc[billing.status] || 0) + 1;
@@ -131,6 +142,21 @@ export async function GET(request: NextRequest) {
         billDate: billing.billDate,
       }));
 
+      const reRegistrationSummary = {
+        totalTagihan: reregBillings.length,
+        periodLabel: latestRereg ? getSppPeriodLabel(latestRereg.month, latestRereg.year) : 'Juli',
+        statusTerbaru: latestRereg?.status || null,
+        billNumberTerbaru: latestRereg?.billNumber || null,
+        totalAmount: reregBillings.reduce((sum, billing) => sum + billing.totalAmount, 0),
+        paidAmount: reregBillings.reduce((sum, billing) => sum + billing.paidAmount, 0),
+        remainingAmount: reregBillings.reduce(
+          (sum, billing) => sum + Math.max(0, billing.totalAmount - billing.paidAmount),
+          0
+        ),
+        isPaid: reregBillings.length > 0 && reregBillings.every((billing) => billing.status === BillingStatus.PAID),
+        paidAt: latestRereg?.payments?.[0]?.paidAt || null,
+      };
+
       return {
         id: student.id,
         nama: student.nama,
@@ -143,6 +169,9 @@ export async function GET(request: NextRequest) {
         enrollmentType: student.enrollmentType,
         sppSummary,
         sppDetails,
+        reRegistrationSummary,
+        reregPaidAt: reRegistrationSummary.paidAt,
+        reregFee: reRegistrationSummary.totalAmount,
       };
     });
 

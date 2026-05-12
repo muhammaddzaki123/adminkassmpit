@@ -123,7 +123,7 @@ export default function AdminStudentsPage() {
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
               <Card padding="sm">
                 <div className="flex items-center gap-2.5">
-                  <div className="p-2 bg-emerald-100 rounded-lg flex-shrink-0">
+                  <div className="p-2 bg-emerald-100 rounded-lg shrink-0">
                     <Users className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-600" />
                   </div>
                   <div className="min-w-0">
@@ -134,7 +134,7 @@ export default function AdminStudentsPage() {
               </Card>
               <Card padding="sm">
                 <div className="flex items-center gap-2.5">
-                  <div className="p-2 bg-blue-100 rounded-lg flex-shrink-0">
+                  <div className="p-2 bg-blue-100 rounded-lg shrink-0">
                     <BookOpen className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
                   </div>
                   <div className="min-w-0">
@@ -145,7 +145,7 @@ export default function AdminStudentsPage() {
               </Card>
               <Card padding="sm">
                 <div className="flex items-center gap-2.5">
-                  <div className="p-2 bg-amber-100 rounded-lg flex-shrink-0">
+                  <div className="p-2 bg-amber-100 rounded-lg shrink-0">
                     <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-amber-600" />
                   </div>
                   <div className="min-w-0">
@@ -156,7 +156,7 @@ export default function AdminStudentsPage() {
               </Card>
               <Card padding="sm">
                 <div className="flex items-center gap-2.5">
-                  <div className="p-2 bg-purple-100 rounded-lg flex-shrink-0">
+                  <div className="p-2 bg-purple-100 rounded-lg shrink-0">
                     <School className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600" />
                   </div>
                   <div className="min-w-0">
@@ -291,7 +291,7 @@ export default function AdminStudentsPage() {
                             <p className="font-semibold text-sm text-neutral-900 truncate">{student.nama}</p>
                             <p className="text-xs text-neutral-500 mt-0.5">NISN: {student.nisn} · {student.kelas}</p>
                           </div>
-                          <div className="flex gap-1 flex-shrink-0">
+                          <div className="flex gap-1 shrink-0">
                             <button
                               onClick={() => router.push(`/admin/students/${student.id}/edit`)}
                               className="p-1.5 rounded-lg hover:bg-primary-50 text-primary"

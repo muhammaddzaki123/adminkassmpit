@@ -83,6 +83,10 @@ export default function BillingListPage() {
     search: '',
   });
 
+  const applyTypePreset = (type: string) => {
+    setFilters((prev) => ({ ...prev, type }));
+  };
+
   const fetchBillings = useCallback(async () => {
     setLoading(true);
     try {
@@ -166,6 +170,46 @@ export default function BillingListPage() {
   const previewBillings = bulkActionType === 'DISCOUNT' ? eligibleDiscountBillings : eligibleInstallmentBillings;
 
   const allSelected = previewBillings.length > 0 && selectedBillingIds.length === previewBillings.length;
+
+  const sppBillings = useMemo(
+    () => billings.filter((billing) => billing.type === 'SPP'),
+    [billings]
+  );
+
+  const reRegistrationBillings = useMemo(
+    () => billings.filter((billing) => billing.type === 'DAFTAR_ULANG'),
+    [billings]
+  );
+
+  const sppSummary = useMemo(() => {
+    const totalAmount = sppBillings.reduce((sum, billing) => sum + billing.totalAmount, 0);
+    const paidAmount = sppBillings.reduce((sum, billing) => sum + billing.paidAmount, 0);
+    const remainingAmount = sppBillings.reduce((sum, billing) => sum + billing.remainingAmount, 0);
+
+    return {
+      total: sppBillings.length,
+      paid: sppBillings.filter((billing) => billing.status === 'PAID').length,
+      unpaid: sppBillings.filter((billing) => ['BILLED', 'OVERDUE', 'PARTIAL'].includes(billing.status)).length,
+      totalAmount,
+      paidAmount,
+      remainingAmount,
+    };
+  }, [sppBillings]);
+
+  const reRegistrationSummary = useMemo(() => {
+    const totalAmount = reRegistrationBillings.reduce((sum, billing) => sum + billing.totalAmount, 0);
+    const paidAmount = reRegistrationBillings.reduce((sum, billing) => sum + billing.paidAmount, 0);
+    const remainingAmount = reRegistrationBillings.reduce((sum, billing) => sum + billing.remainingAmount, 0);
+
+    return {
+      total: reRegistrationBillings.length,
+      paid: reRegistrationBillings.filter((billing) => billing.status === 'PAID').length,
+      unpaid: reRegistrationBillings.filter((billing) => ['BILLED', 'OVERDUE', 'PARTIAL'].includes(billing.status)).length,
+      totalAmount,
+      paidAmount,
+      remainingAmount,
+    };
+  }, [reRegistrationBillings]);
 
   const getStatusBadgeVariant = (status: string) => {
     switch (status) {
@@ -460,9 +504,15 @@ export default function BillingListPage() {
             <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
               <div>
                 <h1 className="text-3xl font-bold text-neutral-900">Daftar Tagihan</h1>
-                <p className="text-neutral-600 mt-1">Kelola semua tagihan siswa</p>
+                <p className="text-neutral-600 mt-1">Kelola semua tagihan siswa, termasuk SPP dan daftar ulang tahunan</p>
               </div>
               <div className="flex flex-col items-stretch gap-2 lg:min-w-[260px]">
+                <Button
+                  variant="outline"
+                  onClick={() => router.push('/treasurer/re-registration')}
+                >
+                  Daftar Ulang
+                </Button>
                 <Button
                   variant="primary"
                   onClick={() => router.push('/treasurer/billing')}
@@ -476,8 +526,61 @@ export default function BillingListPage() {
                 </Button>
               </div>
             </div>
-
             <Card className="overflow-hidden">
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-4">
+                <div className="rounded-xl border border-blue-100 bg-blue-50 p-4">
+                  <p className="text-xs uppercase tracking-[0.12em] text-blue-700">SPP</p>
+                  <p className="mt-2 text-2xl font-bold text-blue-900">{sppSummary.total}</p>
+                  <p className="text-sm text-blue-700 mt-1">Total billing aktif</p>
+                </div>
+                <div className="rounded-xl border border-green-100 bg-green-50 p-4">
+                  <p className="text-xs uppercase tracking-[0.12em] text-green-700">SPP Lunas</p>
+                  <p className="mt-2 text-2xl font-bold text-green-900">{sppSummary.paid}</p>
+                  <p className="text-sm text-green-700 mt-1">Sudah selesai</p>
+                </div>
+                <div className="rounded-xl border border-amber-100 bg-amber-50 p-4">
+                  <p className="text-xs uppercase tracking-[0.12em] text-amber-700">Daftar Ulang</p>
+                  <p className="mt-2 text-2xl font-bold text-amber-900">{reRegistrationSummary.total}</p>
+                  <p className="text-sm text-amber-700 mt-1">Total billing aktif</p>
+                </div>
+                <div className="rounded-xl border border-neutral-200 bg-white p-4">
+                  <p className="text-xs uppercase tracking-[0.12em] text-neutral-500">Daftar Ulang Lunas</p>
+                  <p className="mt-2 text-2xl font-bold text-neutral-900">{reRegistrationSummary.paid}</p>
+                  <p className="text-sm text-neutral-600 mt-1">Status pembayaran selesai</p>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2 mb-4">
+                <Button
+                  size="sm"
+                  variant={filters.type === '' ? 'primary' : 'outline'}
+                  onClick={() => applyTypePreset('')}
+                >
+                  Semua Jenis
+                </Button>
+                <Button
+                  size="sm"
+                  variant={filters.type === 'SPP' ? 'primary' : 'outline'}
+                  onClick={() => applyTypePreset('SPP')}
+                >
+                  SPP
+                </Button>
+                <Button
+                  size="sm"
+                  variant={filters.type === 'DAFTAR_ULANG' ? 'primary' : 'outline'}
+                  onClick={() => applyTypePreset('DAFTAR_ULANG')}
+                >
+                  Daftar Ulang
+                </Button>
+                <Button
+                  size="sm"
+                  variant={filters.type === 'KEGIATAN' ? 'primary' : 'outline'}
+                  onClick={() => applyTypePreset('KEGIATAN')}
+                >
+                  Kegiatan
+                </Button>
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-neutral-700 mb-2">

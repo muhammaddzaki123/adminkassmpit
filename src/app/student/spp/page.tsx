@@ -77,8 +77,22 @@ function SPPPaymentContent() {
         setBillings(unpaidBillings);
         
         // Auto-select billing from URL if provided
+        const billingIdsParam = searchParams.get('billingIds');
         const billingId = searchParams.get('billingId');
-        if (billingId && unpaidBillings.find((b: Billing) => b.id === billingId)) {
+
+        if (billingIdsParam) {
+          const requestedIds = billingIdsParam
+            .split(',')
+            .map((id) => id.trim())
+            .filter(Boolean);
+          const matchedIds = unpaidBillings
+            .filter((billing: Billing) => requestedIds.includes(billing.id))
+            .map((billing: Billing) => billing.id);
+
+          if (matchedIds.length > 0) {
+            setSelectedBillings(matchedIds);
+          }
+        } else if (billingId && unpaidBillings.find((b: Billing) => b.id === billingId)) {
           setSelectedBillings([billingId]);
         }
       }

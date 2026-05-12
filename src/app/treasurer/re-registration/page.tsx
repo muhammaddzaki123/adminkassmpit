@@ -9,15 +9,26 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Table } from '@/components/ui/Table';
 import { Badge } from '@/components/ui/Badge';
-import { Download, AlertCircle } from 'lucide-react';
+import { Download, AlertCircle, CalendarDays } from 'lucide-react';
 
 interface Student {
   id: string;
   nisn: string;
   nama: string;
   kelas?: string;
-  kelasNaik?: string;
-  reregPaidAt?: string;
+  academicYear?: string;
+  reRegistrationSummary?: {
+    totalTagihan: number;
+    periodLabel: string;
+    statusTerbaru: string | null;
+    billNumberTerbaru: string | null;
+    totalAmount: number;
+    paidAmount: number;
+    remainingAmount: number;
+    isPaid: boolean;
+    paidAt: string | null;
+  };
+  reregPaidAt?: string | null;
   reregFee?: number;
 }
 
@@ -26,10 +37,11 @@ interface ReRegistration {
   nisn: string;
   nama: string;
   kelasSekarang: string;
-  kelasNaik: string;
+  periode: string;
   status: 'LUNAS' | 'BELUM' | 'CICILAN';
   totalTagihan: number;
   terbayar: number;
+  sisaBayar: number;
 }
 
 export default function ReRegistrationPage() {
@@ -74,10 +86,11 @@ export default function ReRegistrationPage() {
           nisn: s.nisn,
           nama: s.nama,
           kelasSekarang: s.kelas || '-',
-          kelasNaik: s.kelasNaik || '-',
-          status: s.reregPaidAt ? 'LUNAS' : 'BELUM',
-          totalTagihan: s.reregFee || 0,
-          terbayar: s.reregPaidAt ? (s.reregFee || 0) : 0,
+          periode: s.reRegistrationSummary?.periodLabel || 'Juli',
+          status: s.reRegistrationSummary?.isPaid ? 'LUNAS' : (s.reRegistrationSummary?.paidAmount || 0) > 0 ? 'CICILAN' : 'BELUM',
+          totalTagihan: s.reRegistrationSummary?.totalAmount || s.reregFee || 0,
+          terbayar: s.reRegistrationSummary?.paidAmount || (s.reregPaidAt ? (s.reregFee || 0) : 0),
+          sisaBayar: s.reRegistrationSummary?.remainingAmount || Math.max((s.reregFee || 0) - (s.reregPaidAt ? (s.reregFee || 0) : 0), 0),
         }));
         setStudents(reregStudents);
       }
@@ -101,7 +114,7 @@ export default function ReRegistrationPage() {
     { key: 'nisn', label: 'NISN', width: '12%' },
     { key: 'nama', label: 'Nama Siswa', width: '25%' },
     { key: 'kelasSekarang', label: 'Kelas Sekarang', width: '12%' },
-    { key: 'kelasNaik', label: 'Naik Ke', width: '12%' },
+    { key: 'periode', label: 'Periode', width: '12%' },
     {
       key: 'status',
       label: 'Status',
@@ -163,9 +176,33 @@ export default function ReRegistrationPage() {
         <main className="flex-1 p-4 md:p-6 lg:p-8 overflow-auto mt-16">
           <div className="max-w-7xl mx-auto space-y-6">
             <div>
-              <h1 className="text-3xl font-bold text-neutral-900">Daftar Ulang</h1>
-              <p className="text-neutral-600 mt-1">Kelola pembayaran daftar ulang siswa</p>
+              <h1 className="text-3xl font-bold text-neutral-900">Daftar Ulang Kenaikan Kelas</h1>
+              <p className="text-neutral-600 mt-1">Daftar ulang siswa lama setiap 1–21 Juli, termasuk pembayaran daftar ulang dan SPP bulan Juli</p>
             </div>
+
+            <Card className="bg-blue-50 border-blue-200">
+              <div className="flex items-start gap-3">
+                <CalendarDays className="w-5 h-5 text-blue-600 mt-0.5 shrink-0" />
+                <div>
+                  <h3 className="font-semibold text-blue-900">Alur daftar ulang tahunan</h3>
+                  <p className="text-blue-700 text-sm mt-1">Fokusnya siswa yang sudah ada. Saat periode Juli dibuka, siswa membayar daftar ulang + SPP Juli dalam satu alur pembayaran.</p>
+                </div>
+              </div>
+              <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+                <Button
+                  variant="primary"
+                  onClick={() => router.push('/treasurer/billing?type=DAFTAR_ULANG&month=7')}
+                >
+                  Kelola Billing Daftar Ulang
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => router.push('/treasurer/billing?type=DAFTAR_ULANG&month=7&description=Daftar%20ulang%20kenaikan%20kelas')}
+                >
+                  Generate Tagihan Daftar Ulang
+                </Button>
+              </div>
+            </Card>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <Card padding="md" className="text-center">
