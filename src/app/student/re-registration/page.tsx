@@ -154,7 +154,7 @@ export default function ReRegistrationPage() {
     }
 
     const billingIds = unpaidTargetBillings.map((billing) => billing.id).join(',');
-    router.push(`/student/spp?billingIds=${encodeURIComponent(billingIds)}`);
+    router.push(`/student/re-registration/pay?billingIds=${encodeURIComponent(billingIds)}`);
   };
 
   const openDaysLabel = '1–21 Juli';
