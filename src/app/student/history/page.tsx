@@ -266,7 +266,7 @@ export default function HistoryPage() {
                           size="sm"
                           variant="outline"
                           icon={<Eye className="w-4 h-4" />}
-                          onClick={() => router.push('/student/spp')}
+                          onClick={() => router.push(`/student/history/${transaction.id}`)}
                         >
                           Detail
                         </Button>

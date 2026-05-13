@@ -40,6 +40,7 @@ export async function GET(request: NextRequest) {
 
     const transactions = payments.map((payment) => ({
       id: payment.id,
+      paymentNumber: payment.paymentNumber,
       paymentType: payment.billing.type || 'SPP',
       amount: payment.amount,
       adminFee: payment.adminFee || 0,
@@ -48,7 +49,9 @@ export async function GET(request: NextRequest) {
       paymentMethod: payment.method || 'VIRTUAL_ACCOUNT',
       description: payment.billing.description || payment.notes || '',
       billingNumber: payment.billing.billNumber,
+      billingId: payment.billingId,
       vaNumber: payment.vaNumber,
+      externalId: payment.externalId,
       paidAt: payment.paidAt?.toISOString(),
       expiredAt: payment.expiredAt?.toISOString(),
       createdAt: payment.createdAt.toISOString(),
