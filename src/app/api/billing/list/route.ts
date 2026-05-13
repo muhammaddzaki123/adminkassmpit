@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getServerSession } from '@/lib/auth';
-import { Prisma, BillingStatus, PaymentType } from '@prisma/client';
+import { BillingStatus, PaymentType, Prisma } from '@prisma/client';
 
 const BILLING_STATUS_VALUES: BillingStatus[] = [
   'UNBILLED',
@@ -34,7 +34,9 @@ export async function GET(request: NextRequest) {
     const year = searchParams.get('year');
     const search = searchParams.get('search');
     const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '50');
+    const limitParam = searchParams.get('limit');
+    const all = searchParams.get('all') === 'true' || !limitParam;
+    const limit = all ? 0 : parseInt(limitParam || '50');
 
     // Build where clause
     const where: Prisma.BillingWhereInput = {};
@@ -88,38 +90,45 @@ export async function GET(request: NextRequest) {
       where.student = studentWhere;
     }
 
-    const skip = (page - 1) * limit;
+    const skip = all ? 0 : (page - 1) * limit;
 
-    // Get billings with pagination
-    const [billings, total] = await Promise.all([
-      prisma.billing.findMany({
-        where,
+    // Shared include shape
+    const includeShape = {
+      student: {
         include: {
-          student: {
-            include: {
-              studentClasses: {
-                where: { isActive: true },
-                include: {
-                  class: true,
-                },
-                take: 1,
-              },
-            },
-          },
-          payments: {
-            where: {
-              status: 'COMPLETED',
-            },
+          studentClasses: {
+            where: { isActive: true },
+            include: { class: true },
+            take: 1,
           },
         },
-        orderBy: [
-          { year: 'desc' },
-          { month: 'desc' },
-          { createdAt: 'desc' },
-        ],
-        skip,
-        take: limit,
-      }),
+      },
+      payments: {
+        where: { status: 'COMPLETED' as const },
+      },
+    } as const;
+
+    const orderByShape = [
+      { year: 'desc' as const },
+      { month: 'desc' as const },
+      { createdAt: 'desc' as const },
+    ];
+
+    // Get billings — without skip/take when fetching all rows
+    const [billings, total] = await Promise.all([
+      all
+        ? prisma.billing.findMany({
+            where,
+            include: includeShape,
+            orderBy: orderByShape,
+          })
+        : prisma.billing.findMany({
+            where,
+            include: includeShape,
+            orderBy: orderByShape,
+            skip,
+            take: limit,
+          }),
       prisma.billing.count({ where }),
     ]);
 

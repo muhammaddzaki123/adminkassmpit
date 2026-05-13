@@ -13,6 +13,12 @@ import { FileText, Search, Filter, Eye, Settings2, X, RotateCcw } from 'lucide-r
 
 type BulkActionType = 'DISCOUNT' | 'INSTALLMENT';
 
+interface ClassOption {
+  id: string;
+  label: string;
+  grade: string;
+}
+
 interface Billing {
   id: string;
   billNumber: string;
@@ -61,6 +67,11 @@ export default function BillingListPage() {
   const [bulkResultMessage, setBulkResultMessage] = useState<string | null>(null);
   const [undoInfo, setUndoInfo] = useState<UndoInfo | null>(null);
   const [undoLoading, setUndoLoading] = useState(false);
+
+  // Bulk modal — local search & class filter
+  const [bulkSearch, setBulkSearch] = useState('');
+  const [bulkClassFilter, setBulkClassFilter] = useState('');
+  const [classes, setClasses] = useState<ClassOption[]>([]);
 
   const [bulkDiscountForm, setBulkDiscountForm] = useState({
     discountAmount: '',
@@ -150,6 +161,16 @@ export default function BillingListPage() {
   useEffect(() => {
     if (!bulkModalOpen) return;
     loadUndoInfo(bulkActionType);
+
+    // Fetch class list once when modal first opens
+    if (classes.length > 0) return;
+    fetchWithAuth('/api/classes/active')
+      .then((r) => r.json())
+      .then((result) => {
+        if (result.success) setClasses(result.data);
+      })
+      .catch(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bulkModalOpen, bulkActionType, loadUndoInfo]);
 
   const eligibleDiscountBillings = useMemo(
@@ -167,7 +188,23 @@ export default function BillingListPage() {
     [billings, bulkInstallmentForm.respectAllowInstallments]
   );
 
-  const previewBillings = bulkActionType === 'DISCOUNT' ? eligibleDiscountBillings : eligibleInstallmentBillings;
+  const basePreviewBillings = bulkActionType === 'DISCOUNT' ? eligibleDiscountBillings : eligibleInstallmentBillings;
+
+  const previewBillings = useMemo(() => {
+    let list = basePreviewBillings;
+    if (bulkSearch.trim()) {
+      const q = bulkSearch.trim().toLowerCase();
+      list = list.filter(
+        (b) =>
+          b.student.nama.toLowerCase().includes(q) ||
+          b.student.nisn.toLowerCase().includes(q)
+      );
+    }
+    if (bulkClassFilter) {
+      list = list.filter((b) => b.student.class === bulkClassFilter);
+    }
+    return list;
+  }, [basePreviewBillings, bulkSearch, bulkClassFilter]);
 
   const allSelected = previewBillings.length > 0 && selectedBillingIds.length === previewBillings.length;
 
@@ -256,6 +293,8 @@ export default function BillingListPage() {
     setBulkActionType('DISCOUNT');
     setSelectedBillingIds(eligibleDiscountBillings.map((billing) => billing.id));
     setDiscountOverrides({});
+    setBulkSearch('');
+    setBulkClassFilter('');
     setBulkModalOpen(true);
   };
 
@@ -827,6 +866,39 @@ export default function BillingListPage() {
               )}
 
               <div className="rounded-xl border border-neutral-200 overflow-hidden">
+                {/* Search & class filter bar */}
+                <div className="flex flex-wrap items-center gap-2 px-3 py-2 bg-white border-b border-neutral-200">
+                  <div className="relative flex-1 min-w-[160px]">
+                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 pointer-events-none" />
+                    <input
+                      type="text"
+                      placeholder="Cari nama / NISN..."
+                      value={bulkSearch}
+                      onChange={(e) => setBulkSearch(e.target.value)}
+                      className="w-full pl-8 pr-3 py-1.5 text-sm border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    />
+                  </div>
+                  <select
+                    value={bulkClassFilter}
+                    onChange={(e) => setBulkClassFilter(e.target.value)}
+                    className="py-1.5 px-3 text-sm border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  >
+                    <option value="">Semua Kelas</option>
+                    {classes.map((c) => (
+                      <option key={c.id} value={c.label}>{c.label}</option>
+                    ))}
+                  </select>
+                  {(bulkSearch || bulkClassFilter) && (
+                    <button
+                      type="button"
+                      onClick={() => { setBulkSearch(''); setBulkClassFilter(''); }}
+                      className="text-xs text-neutral-500 hover:text-neutral-700 flex items-center gap-1"
+                    >
+                      <X className="w-3 h-3" /> Reset
+                    </button>
+                  )}
+                </div>
+
                 <div className="flex items-center justify-between px-3 py-2 bg-neutral-50 border-b border-neutral-200">
                   <div className="text-sm text-neutral-700">
                     Preview target: {previewBillings.length} | Dipilih: {selectedBillingIds.length}

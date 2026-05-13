@@ -485,7 +485,7 @@ function BillingManagementContent() {
                       >
                         <div className="flex items-center justify-between">
                           <div>
-                            <p className="font-medium text-neutral-900">{cls.name}</p>
+                            <p className="font-medium text-neutral-900">{`${cls.grade} - ${cls.name}`}</p>
                             <p className="text-sm text-neutral-600">Rp {cls.sppAmount.toLocaleString('id-ID')}</p>
                           </div>
                           {formData.classIds.includes(cls.id) && (
