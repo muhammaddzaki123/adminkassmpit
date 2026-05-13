@@ -82,6 +82,8 @@ export default function StudentsPage() {
   const [showSppStatusMatrix, setShowSppStatusMatrix] = useState(false);
   const [matrixStatusView, setMatrixStatusView] = useState<'all' | 'risk'>('all');
   const [matrixSppStatusFilter, setMatrixSppStatusFilter] = useState<'all' | 'OVERDUE' | 'PARTIAL' | 'BILLED' | 'PAID' | 'UNBILLED'>('all');
+  const [matrixSearchQuery, setMatrixSearchQuery] = useState('');
+  const [matrixKelasFilter, setMatrixKelasFilter] = useState('all');
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -302,6 +304,18 @@ export default function StudentsPage() {
       return acc;
     }, {});
   }, [displayedStudents]);
+
+  const filteredMatrixStudents = useMemo(() => {
+    return matrixStudents.filter((student) => {
+      const matchesSearch =
+        matrixSearchQuery === '' ||
+        student.nama.toLowerCase().includes(matrixSearchQuery.toLowerCase()) ||
+        student.nisn.includes(matrixSearchQuery);
+      const kelasLabel = student.kelasLabel || student.kelas || '-';
+      const matchesKelas = matrixKelasFilter === 'all' || kelasLabel === matrixKelasFilter;
+      return matchesSearch && matchesKelas;
+    });
+  }, [matrixStudents, matrixSearchQuery, matrixKelasFilter]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('id-ID', {
@@ -614,8 +628,8 @@ export default function StudentsPage() {
             </div>
 
             <Card>
-              <div className="flex flex-col md:flex-row gap-4 mb-6">
-                <div className="flex-1">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:flex lg:flex-row gap-2 sm:gap-3 mb-4">
+                <div className="col-span-2 sm:col-span-3 lg:flex-1">
                   <Input
                     placeholder="Cari nama atau NISN..."
                     value={searchQuery}
@@ -623,7 +637,7 @@ export default function StudentsPage() {
                     icon={<Search className="w-4 h-4" />}
                   />
                 </div>
-                <div className="w-full md:w-40">
+                <div>
                   <Select
                     value={statusFilter}
                     onChange={(e) => setStatusFilter(e.target.value)}
@@ -636,7 +650,7 @@ export default function StudentsPage() {
                     ]}
                   />
                 </div>
-                <div className="w-full md:w-44">
+                <div>
                   <Select
                     value={kelasFilter}
                     onChange={(e) => setKelasFilter(e.target.value)}
@@ -646,34 +660,34 @@ export default function StudentsPage() {
                     ]}
                   />
                 </div>
-                <div className="w-full md:w-48">
+                <div>
                   <Select
                     value={sppLatestStatusFilter}
                     onChange={(e) => setSppLatestStatusFilter(e.target.value)}
                     options={[
-                      { value: 'all', label: 'Semua SPP Terbaru' },
-                      { value: 'OVERDUE', label: 'Daftar Tunggakan' },
-                      { value: 'UNPAID', label: 'Daftar Belum Dibayar' },
-                      { value: 'PARTIAL', label: 'SPP Terbaru: Cicilan' },
-                      { value: 'BILLED', label: 'SPP Terbaru: Ditagih' },
-                      { value: 'PAID', label: 'SPP Terbaru: Lunas' },
-                      { value: 'UNBILLED', label: 'SPP Terbaru: Belum Tagih' },
+                      { value: 'all', label: 'Semua SPP' },
+                      { value: 'OVERDUE', label: 'Tunggakan' },
+                      { value: 'UNPAID', label: 'Belum Bayar' },
+                      { value: 'PARTIAL', label: 'Cicilan' },
+                      { value: 'BILLED', label: 'Ditagih' },
+                      { value: 'PAID', label: 'Lunas' },
+                      { value: 'UNBILLED', label: 'Belum Tagih' },
                       { value: 'NO_BILLING', label: 'Belum Ada Tagihan' },
                     ]}
                   />
                 </div>
-                <div className="w-full md:w-48">
+                <div>
                   <Select
                     value={sppSortByOverdue}
                     onChange={(e) => setSppSortByOverdue(e.target.value as 'default' | 'overdue_desc' | 'overdue_asc')}
                     options={[
                       { value: 'default', label: 'Urutan Default' },
-                      { value: 'overdue_desc', label: 'Tunggak Tertinggi' },
-                      { value: 'overdue_asc', label: 'Tunggak Terendah' },
+                      { value: 'overdue_desc', label: 'Tunggak ↓' },
+                      { value: 'overdue_asc', label: 'Tunggak ↑' },
                     ]}
                   />
                 </div>
-                <div className="w-full md:w-auto">
+                <div>
                   <Button
                     variant="outline"
                     onClick={() => {
@@ -683,28 +697,29 @@ export default function StudentsPage() {
                       setSppLatestStatusFilter('all');
                       setSppSortByOverdue('default');
                     }}
-                    className="w-full md:w-auto"
+                    className="w-full"
                   >
-                    Reset Filter
+                    Reset
                   </Button>
                 </div>
               </div>
 
-              <div className="flex flex-wrap gap-2 mb-6">
+              <div className="flex flex-wrap gap-2 mb-4">
                 <Button variant="outline" icon={<Download className="w-4 h-4" />} onClick={handleExportCsv}>
-                  Export CSV
+                  <span className="hidden sm:inline">Export </span>CSV
                 </Button>
                 <Button variant="outline" icon={<Download className="w-4 h-4" />} onClick={handleExportSpreadsheet}>
-                  Export Excel
+                  <span className="hidden sm:inline">Export </span>Excel
                 </Button>
                 <Button variant="outline" icon={<Download className="w-4 h-4" />} onClick={handleExportPdf}>
-                  Export PDF
+                  <span className="hidden sm:inline">Export </span>PDF
                 </Button>
                 <Button
-                  variant={showSppStatusMatrix ? 'primary' : 'outline'}
-                  onClick={() => setShowSppStatusMatrix((prev) => !prev)}
+                  variant="outline"
+                  onClick={() => setShowSppStatusMatrix(true)}
+                  className="ml-auto"
                 >
-                  {showSppStatusMatrix ? 'Sembunyikan Status SPP Semua Siswa' : 'Tampilkan Status SPP Semua Siswa'}
+                  <span className="hidden sm:inline">Tampilkan </span>Status SPP
                 </Button>
               </div>
 
@@ -714,137 +729,244 @@ export default function StudentsPage() {
                   <p className="text-neutral-600">Tidak ada siswa ditemukan</p>
                 </div>
               ) : (
-                <div className="w-full overflow-x-auto">
-                  <table className="w-full text-left text-sm">
-                    <thead className="bg-[#f9fafb] border-b border-[#e5e7eb]">
-                      <tr>
-                        <th className="px-4 py-3 font-medium text-[#4b5563] w-[12%]">NISN</th>
-                        <th className="px-4 py-3 font-medium text-[#4b5563] w-[20%]">Nama Siswa</th>
-                        <th className="px-4 py-3 font-medium text-[#4b5563] w-[8%]">Kelas</th>
-                        <th className="px-4 py-3 font-medium text-[#4b5563] w-[8%]">JK</th>
-                        <th className="px-4 py-3 font-medium text-[#4b5563] w-[40%]">Status SPP (Awal - Terbaru)</th>
-                        <th className="px-4 py-3 font-medium text-[#4b5563] w-[12%]">Status</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-[#e5e7eb]">
-                      {displayedStudents.map((student) => {
-                        const summary = student.sppSummary;
-                        const latest = getBillingStatusBadge(summary?.statusTerbaru || null);
-                        const studentStatus = getStudentStatusBadge(student.status);
-                        const canExpand = (student.sppDetails?.length || 0) > 0;
-                        const unpaidCount = (student.sppDetails || []).filter((detail) => !['PAID', 'WAIVED', 'CANCELLED'].includes(detail.status)).length;
-
-                        return (
-                          <tr key={student.id} className="hover:bg-[#f9fafb] transition-colors align-top">
-                              <td className="px-4 py-3 text-[#1c1c1c]">{student.nisn}</td>
-                              <td className="px-4 py-3 text-[#1c1c1c] font-medium">{student.nama}</td>
-                              <td className="px-4 py-3 text-[#1c1c1c]">{student.kelasLabel || student.kelas || '-'}</td>
-                              <td className="px-4 py-3 text-[#1c1c1c]">{student.jenisKelamin || '-'}</td>
-                              <td className="px-4 py-3 text-[#1c1c1c]">
+                <>
+                  {/* Desktop table */}
+                  <div className="hidden md:block w-full overflow-x-auto">
+                    <table className="w-full text-left text-sm">
+                      <thead className="bg-neutral-50 border-b border-neutral-200">
+                        <tr>
+                          <th className="px-4 py-3 font-medium text-neutral-600">NISN</th>
+                          <th className="px-4 py-3 font-medium text-neutral-600">Nama Siswa</th>
+                          <th className="px-4 py-3 font-medium text-neutral-600">Kelas</th>
+                          <th className="px-4 py-3 font-medium text-neutral-600">JK</th>
+                          <th className="px-4 py-3 font-medium text-neutral-600">Status SPP</th>
+                          <th className="px-4 py-3 font-medium text-neutral-600">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-neutral-200">
+                        {displayedStudents.map((student) => {
+                          const summary = student.sppSummary;
+                          const latest = getBillingStatusBadge(summary?.statusTerbaru || null);
+                          const studentStatus = getStudentStatusBadge(student.status);
+                          const canExpand = (student.sppDetails?.length || 0) > 0;
+                          const unpaidCount = (student.sppDetails || []).filter((d) => !['PAID', 'WAIVED', 'CANCELLED'].includes(d.status)).length;
+                          return (
+                            <tr key={student.id} className="hover:bg-neutral-50 transition-colors align-top">
+                              <td className="px-4 py-3 text-neutral-800 text-sm">{student.nisn}</td>
+                              <td className="px-4 py-3 font-medium text-neutral-900">{student.nama}</td>
+                              <td className="px-4 py-3 text-neutral-700">{student.kelasLabel || student.kelas || '-'}</td>
+                              <td className="px-4 py-3 text-neutral-700">{student.jenisKelamin || '-'}</td>
+                              <td className="px-4 py-3">
                                 {!summary || summary.totalTagihan === 0 ? (
-                                  <div className="text-sm text-neutral-500">
-                                    <p>Belum ada tagihan SPP</p>
-                                  </div>
+                                  <span className="text-sm text-neutral-400">Belum ada tagihan</span>
                                 ) : (
-                                  <div className="space-y-2">
+                                  <div className="space-y-1">
                                     <div className="flex items-center gap-2 flex-wrap">
                                       <Badge variant={latest.variant}>{latest.label}</Badge>
-                                      <span className="text-xs text-neutral-500">{summary.billNumberTerbaru || '-'}</span>
+                                      <span className="text-xs text-neutral-400">{summary.billNumberTerbaru || '-'}</span>
                                     </div>
-                                    <p className="text-xs text-neutral-700">
-                                      Periode: {summary.periodAwal} - {summary.periodTerbaru}
-                                    </p>
-                                    <p className="text-xs text-neutral-500">
-                                      Lunas {summary.statusCounts.paid}/{summary.totalTagihan} • Cicilan {summary.statusCounts.partial} • Tunggak {summary.statusCounts.overdue}
-                                    </p>
+                                    <p className="text-xs text-neutral-500">Periode: {summary.periodAwal} – {summary.periodTerbaru}</p>
+                                    <p className="text-xs text-neutral-400">Lunas {summary.statusCounts.paid}/{summary.totalTagihan} · Cicilan {summary.statusCounts.partial} · Tunggak {summary.statusCounts.overdue}</p>
                                     {(sppLatestStatusFilter === 'OVERDUE' || sppLatestStatusFilter === 'UNPAID') && (
-                                      <p className="text-xs text-amber-700 font-medium">
-                                        Belum dibayar: {unpaidCount} tagihan
-                                      </p>
+                                      <p className="text-xs text-amber-700 font-medium">Belum dibayar: {unpaidCount} tagihan</p>
                                     )}
                                     {canExpand && (
-                                      <button
-                                        type="button"
-                                        onClick={() => toggleSppDetails(student.id)}
-                                        className="inline-flex items-center gap-1 text-xs text-primary-700 hover:text-primary-800 font-medium"
-                                      >
-                                        <ChevronDown className="w-3.5 h-3.5" />
-                                        Lihat detail SPP per bulan
+                                      <button type="button" onClick={() => toggleSppDetails(student.id)}
+                                        className="inline-flex items-center gap-1 text-xs text-primary-700 hover:text-primary-800 font-medium mt-0.5">
+                                        <ChevronDown className="w-3.5 h-3.5" />Lihat detail
                                       </button>
                                     )}
                                   </div>
                                 )}
                               </td>
-                              <td className="px-4 py-3 text-[#1c1c1c]">
+                              <td className="px-4 py-3">
                                 <Badge variant={studentStatus.color}>{studentStatus.label}</Badge>
                               </td>
                             </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Mobile card list */}
+                  <div className="md:hidden divide-y divide-neutral-200">
+                    {displayedStudents.map((student) => {
+                      const summary = student.sppSummary;
+                      const latest = getBillingStatusBadge(summary?.statusTerbaru || null);
+                      const studentStatus = getStudentStatusBadge(student.status);
+                      const canExpand = (student.sppDetails?.length || 0) > 0;
+                      const unpaidCount = (student.sppDetails || []).filter((d) => !['PAID', 'WAIVED', 'CANCELLED'].includes(d.status)).length;
+                      return (
+                        <div key={student.id} className="p-4 space-y-2">
+                          <div className="flex items-start justify-between gap-2">
+                            <div>
+                              <p className="font-semibold text-neutral-900 text-sm">{student.nama}</p>
+                              <p className="text-xs text-neutral-500">{student.nisn} · {student.kelasLabel || student.kelas || '-'} · {student.jenisKelamin || '-'}</p>
+                            </div>
+                            <Badge variant={studentStatus.color}>{studentStatus.label}</Badge>
+                          </div>
+                          {!summary || summary.totalTagihan === 0 ? (
+                            <p className="text-xs text-neutral-400">Belum ada tagihan SPP</p>
+                          ) : (
+                            <div className="bg-neutral-50 rounded-lg p-2.5 space-y-1">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <Badge variant={latest.variant}>{latest.label}</Badge>
+                                <span className="text-xs text-neutral-400">{summary.billNumberTerbaru || '-'}</span>
+                              </div>
+                              <p className="text-xs text-neutral-500">Periode: {summary.periodAwal} – {summary.periodTerbaru}</p>
+                              <p className="text-xs text-neutral-400">Lunas {summary.statusCounts.paid}/{summary.totalTagihan} · Cicilan {summary.statusCounts.partial} · Tunggak {summary.statusCounts.overdue}</p>
+                              {(sppLatestStatusFilter === 'OVERDUE' || sppLatestStatusFilter === 'UNPAID') && (
+                                <p className="text-xs text-amber-700 font-medium">Belum dibayar: {unpaidCount} tagihan</p>
+                              )}
+                              {canExpand && (
+                                <button type="button" onClick={() => toggleSppDetails(student.id)}
+                                  className="inline-flex items-center gap-1 text-xs text-primary-700 font-medium mt-0.5">
+                                  <ChevronDown className="w-3.5 h-3.5" />Lihat detail SPP
+                                </button>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </>
               )}
             </Card>
 
+            {/* Modal: Status SPP Semua Siswa */}
             {showSppStatusMatrix && (
-              <Card>
-                <div className="space-y-3 mb-4">
-                  <h2 className="text-lg font-semibold text-neutral-900">Status SPP Semua Siswa per Bulan</h2>
-                  <p className="text-sm text-neutral-600">
-                    Tabel ini melebar ke samping. Geser horizontal untuk melihat status semua bulan per siswa.
-                  </p>
-                  <div className="flex flex-wrap items-center gap-2 text-xs text-neutral-700">
-                    <span className="font-medium text-neutral-800 mr-1">Legend:</span>
-                    <span className="inline-flex items-center gap-1 rounded-full border border-red-200 bg-red-100 px-2 py-0.5">Merah: Tunggak</span>
-                    <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-100 px-2 py-0.5">Kuning: Cicilan</span>
-                    <span className="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-100 px-2 py-0.5">Biru: Ditagih</span>
-                    <span className="inline-flex items-center gap-1 rounded-full border border-green-200 bg-green-100 px-2 py-0.5">Hijau: Lunas</span>
-                    <span className="inline-flex items-center gap-1 rounded-full border border-neutral-200 bg-neutral-100 px-2 py-0.5">Abu: Belum Tagih / Lainnya</span>
+              <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 lg:p-10" aria-modal="true">
+                {/* Backdrop */}
+                <div
+                  className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+                  onClick={() => {
+                    setShowSppStatusMatrix(false);
+                    setMatrixStatusView('all');
+                    setMatrixSppStatusFilter('all');
+                    setMatrixSearchQuery('');
+                    setMatrixKelasFilter('all');
+                  }}
+                />
+                {/* Floating Panel */}
+                <div className="relative z-10 flex flex-col w-full max-w-[95vw] xl:max-w-7xl h-[90vh] bg-white rounded-2xl shadow-2xl overflow-hidden">
+                {/* Modal Header */}
+                <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-neutral-100 shrink-0 bg-white">
+                  <div>
+                    <h2 className="text-lg font-semibold text-neutral-900">Status SPP Semua Siswa per Bulan</h2>
+                    <p className="text-sm text-neutral-500 mt-0.5">
+                      Geser horizontal untuk melihat status semua bulan per siswa.
+                    </p>
                   </div>
-                  <div className="flex flex-wrap gap-2">
-                    <Button
-                      size="sm"
-                      variant={matrixStatusView === 'all' ? 'primary' : 'outline'}
-                      onClick={() => setMatrixStatusView('all')}
-                    >
-                      Semua Status
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant={matrixStatusView === 'risk' ? 'primary' : 'outline'}
-                      onClick={() => setMatrixStatusView('risk')}
-                    >
-                      Hanya Tunggakan / Belum Lunas
-                    </Button>
-                    <div className="w-full sm:w-64">
-                      <Select
-                        value={matrixSppStatusFilter}
-                        onChange={(e) =>
-                          setMatrixSppStatusFilter(
-                            e.target.value as 'all' | 'OVERDUE' | 'PARTIAL' | 'BILLED' | 'PAID' | 'UNBILLED'
-                          )
-                        }
-                        options={[
-                          { value: 'all', label: 'Semua Status SPP di Matrix' },
-                          { value: 'OVERDUE', label: 'Hanya Tunggak' },
-                          { value: 'PARTIAL', label: 'Hanya Cicilan' },
-                          { value: 'BILLED', label: 'Hanya Ditagih' },
-                          { value: 'PAID', label: 'Hanya Lunas' },
-                          { value: 'UNBILLED', label: 'Hanya Belum Ditagih' },
-                        ]}
-                      />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowSppStatusMatrix(false);
+                      setMatrixStatusView('all');
+                      setMatrixSppStatusFilter('all');
+                      setMatrixSearchQuery('');
+                      setMatrixKelasFilter('all');
+                    }}
+                    className="p-2 rounded-lg hover:bg-neutral-100 text-neutral-500 hover:text-neutral-700 transition-colors shrink-0"
+                    aria-label="Tutup"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+
+                {/* Modal Toolbar */}
+                <div className="px-4 sm:px-5 py-3 border-b border-neutral-200 shrink-0 space-y-2.5">
+                  {/* Legend — hidden on very small screens to save space */}
+                  <div className="hidden sm:flex flex-wrap items-center gap-1.5 text-xs text-neutral-600">
+                    <span className="font-medium text-neutral-700 mr-0.5">Legend:</span>
+                    <span className="inline-flex items-center rounded-full border border-red-200 bg-red-100 px-2 py-0.5">Merah: Tunggak</span>
+                    <span className="inline-flex items-center rounded-full border border-amber-200 bg-amber-100 px-2 py-0.5">Kuning: Cicilan</span>
+                    <span className="inline-flex items-center rounded-full border border-blue-200 bg-blue-100 px-2 py-0.5">Biru: Ditagih</span>
+                    <span className="inline-flex items-center rounded-full border border-green-200 bg-green-100 px-2 py-0.5">Hijau: Lunas</span>
+                    <span className="inline-flex items-center rounded-full border border-neutral-200 bg-neutral-100 px-2 py-0.5">Abu: Lainnya</span>
+                  </div>
+                  {/* Search + Kelas + Status in one responsive row */}
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <div className="flex gap-2 flex-1 min-w-0">
+                      <div className="flex-1 min-w-0">
+                        <Input
+                          placeholder="Cari nama / NISN..."
+                          value={matrixSearchQuery}
+                          onChange={(e) => setMatrixSearchQuery(e.target.value)}
+                          icon={<Search className="w-4 h-4" />}
+                        />
+                      </div>
+                      <div className="w-36 sm:w-44 shrink-0">
+                        <Select
+                          value={matrixKelasFilter}
+                          onChange={(e) => setMatrixKelasFilter(e.target.value)}
+                          options={[
+                            { value: 'all', label: 'Semua Kelas' },
+                            ...uniqueKelas.map((kelas) => ({ value: kelas, label: kelas })),
+                          ]}
+                        />
+                      </div>
+                    </div>
+                    <div className="flex gap-2 items-center flex-wrap sm:flex-nowrap shrink-0">
+                      <Button
+                        size="sm"
+                        variant={matrixStatusView === 'all' ? 'primary' : 'outline'}
+                        onClick={() => setMatrixStatusView('all')}
+                      >
+                        Semua
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant={matrixStatusView === 'risk' ? 'primary' : 'outline'}
+                        onClick={() => setMatrixStatusView('risk')}
+                      >
+                        Tunggakan
+                      </Button>
+                      <div className="w-44 sm:w-52">
+                        <Select
+                          value={matrixSppStatusFilter}
+                          onChange={(e) =>
+                            setMatrixSppStatusFilter(
+                              e.target.value as 'all' | 'OVERDUE' | 'PARTIAL' | 'BILLED' | 'PAID' | 'UNBILLED'
+                            )
+                          }
+                          options={[
+                            { value: 'all', label: 'Semua Status' },
+                            { value: 'OVERDUE', label: 'Tunggak' },
+                            { value: 'PARTIAL', label: 'Cicilan' },
+                            { value: 'BILLED', label: 'Ditagih' },
+                            { value: 'PAID', label: 'Lunas' },
+                            { value: 'UNBILLED', label: 'Belum Ditagih' },
+                          ]}
+                        />
+                      </div>
+                      {(matrixSearchQuery !== '' || matrixKelasFilter !== 'all' || matrixStatusView !== 'all' || matrixSppStatusFilter !== 'all') && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setMatrixSearchQuery('');
+                            setMatrixKelasFilter('all');
+                            setMatrixStatusView('all');
+                            setMatrixSppStatusFilter('all');
+                          }}
+                          className="text-xs text-neutral-500 hover:text-neutral-700 underline whitespace-nowrap"
+                        >
+                          Reset
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
 
-                {matrixStudents.length === 0 || visibleSppPeriods.length === 0 ? (
-                  <div className="text-center py-10 text-neutral-600">
-                    Data SPP bulanan belum tersedia untuk ditampilkan.
-                  </div>
-                ) : (
-                  <div className="w-full overflow-auto max-h-[70vh] border border-neutral-200 rounded-lg">
-                    <table className="text-sm min-w-max">
+                {/* Modal Body — scrollable matrix */}
+                <div className="flex-1 overflow-auto">
+                  {filteredMatrixStudents.length === 0 || visibleSppPeriods.length === 0 ? (
+                    <div className="flex items-center justify-center h-full text-neutral-500">
+                      Data SPP bulanan belum tersedia untuk ditampilkan.
+                    </div>
+                  ) : (
+                    <table className="text-sm min-w-max w-full">
                       <thead className="bg-neutral-100 border-b border-neutral-200">
                         <tr>
                           <th className="px-3 py-3 text-left font-medium text-neutral-700 sticky top-0 left-0 z-30 bg-neutral-100 min-w-[130px]">NISN</th>
@@ -858,7 +980,7 @@ export default function StudentsPage() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-neutral-200">
-                        {matrixStudents.map((student) => (
+                        {filteredMatrixStudents.map((student) => (
                           <tr key={`matrix-${student.id}`} className="hover:bg-neutral-50">
                             <td className="px-3 py-3 sticky left-0 z-10 bg-white min-w-[130px]">{student.nisn}</td>
                             <td className="px-3 py-3 sticky left-[130px] z-10 bg-white min-w-[220px] font-medium">{student.nama}</td>
@@ -867,9 +989,7 @@ export default function StudentsPage() {
                               const detail = sppMatrixByStudent[student.id]?.[period.key];
                               if (!detail) {
                                 return (
-                                  <td key={`${student.id}-${period.key}`} className="px-3 py-3 text-neutral-400 min-w-[180px]">
-                                    -
-                                  </td>
+                                  <td key={`${student.id}-${period.key}`} className="px-3 py-3 text-neutral-400 min-w-[180px]">-</td>
                                 );
                               }
 
@@ -878,17 +998,13 @@ export default function StudentsPage() {
 
                               if (showAsEmpty) {
                                 return (
-                                  <td key={`${student.id}-${period.key}`} className="px-3 py-3 text-neutral-300 min-w-[180px]">
-                                    -
-                                  </td>
+                                  <td key={`${student.id}-${period.key}`} className="px-3 py-3 text-neutral-300 min-w-[180px]">-</td>
                                 );
                               }
 
                               if (matrixSppStatusFilter !== 'all' && detail.status !== matrixSppStatusFilter) {
                                 return (
-                                  <td key={`${student.id}-${period.key}`} className="px-3 py-3 text-neutral-300 min-w-[180px]">
-                                    -
-                                  </td>
+                                  <td key={`${student.id}-${period.key}`} className="px-3 py-3 text-neutral-300 min-w-[180px]">-</td>
                                 );
                               }
 
@@ -906,9 +1022,10 @@ export default function StudentsPage() {
                         ))}
                       </tbody>
                     </table>
-                  </div>
-                )}
-              </Card>
+                  )}
+                </div>
+                </div>
+              </div>
             )}
 
             {selectedStudentForModal && (
