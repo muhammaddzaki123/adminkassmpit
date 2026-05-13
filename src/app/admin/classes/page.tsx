@@ -1,5 +1,6 @@
 'use client';
 
+import { ManageClassMembersModal } from '@/components/admin/ManageClassMembersModal';
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AdminHeader } from '@/components/layout/AdminHeader';
@@ -28,6 +29,8 @@ export default function AdminClassesPage() {
   const [search, setSearch] = useState('');
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [manageModalOpen, setManageModalOpen] = useState(false);
+  const [selectedClassForManage, setSelectedClassForManage] = useState<ClassItem | null>(null);
 
   const [form, setForm] = useState({
     grade: '',
@@ -168,6 +171,10 @@ export default function AdminClassesPage() {
       });
     }
   };
+  const handleOpenManageModal = (item: ClassItem) => {
+    setSelectedClassForManage(item);
+    setManageModalOpen(true);
+  };
 
   return (
     <div className="min-h-screen bg-neutral-50">
@@ -300,6 +307,13 @@ export default function AdminClassesPage() {
                         <Badge variant={item.currentStudents > 0 ? 'warning' : 'success'}>
                           {item.currentStudents > 0 ? 'Aktif' : 'Kosong'}
                         </Badge>
+                          <button
+                            title="Lihat dan kelola member"
+                            onClick={() => handleOpenManageModal(item)}
+                            className="p-1.5 rounded-lg hover:bg-blue-50 text-blue-600 transition-colors"
+                          >
+                            <Users className="w-4 h-4" />
+                          </button>
                         <button
                           title="Edit"
                           onClick={() => handleEditClass(item)}
@@ -323,6 +337,19 @@ export default function AdminClassesPage() {
           </div>
         </main>
       </div>
+        {selectedClassForManage && (
+          <ManageClassMembersModal
+            isOpen={manageModalOpen}
+            classId={selectedClassForManage.id}
+            className={`${selectedClassForManage.grade} - ${selectedClassForManage.name}`}
+            maxCapacity={selectedClassForManage.maxCapacity}
+            onClose={() => {
+              setManageModalOpen(false);
+              setSelectedClassForManage(null);
+            }}
+            onMembersUpdated={fetchClasses}
+          />
+        )}
     </div>
   );
 }

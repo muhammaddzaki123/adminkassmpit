@@ -30,6 +30,8 @@ interface Student {
   nisn: string;
   nama: string;
   kelas: string;
+  kelasLabel?: string;
+  kelasGrade?: number | null;
   jenisKelamin?: string;
   status: string;
   email?: string;
@@ -72,12 +74,14 @@ export default function StudentsPage() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [kelasFilter, setKelasFilter] = useState('all');
   const [sppLatestStatusFilter, setSppLatestStatusFilter] = useState('all');
   const [sppSortByOverdue, setSppSortByOverdue] = useState<'default' | 'overdue_desc' | 'overdue_asc'>('default');
   const [selectedStudentForModal, setSelectedStudentForModal] = useState<Student | null>(null);
   const [detailViewMode, setDetailViewMode] = useState<'all' | 'unpaid'>('all');
   const [showSppStatusMatrix, setShowSppStatusMatrix] = useState(false);
   const [matrixStatusView, setMatrixStatusView] = useState<'all' | 'risk'>('all');
+  const [matrixSppStatusFilter, setMatrixSppStatusFilter] = useState<'all' | 'OVERDUE' | 'PARTIAL' | 'BILLED' | 'PAID' | 'UNBILLED'>('all');
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -122,11 +126,13 @@ export default function StudentsPage() {
 
   const filteredStudents = useMemo(() => {
     return students.filter(s => {
+      const kelasLabel = s.kelasLabel || s.kelas || '-';
       const matchesSearch = searchQuery === '' ||
         s.nama.toLowerCase().includes(searchQuery.toLowerCase()) ||
         s.nisn.includes(searchQuery);
 
       const matchesStatus = statusFilter === 'all' || s.status === statusFilter;
+      const matchesKelas = kelasFilter === 'all' || kelasLabel === kelasFilter;
 
       const latestSppStatus = (s.sppSummary?.statusTerbaru || 'NO_BILLING').toUpperCase();
       const overdueCount = s.sppSummary?.statusCounts.overdue || 0;
@@ -143,27 +149,47 @@ export default function StudentsPage() {
         matchesSppLatestStatus = latestSppStatus === sppLatestStatusFilter;
       }
 
-      return matchesSearch && matchesStatus && matchesSppLatestStatus;
+      return matchesSearch && matchesStatus && matchesKelas && matchesSppLatestStatus;
     });
-  }, [students, searchQuery, statusFilter, sppLatestStatusFilter]);
+  }, [students, searchQuery, statusFilter, kelasFilter, sppLatestStatusFilter]);
+
+  const uniqueKelas = useMemo(() => {
+    const kelasValues = Array.from(
+      new Set(
+        students
+          .map((student) => student.kelasLabel || student.kelas || '-')
+          .filter((kelas) => kelas && kelas !== '-')
+      )
+    );
+
+    return kelasValues.sort((a, b) => {
+      const gradeA = Number((a.match(/\b(\d+)\b/) || [])[1] || 999);
+      const gradeB = Number((b.match(/\b(\d+)\b/) || [])[1] || 999);
+
+      if (gradeA !== gradeB) return gradeA - gradeB;
+      return a.localeCompare(b, 'id-ID');
+    });
+  }, [students]);
 
   const displayedStudents = useMemo(() => {
+    const compareByClassThenName = (a: Student, b: Student) => {
+      const gradeA = a.kelasGrade ?? Number((a.kelasLabel || a.kelas || '').match(/\b(\d+)\b/)?.[1] || 999);
+      const gradeB = b.kelasGrade ?? Number((b.kelasLabel || b.kelas || '').match(/\b(\d+)\b/)?.[1] || 999);
+
+      if (gradeA !== gradeB) return gradeA - gradeB;
+
+      const kelasA = (a.kelasLabel || a.kelas || '').toLowerCase();
+      const kelasB = (b.kelasLabel || b.kelas || '').toLowerCase();
+      const kelasCompare = kelasA.localeCompare(kelasB, 'id-ID');
+      if (kelasCompare !== 0) return kelasCompare;
+
+      return a.nama.localeCompare(b.nama, 'id-ID');
+    };
+
     const rows = [...filteredStudents];
 
     if (sppSortByOverdue === 'default') {
-      if (sppLatestStatusFilter === 'OVERDUE' || sppLatestStatusFilter === 'UNPAID') {
-        rows.sort((a, b) => {
-          const overdueA = a.sppSummary?.statusCounts.overdue || 0;
-          const overdueB = b.sppSummary?.statusCounts.overdue || 0;
-          if (overdueA === overdueB) {
-            const unpaidA = (a.sppDetails || []).filter((detail) => !['PAID', 'WAIVED', 'CANCELLED'].includes(detail.status)).length;
-            const unpaidB = (b.sppDetails || []).filter((detail) => !['PAID', 'WAIVED', 'CANCELLED'].includes(detail.status)).length;
-            if (unpaidA === unpaidB) return a.nama.localeCompare(b.nama, 'id-ID');
-            return unpaidB - unpaidA;
-          }
-          return overdueB - overdueA;
-        });
-      }
+      rows.sort(compareByClassThenName);
       return rows;
     }
 
@@ -172,14 +198,14 @@ export default function StudentsPage() {
       const overdueB = b.sppSummary?.statusCounts.overdue || 0;
 
       if (overdueA === overdueB) {
-        return a.nama.localeCompare(b.nama, 'id-ID');
+        return compareByClassThenName(a, b);
       }
 
       return sppSortByOverdue === 'overdue_desc' ? overdueB - overdueA : overdueA - overdueB;
     });
 
     return rows;
-  }, [filteredStudents, sppSortByOverdue, sppLatestStatusFilter]);
+  }, [filteredStudents, sppSortByOverdue]);
 
   const sppAggregateSummary = useMemo(() => {
     return displayedStudents.reduce(
@@ -231,22 +257,38 @@ export default function StudentsPage() {
   };
 
   const matrixStudents = useMemo(() => {
-    if (matrixStatusView === 'all') return displayedStudents;
-    return displayedStudents.filter((student) => (student.sppDetails || []).some((detail) => isOutstandingStatus(detail.status)));
-  }, [displayedStudents, matrixStatusView]);
+    let baseRows = displayedStudents;
+
+    if (matrixStatusView === 'risk') {
+      baseRows = baseRows.filter((student) =>
+        (student.sppDetails || []).some((detail) => isOutstandingStatus(detail.status))
+      );
+    }
+
+    if (matrixSppStatusFilter !== 'all') {
+      baseRows = baseRows.filter((student) =>
+        (student.sppDetails || []).some((detail) => detail.status === matrixSppStatusFilter)
+      );
+    }
+
+    return baseRows;
+  }, [displayedStudents, matrixStatusView, matrixSppStatusFilter]);
 
   const visibleSppPeriods = useMemo(() => {
-    if (matrixStatusView === 'all') return sppPeriods;
+    if (matrixStatusView === 'all' && matrixSppStatusFilter === 'all') return sppPeriods;
 
     return sppPeriods.filter((period) => {
       return matrixStudents.some((student) => {
         const detail = (student.sppDetails || []).find(
           (d) => `${d.year ?? 0}-${d.month ?? 0}` === period.key
         );
-        return detail ? isOutstandingStatus(detail.status) : false;
+        if (!detail) return false;
+        if (matrixSppStatusFilter !== 'all' && detail.status !== matrixSppStatusFilter) return false;
+        if (matrixStatusView === 'risk' && !isOutstandingStatus(detail.status)) return false;
+        return true;
       });
     });
-  }, [sppPeriods, matrixStudents, matrixStatusView]);
+  }, [sppPeriods, matrixStudents, matrixStatusView, matrixSppStatusFilter]);
 
   const sppMatrixByStudent = useMemo(() => {
     return displayedStudents.reduce<Record<string, Record<string, SppDetail>>>((acc, student) => {
@@ -305,7 +347,7 @@ export default function StudentsPage() {
         no: index + 1,
         nisn: s.nisn,
         nama: s.nama,
-        kelas: s.kelas,
+        kelas: s.kelasLabel || s.kelas,
         statusSiswa: s.status,
         statusSppTerbaru: latest.label,
         billTerbaru: summary?.billNumberTerbaru || '-',
@@ -594,6 +636,16 @@ export default function StudentsPage() {
                     ]}
                   />
                 </div>
+                <div className="w-full md:w-44">
+                  <Select
+                    value={kelasFilter}
+                    onChange={(e) => setKelasFilter(e.target.value)}
+                    options={[
+                      { value: 'all', label: 'Semua Kelas' },
+                      ...uniqueKelas.map((kelas) => ({ value: kelas, label: kelas })),
+                    ]}
+                  />
+                </div>
                 <div className="w-full md:w-48">
                   <Select
                     value={sppLatestStatusFilter}
@@ -620,6 +672,21 @@ export default function StudentsPage() {
                       { value: 'overdue_asc', label: 'Tunggak Terendah' },
                     ]}
                   />
+                </div>
+                <div className="w-full md:w-auto">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setSearchQuery('');
+                      setStatusFilter('all');
+                      setKelasFilter('all');
+                      setSppLatestStatusFilter('all');
+                      setSppSortByOverdue('default');
+                    }}
+                    className="w-full md:w-auto"
+                  >
+                    Reset Filter
+                  </Button>
                 </div>
               </div>
 
@@ -671,7 +738,7 @@ export default function StudentsPage() {
                           <tr key={student.id} className="hover:bg-[#f9fafb] transition-colors align-top">
                               <td className="px-4 py-3 text-[#1c1c1c]">{student.nisn}</td>
                               <td className="px-4 py-3 text-[#1c1c1c] font-medium">{student.nama}</td>
-                              <td className="px-4 py-3 text-[#1c1c1c]">{student.kelas || '-'}</td>
+                              <td className="px-4 py-3 text-[#1c1c1c]">{student.kelasLabel || student.kelas || '-'}</td>
                               <td className="px-4 py-3 text-[#1c1c1c]">{student.jenisKelamin || '-'}</td>
                               <td className="px-4 py-3 text-[#1c1c1c]">
                                 {!summary || summary.totalTagihan === 0 ? (
@@ -750,6 +817,24 @@ export default function StudentsPage() {
                     >
                       Hanya Tunggakan / Belum Lunas
                     </Button>
+                    <div className="w-full sm:w-64">
+                      <Select
+                        value={matrixSppStatusFilter}
+                        onChange={(e) =>
+                          setMatrixSppStatusFilter(
+                            e.target.value as 'all' | 'OVERDUE' | 'PARTIAL' | 'BILLED' | 'PAID' | 'UNBILLED'
+                          )
+                        }
+                        options={[
+                          { value: 'all', label: 'Semua Status SPP di Matrix' },
+                          { value: 'OVERDUE', label: 'Hanya Tunggak' },
+                          { value: 'PARTIAL', label: 'Hanya Cicilan' },
+                          { value: 'BILLED', label: 'Hanya Ditagih' },
+                          { value: 'PAID', label: 'Hanya Lunas' },
+                          { value: 'UNBILLED', label: 'Hanya Belum Ditagih' },
+                        ]}
+                      />
+                    </div>
                   </div>
                 </div>
 
@@ -777,7 +862,7 @@ export default function StudentsPage() {
                           <tr key={`matrix-${student.id}`} className="hover:bg-neutral-50">
                             <td className="px-3 py-3 sticky left-0 z-10 bg-white min-w-[130px]">{student.nisn}</td>
                             <td className="px-3 py-3 sticky left-[130px] z-10 bg-white min-w-[220px] font-medium">{student.nama}</td>
-                            <td className="px-3 py-3 sticky left-[350px] z-10 bg-white min-w-[90px]">{student.kelas || '-'}</td>
+                            <td className="px-3 py-3 sticky left-[350px] z-10 bg-white min-w-[90px]">{student.kelasLabel || student.kelas || '-'}</td>
                             {visibleSppPeriods.map((period) => {
                               const detail = sppMatrixByStudent[student.id]?.[period.key];
                               if (!detail) {
@@ -792,6 +877,14 @@ export default function StudentsPage() {
                               const showAsEmpty = matrixStatusView === 'risk' && !isOutstandingStatus(detail.status);
 
                               if (showAsEmpty) {
+                                return (
+                                  <td key={`${student.id}-${period.key}`} className="px-3 py-3 text-neutral-300 min-w-[180px]">
+                                    -
+                                  </td>
+                                );
+                              }
+
+                              if (matrixSppStatusFilter !== 'all' && detail.status !== matrixSppStatusFilter) {
                                 return (
                                   <td key={`${student.id}-${period.key}`} className="px-3 py-3 text-neutral-300 min-w-[180px]">
                                     -
@@ -825,7 +918,7 @@ export default function StudentsPage() {
                     <div>
                       <h3 className="text-lg font-semibold text-neutral-900">Detail Pembayaran SPP</h3>
                       <p className="text-sm text-neutral-600">
-                        {selectedStudentForModal.nama} ({selectedStudentForModal.nisn}) • Kelas {selectedStudentForModal.kelas || '-'}
+                        {selectedStudentForModal.nama} ({selectedStudentForModal.nisn}) • Kelas {selectedStudentForModal.kelasLabel || selectedStudentForModal.kelas || '-'}
                       </p>
                     </div>
                     <button

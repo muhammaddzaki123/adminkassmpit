@@ -70,6 +70,8 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get('status');
     const limit = searchParams.get('limit');
     const studentId = searchParams.get('studentId');
+    const kelas = searchParams.get('kelas');
+    const search = searchParams.get('search');
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const where: any = {};
@@ -89,6 +91,49 @@ export async function GET(request: NextRequest) {
 
     if (studentId) {
       where.billing = { studentId };
+    }
+
+    if (kelas && kelas !== 'all') {
+      where.billing = {
+        ...(where.billing || {}),
+        student: {
+          studentClasses: {
+            some: {
+              isActive: true,
+              class: {
+                OR: [
+                  { id: kelas },
+                  { name: kelas },
+                ],
+              },
+            },
+          },
+        },
+      };
+    }
+
+    if (search) {
+      where.OR = [
+        {
+          billing: {
+            student: {
+              nama: {
+                contains: search,
+                mode: 'insensitive',
+              },
+            },
+          },
+        },
+        {
+          billing: {
+            student: {
+              nisn: {
+                contains: search,
+              },
+            },
+          },
+        },
+      ];
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -136,6 +181,9 @@ export async function GET(request: NextRequest) {
         nisn: payment.billing.student.nisn,
         nis: payment.billing.student.nisn,
         kelas: payment.billing.student.studentClasses?.[0]?.class?.name || '-',
+        kelasLabel: payment.billing.student.studentClasses?.[0]?.class
+          ? `${payment.billing.student.studentClasses[0].class.grade} - ${payment.billing.student.studentClasses[0].class.name}`
+          : '-',
       },
       month: payment.billing.month,
       year: payment.billing.year,

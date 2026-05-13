@@ -278,7 +278,7 @@ export default function AdminAcademicYearsPage() {
                     <div key={item.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-3 bg-neutral-50 rounded-lg">
                       <div className="flex-1 min-w-0">
                         <p className="font-medium text-neutral-900 text-sm flex items-center gap-1.5">
-                          <CalendarRange className="w-3.5 h-3.5 flex-shrink-0 text-neutral-500" />
+                          <CalendarRange className="w-3.5 h-3.5 shrink-0 text-neutral-500" />
                           {item.year}
                         </p>
                         <p className="text-xs text-neutral-500 mt-0.5">
@@ -288,7 +288,7 @@ export default function AdminAcademicYearsPage() {
                           {' · '}{item.studentCount} siswa · {item.billingCount} tagihan
                         </p>
                       </div>
-                      <div className="flex items-center gap-1.5 flex-shrink-0">
+                      <div className="flex items-center gap-1.5 shrink-0">
                         <Badge variant={item.isActive ? 'success' : 'default'}>
                           {item.isActive ? 'Aktif' : 'Nonaktif'}
                         </Badge>

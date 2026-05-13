@@ -61,11 +61,13 @@ export default function ImportStudentsPage() {
   };
 
   const downloadTemplate = () => {
-    // Create template data
+    // Create template data - Kelas optional
     const template = [
-      ['NISN', 'Nama Lengkap', 'Kelas', 'Email', 'No Telepon', 'Alamat', 'Nama Orang Tua', 'Password'],
-      ['1234567890', 'Ahmad Zaki', '7A', 'zaki@email.com', '081234567890', 'Jl. Contoh No. 1', 'Budi Santoso', 'password123'],
-      ['0987654321', 'Siti Aisyah', '8B', 'aisyah@email.com', '082345678901', 'Jl. Contoh No. 2', 'Ahmad Wijaya', 'password456'],
+      ['NISN', 'Nama Lengkap', 'Kelas (opsional)'],
+      ['1234567890', 'Ahmad Zaki', '7 - VII A'],
+      ['0987654321', 'Siti Aisyah', '8 - VIII B'],
+      ['1122334455', 'Muhammad Fajar', ''],
+      ['5544332211', 'Nur Aini', '9 - IX A'],
     ];
 
     // Convert to CSV
@@ -109,12 +111,14 @@ export default function ImportStudentsPage() {
         <ul className="space-y-2 text-sm text-blue-800">
           <li>• Download template Excel/CSV terlebih dahulu</li>
           <li>• Isi data siswa sesuai format template</li>
-          <li>• Kolom yang wajib diisi: NISN, Nama, Kelas, Email, Password</li>
+          <li>• Kolom yang wajib diisi: NISN dan Nama Lengkap</li>
+          <li>• Kolom Kelas bersifat opsional, isi jika ingin langsung assign kelas saat import</li>
           <li>• Format NISN harus 10 digit angka (contoh: 1234567890)</li>
-          <li>• Email harus unik dan valid</li>
-          <li>• Password akan digunakan untuk login siswa (bisa diganti nanti)</li>
-          <li>• Sistem akan otomatis membuat akun User untuk setiap siswa</li>
-          <li>• Status siswa akan langsung ACTIVE (siswa bisa login)</li>
+          <li>• NISN harus unik (tidak boleh duplikat)</li>
+          <li>• Sistem akan otomatis membuat data siswa dengan status ACTIVE</li>
+          <li>• Password default untuk login: password123 (dapat diubah nanti)</li>
+          <li>• Username login siswa: sama dengan NISN</li>
+          <li>• Format kelas disarankan: 7 - VII A, 8 - VIII B, 9 - IX A</li>
         </ul>
       </Card>
 
@@ -237,7 +241,7 @@ export default function ImportStudentsPage() {
             {result.success > 0 && (
               <div className="mt-4 p-4 bg-emerald-50 border border-emerald-200 rounded-lg">
                 <p className="text-sm text-emerald-800">
-                  ✅ {result.success} siswa berhasil ditambahkan! Akun login sudah otomatis dibuat dan siswa bisa langsung login ke sistem.
+                  ✅ {result.success} siswa berhasil ditambahkan! Akun login sudah otomatis dibuat dan siswa bisa langsung login ke sistem. Jika kolom kelas diisi, siswa juga langsung masuk ke kelas aktif.
                 </p>
               </div>
             )}
@@ -251,10 +255,12 @@ export default function ImportStudentsPage() {
               <div className="space-y-2 text-sm text-neutral-700">
                 <p>✅ Setiap siswa akan dibuat record di tabel <code className="bg-neutral-200 px-1 rounded">students</code></p>
                 <p>✅ Akun User dengan role STUDENT otomatis dibuat</p>
-                <p>✅ Username = NISN siswa</p>
-                <p>✅ Password = sesuai file Excel (bisa diganti siswa setelah login)</p>
-                <p>✅ Status siswa = ACTIVE (langsung bisa login dan bayar SPP)</p>
+                <p>✅ Username login = NISN siswa</p>
+                <p>✅ Password default = <code className="bg-neutral-200 px-1 rounded">password123</code> (siswa bisa ganti setelah login)</p>
+                <p>✅ Status siswa = ACTIVE (langsung bisa login)</p>
                 <p>✅ Virtual Account otomatis di-generate untuk pembayaran</p>
+                <p>✅ Enrollment Type = NEW</p>
+                <p>✅ Jika kolom Kelas diisi, siswa otomatis masuk ke kelas aktif pada tahun ajaran aktif</p>
                 <p>⚠️ NISN yang sudah ada akan di-skip (tidak akan duplikat)</p>
               </div>
             </Card>

@@ -10,10 +10,15 @@ interface FetchOptions extends RequestInit {
  * Authenticated fetch wrapper that uses httpOnly cookie session.
  */
 export async function fetchWithAuth(url: string, options: FetchOptions = {}) {
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-    ...options.headers,
-  };
+  // Don't set Content-Type for FormData - let browser set it with proper boundary
+  const isFormData = options.body instanceof FormData;
+  
+  const headers: Record<string, string> = isFormData
+    ? { ...options.headers }
+    : {
+        'Content-Type': 'application/json',
+        ...options.headers,
+      };
 
   const response = await fetch(url, {
     ...options,

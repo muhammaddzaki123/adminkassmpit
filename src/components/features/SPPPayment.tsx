@@ -15,6 +15,13 @@ interface Student {
   nama: string;
   nisn: string;
   kelas: string;
+  kelasLabel?: string;
+}
+
+interface ClassOption {
+  value: string;
+  label: string;
+  grade: number;
 }
 
 interface Payment {
@@ -23,6 +30,7 @@ interface Payment {
     nama: string;
     nisn: string;
     kelas: string;
+    kelasLabel?: string;
   };
   paymentType: string;
   amount: number;
@@ -98,6 +106,7 @@ export function SPPPayment() {
   const [searchQuery, setSearchQuery] = useState('');
   const [payments, setPayments] = useState<Payment[]>([]);
   const [students, setStudents] = useState<Student[]>([]);
+  const [classOptions, setClassOptions] = useState<ClassOption[]>([]);
   const [stats, setStats] = useState<Stats>({
     totalAmount: 0,
     totalStudents: 0,
@@ -170,7 +179,8 @@ export function SPPPayment() {
       if (res.ok) {
         const data = await res.json();
         if (data.success) {
-          setStudents(data.data);
+          const fetchedStudents = data.data || [];
+          setStudents(fetchedStudents);
         }
       }
     } catch (error) {
@@ -178,9 +188,64 @@ export function SPPPayment() {
     }
   };
 
+  const fetchClassOptions = useCallback(async () => {
+    try {
+      const res = await fetchWithAuth('/api/classes/active');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success) {
+          setClassOptions(data.data || []);
+          return;
+        }
+      }
+    } catch (error) {
+      console.error('Failed to fetch active classes:', error);
+    }
+
+    // Fallback: derive class options from students list if active classes endpoint fails
+    try {
+      const res = await fetch('/api/students');
+      if (!res.ok) return;
+
+      const data = await res.json();
+      if (!data.success) return;
+
+      const fetchedStudents = data.data || [];
+      const kelasMap = new Map<string, { label: string; grade: number }>();
+
+      fetchedStudents.forEach((student: Student) => {
+        const kelasName = student.kelas;
+        const kelasLabel = student.kelasLabel || kelasName;
+        if (!kelasName || kelasName === '-') return;
+
+        const gradeMatch = kelasLabel.match(/\b(\d+)\b/);
+        const grade = gradeMatch ? Number(gradeMatch[1]) : 999;
+
+        if (!kelasMap.has(kelasName)) {
+          kelasMap.set(kelasName, { label: kelasLabel, grade });
+        }
+      });
+
+      const fallbackOptions = Array.from(kelasMap.entries())
+        .map(([value, meta]) => ({ value, label: meta.label, grade: meta.grade }))
+        .sort((a, b) => {
+          if (a.grade !== b.grade) return a.grade - b.grade;
+          return a.label.localeCompare(b.label, 'id-ID');
+        });
+
+      setClassOptions(fallbackOptions);
+    } catch (error) {
+      console.error('Failed to build fallback class options:', error);
+    }
+  }, []);
+
   useEffect(() => {
     fetchPayments();
   }, [fetchPayments]);
+
+  useEffect(() => {
+    fetchClassOptions();
+  }, [fetchClassOptions]);
 
   useEffect(() => {
     if (showModal) {
@@ -296,7 +361,7 @@ export function SPPPayment() {
       key: 'kelas',
       label: 'Kelas',
       width: '10%',
-      render: (item: Payment) => item.student?.kelas || '-'
+      render: (item: Payment) => item.student?.kelasLabel || item.student?.kelas || '-'
     },
     {
       key: 'nisn',
@@ -375,40 +440,57 @@ export function SPPPayment() {
 
       {/* Filters */}
       <Card>
-        <div className="flex items-center gap-4">
-          <Filter className="w-5 h-5 text-[#4b5563]" />
-          <Select
-            value={selectedClass}
-            onChange={(e) => setSelectedClass(e.target.value)}
-            options={[
-              { value: 'all', label: 'Semua Kelas' },
-              { value: 'X-A', label: 'Kelas X-A' },
-              { value: 'X-B', label: 'Kelas X-B' },
-              { value: 'XI-A', label: 'Kelas XI-A' },
-              { value: 'XI-B', label: 'Kelas XI-B' },
-              { value: 'XII-A', label: 'Kelas XII-A' },
-            ]}
-            className="w-48"
-          />
-          <Select
-            value={selectedStatus}
-            onChange={(e) => setSelectedStatus(e.target.value)}
-            options={[
-              { value: 'all', label: 'Semua Status' },
-              { value: 'COMPLETED', label: 'Lunas' },
-              { value: 'PENDING', label: 'Pending' },
-              { value: 'FAILED', label: 'Gagal' },
-            ]}
-            className="w-48"
-          />
-          <Input
-            type="search"
-            placeholder="Cari nama atau NISN..."
-            className="flex-1"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            icon={<Search className="w-4 h-4" />}
-          />
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-12 md:items-center">
+          <div className="hidden md:flex md:col-span-1 justify-center">
+            <Filter className="w-5 h-5 text-[#4b5563]" />
+          </div>
+          <div className="md:col-span-3">
+            <Select
+              value={selectedClass}
+              onChange={(e) => setSelectedClass(e.target.value)}
+              options={[
+                { value: 'all', label: 'Semua Kelas' },
+                ...classOptions.map((option) => ({ value: option.value, label: option.label })),
+              ]}
+              className="w-full"
+            />
+          </div>
+          <div className="md:col-span-3">
+            <Select
+              value={selectedStatus}
+              onChange={(e) => setSelectedStatus(e.target.value)}
+              options={[
+                { value: 'all', label: 'Semua Status' },
+                { value: 'COMPLETED', label: 'Lunas' },
+                { value: 'PENDING', label: 'Pending' },
+                { value: 'FAILED', label: 'Gagal' },
+              ]}
+              className="w-full"
+            />
+          </div>
+          <div className="md:col-span-4">
+            <Input
+              type="search"
+              placeholder="Cari nama atau NISN..."
+              className="w-full"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              icon={<Search className="w-4 h-4" />}
+            />
+          </div>
+          <div className="md:col-span-1">
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={() => {
+                setSelectedClass('all');
+                setSelectedStatus('all');
+                setSearchQuery('');
+              }}
+            >
+              Reset
+            </Button>
+          </div>
         </div>
       </Card>
 
