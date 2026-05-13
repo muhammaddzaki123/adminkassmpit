@@ -3,6 +3,7 @@ import prisma from '@/lib/prisma';
 import { getServerSession } from '@/lib/auth';
 import { createMidtransCharge, normalizeMidtransStatus } from '@/lib/midtrans';
 import { appendPaymentAuditEvent, buildPaymentNotes } from '@/lib/payment-audit';
+import { normalizePaymentAmount } from '@/lib/payment-amount';
 
 // POST /api/payment/create - Create payment for a billing (PROPER FLOW)
 export async function POST(request: NextRequest) {
@@ -17,16 +18,17 @@ export async function POST(request: NextRequest) {
     }
 
     const { billingId, amount, method, bankCode, receiptUrl, notes } = await request.json();
+    const normalizedAmount = normalizePaymentAmount(amount);
 
     // Validate
-    if (!billingId || !amount || !method) {
+    if (!billingId || !method) {
       return NextResponse.json(
         { error: 'Billing ID, amount, and method are required' },
         { status: 400 }
       );
     }
 
-    if (amount <= 0) {
+    if (!Number.isFinite(normalizedAmount) || normalizedAmount <= 0) {
       return NextResponse.json(
         { error: 'Amount must be greater than 0' },
         { status: 400 }
@@ -121,20 +123,22 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    const isInstallmentPayment = amount < (billing.totalAmount - billing.paidAmount);
-    if (isInstallmentPayment && !billing.allowInstallments) {
+    const remainingAmount = normalizePaymentAmount(billing.totalAmount - billing.paidAmount);
+
+    if (normalizedAmount > remainingAmount) {
       return NextResponse.json(
-        { error: 'Billing ini tidak mengizinkan cicilan' },
+        {
+          error: 'Jumlah pembayaran tidak boleh melebihi sisa tagihan',
+          remainingAmount,
+        },
         { status: 400 }
       );
     }
 
-    // Calculate remaining amount
-    const remainingAmount = billing.totalAmount - billing.paidAmount;
-
-    if (amount > remainingAmount) {
+    const isInstallmentPayment = normalizedAmount < remainingAmount;
+    if (isInstallmentPayment && !billing.allowInstallments) {
       return NextResponse.json(
-        { error: `Amount exceeds remaining balance (Rp ${remainingAmount.toLocaleString('id-ID')})` },
+        { error: 'Billing ini tidak mengizinkan cicilan' },
         { status: 400 }
       );
     }
@@ -147,10 +151,10 @@ export async function POST(request: NextRequest) {
     if (method === 'VIRTUAL_ACCOUNT') {
       adminFee = 2500;
     } else if (method === 'EWALLET') {
-      adminFee = Math.ceil(amount * 0.007); // 0.7%
+      adminFee = Math.ceil(normalizedAmount * 0.007); // 0.7%
     }
 
-    const totalPaid = amount + adminFee;
+    const totalPaid = normalizedAmount + adminFee;
 
     // TUNAI must be processed by treasurer
     if (method === 'TUNAI' && session.user.role !== 'TREASURER') {
@@ -189,7 +193,7 @@ export async function POST(request: NextRequest) {
             {
               id: billing.id,
               name: billing.description || `Pembayaran ${billing.type}`,
-              price: amount,
+              price: normalizedAmount,
               quantity: 1,
             },
             ...(adminFee > 0
@@ -260,7 +264,7 @@ export async function POST(request: NextRequest) {
             connect: { id: billingId }
           },
           method,
-          amount,
+          amount: normalizedAmount,
           adminFee,
           totalPaid,
           status: resolvedPaymentStatus,
@@ -287,7 +291,7 @@ export async function POST(request: NextRequest) {
         data: {
           paymentId: newPayment.id,
           description: billing.description || `Pembayaran ${billing.type}`,
-          amount: amount,
+            amount: normalizedAmount,
         },
       });
 
@@ -303,7 +307,7 @@ export async function POST(request: NextRequest) {
 
       // If TUNAI, update billing immediately
       if (resolvedPaymentStatus === 'COMPLETED') {
-        const newPaidAmount = billing.paidAmount + amount;
+        const newPaidAmount = billing.paidAmount + normalizedAmount;
         const newStatus = newPaidAmount >= billing.totalAmount ? 'PAID' : 'PARTIAL';
 
         await tx.billing.update({

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getServerSession } from '@/lib/auth';
 import { appendPaymentAuditEvent, buildPaymentNotes } from '@/lib/payment-audit';
+import { normalizePaymentAmount } from '@/lib/payment-amount';
 import { 
   getPaymentSuccessMessage, 
   sendWhatsAppMessage 
@@ -21,6 +22,7 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     const { paymentId, action, notes, billingId, amount, method, paidAt, receiptUrl } = body;
+    const normalizedAmount = normalizePaymentAmount(amount);
 
     // Support both existing payment verification and manual payment creation
     if (billingId && amount) {
@@ -37,6 +39,24 @@ export async function POST(request: NextRequest) {
         );
       }
 
+      if (!Number.isFinite(normalizedAmount) || normalizedAmount <= 0) {
+        return NextResponse.json(
+          { error: 'Amount must be greater than 0' },
+          { status: 400 }
+        );
+      }
+
+      const remainingAmount = normalizePaymentAmount(billing.totalAmount - billing.paidAmount);
+      if (normalizedAmount > remainingAmount) {
+        return NextResponse.json(
+          {
+            error: 'Jumlah pembayaran tidak boleh melebihi sisa tagihan',
+            remainingAmount,
+          },
+          { status: 400 }
+        );
+      }
+
       // Generate payment number
       const paymentCount = await prisma.payment.count();
       const paymentNumber = `PAY${new Date().getFullYear()}${String(paymentCount + 1).padStart(6, '0')}`;
@@ -49,7 +69,7 @@ export async function POST(request: NextRequest) {
           message: `Pembayaran manual diverifikasi oleh ${session.user.nama}`,
           raw: {
             billingId,
-            amount,
+            amount: normalizedAmount,
             method: method || 'TUNAI',
             paidAt: paidAt || null,
             receiptUrl: receiptUrl || null,
@@ -63,9 +83,9 @@ export async function POST(request: NextRequest) {
             billing: {
               connect: { id: billingId }
             },
-            amount,
+            amount: normalizedAmount,
             adminFee: 0,
-            totalPaid: amount,
+            totalPaid: normalizedAmount,
             method: method || 'TUNAI',
             status: 'COMPLETED',
             paidAt: paidAt ? new Date(paidAt) : new Date(),
@@ -79,7 +99,7 @@ export async function POST(request: NextRequest) {
         });
 
         // Update billing
-        const newPaidAmount = billing.paidAmount + amount;
+        const newPaidAmount = billing.paidAmount + normalizedAmount;
         const newStatus = newPaidAmount >= billing.totalAmount ? 'PAID' : 'PARTIAL';
 
         await tx.billing.update({

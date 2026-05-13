@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Inter, Poppins } from 'next/font/google';
 import './globals.css';
+import { SessionTimeoutManager } from '@/components/auth/SessionTimeoutManager';
 
 const inter = Inter({ 
   subsets: ['latin'],
@@ -30,6 +31,7 @@ export default function RootLayout({
     <html lang="id">
       <body className={`${inter.variable} ${poppins.variable} ${inter.className}`}>
         {children}
+        <SessionTimeoutManager />
       </body>
     </html>
   );

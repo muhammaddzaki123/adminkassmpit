@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { fetchWithAuth } from '@/lib/api-client';
 import { StudentSidebar } from '@/components/layout/StudentSidebar';
@@ -63,27 +63,30 @@ export default function StudentDashboard() {
   });
   const [studentInfo, setStudentInfo] = useState<StudentData | null>(null);
   const [recentBillings, setRecentBillings] = useState<Billing[]>([]);
+  const hasLoadedOnceRef = useRef(false);
 
-  useEffect(() => {
+  const fetchStudentData = useCallback(async () => {
+    const isInitialLoad = !hasLoadedOnceRef.current;
+
+    if (isInitialLoad) {
+      setLoading(true);
+    }
+
     const userData = localStorage.getItem('user');
     if (!userData) {
       router.push('/auth/login');
       return;
     }
 
-    const user = JSON.parse(userData);
-    if (user.role !== 'STUDENT') {
-      router.push('/auth/login');
-      return;
-    }
-
-    fetchStudentData();
-  }, [router]);
-
-  const fetchStudentData = async () => {
     try {
+      const user = JSON.parse(userData);
+      if (user.role !== 'STUDENT') {
+        router.push('/auth/login');
+        return;
+      }
+
       // Fetch billings (includes student info)
-      const billingsResponse = await fetchWithAuth('/api/billing/student');
+      const billingsResponse = await fetchWithAuth('/api/billing/student', { cache: 'no-store' });
       
       if (!billingsResponse.ok) {
         throw new Error(`HTTP error! status: ${billingsResponse.status}`);
@@ -124,9 +127,35 @@ export default function StudentDashboard() {
       console.error('Error fetching student data:', error);
       alert('Gagal memuat data. Silakan refresh halaman.');
     } finally {
-      setLoading(false);
+      if (isInitialLoad) {
+        hasLoadedOnceRef.current = true;
+        setLoading(false);
+      }
     }
-  };
+  }, [router]);
+
+  useEffect(() => {
+    void fetchStudentData();
+
+    const intervalId = window.setInterval(() => {
+      void fetchStudentData();
+    }, 10000);
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        void fetchStudentData();
+      }
+    };
+
+    window.addEventListener('focus', handleVisibilityChange);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      window.clearInterval(intervalId);
+      window.removeEventListener('focus', handleVisibilityChange);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [fetchStudentData]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('id-ID', {

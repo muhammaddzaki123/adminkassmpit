@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { fetchWithAuth } from '@/lib/api-client';
+import { normalizePaymentAmount } from '@/lib/payment-amount';
 import { StudentSidebar } from '@/components/layout/StudentSidebar';
 import { StudentHeader } from '@/components/layout/StudentHeader';
 import { Card } from '@/components/ui/Card';
@@ -72,7 +73,7 @@ function SPPPaymentContent() {
 
   const fetchBillings = useCallback(async () => {
     try {
-      const response = await fetchWithAuth('/api/billing/student');
+      const response = await fetchWithAuth('/api/billing/student', { cache: 'no-store' });
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -325,7 +326,7 @@ function SPPPaymentContent() {
       return;
     }
 
-    const amount = paymentAmount || billing.remainingAmount;
+    const amount = normalizePaymentAmount(paymentAmount || billing.remainingAmount);
     if (amount <= 0 || amount > billing.remainingAmount) {
       alert(`Nominal pembayaran harus antara Rp 1 - ${formatCurrency(billing.remainingAmount)}`);
       return;
@@ -731,9 +732,23 @@ function SPPPaymentContent() {
                     </label>
                     <input
                       type="number"
+                      step="0.01"
+                      inputMode="decimal"
+                      min="0"
+                      max={total}
                       placeholder="Masukkan nominal atau kosongkan untuk bayar penuh"
                       value={paymentAmount || ''}
-                      onChange={(e) => setPaymentAmount(parseFloat(e.target.value) || 0)}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        if (value === '') {
+                          setPaymentAmount(0);
+                          return;
+                        }
+
+                        if (/^\d*\.?\d{0,2}$/.test(value)) {
+                          setPaymentAmount(Number(value));
+                        }
+                      }}
                       className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                     />
                     <p className="text-xs text-neutral-500 mt-1">

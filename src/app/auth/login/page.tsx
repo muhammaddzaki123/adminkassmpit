@@ -18,7 +18,7 @@ export default function LoginPage() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    void clearClientAuthSession();
+    void clearClientAuthSession({ skipServerLogout: true });
   }, []);
 
   const handleLogin = async (e: React.FormEvent) => {

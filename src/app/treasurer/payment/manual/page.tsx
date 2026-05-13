@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { fetchWithAuth } from '@/lib/api-client';
+import { normalizePaymentAmount } from '@/lib/payment-amount';
 import { TreasurerSidebar } from '@/components/layout/TreasurerSidebar';
 import { TreasurerHeader } from '@/components/layout/TreasurerHeader';
 import { Card } from '@/components/ui/Card';
@@ -108,8 +109,8 @@ export default function ManualPaymentPage() {
   const handleSubmitPayment = async () => {
     if (!selectedBilling) return;
 
-    const amount = parseFloat(formData.amount);
-    if (amount <= 0 || amount > selectedBilling.remainingAmount) {
+    const amount = normalizePaymentAmount(formData.amount);
+    if (!Number.isFinite(amount) || amount <= 0 || amount > selectedBilling.remainingAmount) {
       setMessage({
         type: 'error',
         text: `Nominal harus antara 1 - ${selectedBilling.remainingAmount.toLocaleString('id-ID')}`,
@@ -333,9 +334,18 @@ export default function ManualPaymentPage() {
                 </label>
                 <input
                   type="number"
+                  step="0.01"
+                  inputMode="decimal"
+                  min="0"
+                  max={selectedBilling.remainingAmount}
                   className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                   value={formData.amount}
-                  onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    if (value === '' || /^\d*\.?\d{0,2}$/.test(value)) {
+                      setFormData({ ...formData, amount: value });
+                    }
+                  }}
                   placeholder="Masukkan nominal"
                 />
               </div>

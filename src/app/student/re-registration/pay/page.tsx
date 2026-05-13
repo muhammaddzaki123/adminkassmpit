@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { fetchWithAuth } from '@/lib/api-client';
+import { normalizePaymentAmount } from '@/lib/payment-amount';
 import { StudentSidebar } from '@/components/layout/StudentSidebar';
 import { StudentHeader } from '@/components/layout/StudentHeader';
 import { Card } from '@/components/ui/Card';
@@ -87,7 +88,7 @@ function ReRegistrationPayContent() {
 
   const fetchBillings = useCallback(async () => {
     try {
-      const res = await fetchWithAuth('/api/billing/student');
+      const res = await fetchWithAuth('/api/billing/student', { cache: 'no-store' });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const result = await res.json();
       if (!result.success) throw new Error(result.error);
@@ -122,20 +123,20 @@ function ReRegistrationPayContent() {
 
   const adminFee = (() => {
     if (!paymentMethod) return 0;
-    const amt = paymentAmount || (selectedBilling?.remainingAmount ?? 0);
+    const amt = normalizePaymentAmount(paymentAmount || (selectedBilling?.remainingAmount ?? 0));
     if (paymentMethod === 'VIRTUAL_ACCOUNT') return 2500;
     if (paymentMethod === 'EWALLET') return Math.ceil(amt * 0.007);
     return 0;
   })();
 
-  const grandTotal = (paymentAmount || (selectedBilling?.remainingAmount ?? 0)) + adminFee;
+  const grandTotal = normalizePaymentAmount(paymentAmount || (selectedBilling?.remainingAmount ?? 0)) + adminFee;
 
   const handleCreatePayment = async () => {
     if (!paymentMethod || !selectedBilling) return;
     if ((paymentMethod === 'VIRTUAL_ACCOUNT' || paymentMethod === 'TRANSFER_BANK') && !paymentBankCode) {
       alert('Pilih bank tujuan terlebih dahulu'); return;
     }
-    const amount = paymentAmount || selectedBilling.remainingAmount;
+    const amount = normalizePaymentAmount(paymentAmount || selectedBilling.remainingAmount);
     if (amount <= 0 || amount > selectedBilling.remainingAmount) {
       alert(`Nominal harus antara Rp 1 – ${formatCurrency(selectedBilling.remainingAmount)}`); return;
     }
@@ -379,8 +380,22 @@ function ReRegistrationPayContent() {
             <label className="block text-sm font-medium text-neutral-700 mb-1">Nominal Pembayaran (opsional untuk cicilan)</label>
             <input
               type="number"
+              step="0.01"
+              inputMode="decimal"
+              min="0"
+              max={selectedBilling.remainingAmount}
               value={paymentAmount || ''}
-              onChange={(e) => setPaymentAmount(parseFloat(e.target.value) || 0)}
+              onChange={(e) => {
+                const value = e.target.value;
+                if (value === '') {
+                  setPaymentAmount(0);
+                  return;
+                }
+
+                if (/^\d*\.?\d{0,2}$/.test(value)) {
+                  setPaymentAmount(Number(value));
+                }
+              }}
               placeholder={`Maks. ${formatCurrency(selectedBilling.remainingAmount)}`}
               className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500"
             />

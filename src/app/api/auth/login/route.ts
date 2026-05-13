@@ -79,7 +79,7 @@ export async function POST(request: NextRequest) {
       newStudentId: user.newStudentId,
     };
 
-    const token = jwt.sign(tokenPayload, JWT_SECRET, { expiresIn: '7d' });
+    const token = jwt.sign(tokenPayload, JWT_SECRET, { expiresIn: '8h' });
 
     // Return user data (tanpa password)
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -97,7 +97,7 @@ export async function POST(request: NextRequest) {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 7, // 7 days
+      maxAge: 60 * 60 * 8, // 8 hours
       path: '/',
     });
 

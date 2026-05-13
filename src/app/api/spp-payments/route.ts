@@ -3,6 +3,7 @@ import prisma from '@/lib/prisma';
 import { getServerSession } from '@/lib/auth';
 import { PaymentMethod, PaymentStatus, PaymentType } from '@prisma/client';
 import { appendPaymentAuditEvent, buildPaymentNotes } from '@/lib/payment-audit';
+import { normalizePaymentAmount } from '@/lib/payment-amount';
 
 const PAYMENT_STATUS_VALUES: PaymentStatus[] = [
   'PENDING',
@@ -15,6 +16,18 @@ const PAYMENT_STATUS_VALUES: PaymentStatus[] = [
 
 function resolveBillingStatus(totalAmount: number, paidAmount: number): 'PAID' | 'PARTIAL' {
   return paidAmount >= totalAmount ? 'PAID' : 'PARTIAL';
+}
+
+class PaymentValidationError extends Error {
+  status: number;
+  payload?: Record<string, unknown>;
+
+  constructor(message: string, status = 400, payload?: Record<string, unknown>) {
+    super(message);
+    this.name = 'PaymentValidationError';
+    this.status = status;
+    this.payload = payload;
+  }
 }
 
 async function generateBillNumber(year: number, month: number | null) {
@@ -227,8 +240,9 @@ export async function POST(request: NextRequest) {
       paidAt,
       description,
     } = body;
+    const normalizedAmount = normalizePaymentAmount(amount);
 
-    if (!studentId || !amount || amount <= 0) {
+    if (!studentId || !Number.isFinite(normalizedAmount) || normalizedAmount <= 0) {
       return NextResponse.json(
         { success: false, error: 'studentId dan amount wajib diisi' },
         { status: 400 }
@@ -273,6 +287,15 @@ export async function POST(request: NextRequest) {
         },
       });
 
+      if (billing) {
+        const remainingAmount = normalizePaymentAmount(billing.totalAmount - billing.paidAmount);
+        if (normalizedAmount > remainingAmount) {
+          throw new PaymentValidationError('Jumlah pembayaran tidak boleh melebihi sisa tagihan', 400, {
+            remainingAmount,
+          });
+        }
+      }
+
       if (!billing) {
         const billNumber = await generateBillNumber(normalizedYear, normalizedMonth);
         const dueDate = new Date(normalizedYear, (normalizedMonth || 1) - 1, 10);
@@ -285,9 +308,9 @@ export async function POST(request: NextRequest) {
             type: normalizedType,
             month: normalizedMonth,
             year: normalizedYear,
-            subtotal: amount,
+            subtotal: normalizedAmount,
             discount: 0,
-            totalAmount: amount,
+            totalAmount: normalizedAmount,
             paidAmount: 0,
             status: 'BILLED',
             dueDate,
@@ -304,9 +327,9 @@ export async function POST(request: NextRequest) {
           paymentNumber,
           billingId: billing.id,
           method: 'TUNAI' as PaymentMethod,
-          amount,
+          amount: normalizedAmount,
           adminFee: 0,
-          totalPaid: amount,
+          totalPaid: normalizedAmount,
           status: 'COMPLETED',
           paidAt: paidAt ? new Date(paidAt) : new Date(),
           notes: buildPaymentNotes('COMPLETED'),
@@ -317,7 +340,7 @@ export async function POST(request: NextRequest) {
             raw: {
               studentId,
               paymentType: normalizedType,
-              amount,
+              amount: normalizedAmount,
               month: normalizedMonth,
               year: normalizedYear,
               paidAt: paidAt || null,
@@ -328,7 +351,7 @@ export async function POST(request: NextRequest) {
         },
       });
 
-      const newPaidAmount = Math.min(billing.totalAmount, billing.paidAmount + amount);
+      const newPaidAmount = billing.paidAmount + normalizedAmount;
       const nextStatus = resolveBillingStatus(billing.totalAmount, newPaidAmount);
 
       const updatedBilling = await tx.billing.update({
@@ -343,7 +366,7 @@ export async function POST(request: NextRequest) {
         data: {
           paymentId: payment.id,
           description: description || `Pembayaran ${normalizedType}`,
-          amount,
+          amount: normalizedAmount,
         },
       });
 
@@ -360,6 +383,13 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error) {
+    if (error instanceof PaymentValidationError) {
+      return NextResponse.json(
+        { success: false, error: error.message, ...(error.payload || {}) },
+        { status: error.status }
+      );
+    }
+
     console.error('Error creating SPP payment:', error);
     return NextResponse.json(
       { success: false, error: 'Failed to create payment' },

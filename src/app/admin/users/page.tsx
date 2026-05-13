@@ -198,10 +198,12 @@ export default function UsersManagement() {
   ];
 
   const filteredUsers = users.filter((user) => {
+    const normalizedSearch = searchQuery.trim().toLowerCase();
     const matchSearch =
-      user.nama.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (user.email && user.email.toLowerCase().includes(searchQuery.toLowerCase()));
+      normalizedSearch === '' ||
+      user.nama.toLowerCase().includes(normalizedSearch) ||
+      user.username.toLowerCase().includes(normalizedSearch) ||
+      (user.email && user.email.toLowerCase().includes(normalizedSearch));
 
     const matchRole = roleFilter === 'all' || user.role === roleFilter;
 
@@ -315,7 +317,7 @@ export default function UsersManagement() {
         {/* Modal */}
         {showModal && (
           <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center p-0 sm:p-4 z-50">
-            <Card className="w-full sm:max-w-2xl max-h-[92vh] overflow-y-auto rounded-t-2xl sm:rounded-2xl !rounded-b-none sm:!rounded-b-2xl">
+            <Card className="w-full sm:max-w-2xl max-h-[92vh] overflow-y-auto rounded-t-2xl sm:rounded-2xl rounded-b-none! sm:rounded-b-2xl!">
               <div className="p-4 sm:p-6">
                 <h3 className="text-neutral-900 mb-5 text-lg font-bold">
                   {editingUser ? 'Edit User' : 'Tambah User Baru'}
