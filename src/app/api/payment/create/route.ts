@@ -81,6 +81,46 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Guard: check if there is already a PENDING payment for this billing
+    // If yes, return it directly so the frontend can resume instead of creating a duplicate
+    const existingPendingPayment = await prisma.payment.findFirst({
+      where: {
+        billingId: billingId,
+        status: 'PENDING',
+        // Only consider non-expired payments (or no expiry set)
+        OR: [
+          { expiredAt: null },
+          { expiredAt: { gt: new Date() } },
+        ],
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    if (existingPendingPayment) {
+      return NextResponse.json({
+        success: true,
+        resumed: true,
+        data: {
+          payment: {
+            id: existingPendingPayment.id,
+            paymentNumber: existingPendingPayment.paymentNumber,
+            externalId: existingPendingPayment.externalId,
+            amount: existingPendingPayment.amount,
+            adminFee: existingPendingPayment.adminFee,
+            totalPaid: existingPendingPayment.totalPaid,
+            status: existingPendingPayment.status,
+            method: existingPendingPayment.method,
+            bankCode: bankCode || null,
+            vaNumber: existingPendingPayment.vaNumber,
+            qrCode: existingPendingPayment.qrCode,
+            expiredAt: existingPendingPayment.expiredAt,
+            deeplink: existingPendingPayment.deeplink,
+          },
+          message: 'Pembayaran yang belum selesai ditemukan. Silakan selesaikan pembayaran ini.',
+        },
+      });
+    }
+
     const isInstallmentPayment = amount < (billing.totalAmount - billing.paidAmount);
     if (isInstallmentPayment && !billing.allowInstallments) {
       return NextResponse.json(

@@ -84,17 +84,25 @@ export async function GET(req: NextRequest) {
         },
         payments: {
           where: {
-            status: 'COMPLETED',
+            status: { in: ['COMPLETED', 'PENDING'] },
           },
           select: {
             id: true,
             paymentNumber: true,
             amount: true,
+            adminFee: true,
+            totalPaid: true,
             paidAt: true,
             method: true,
+            status: true,
+            vaNumber: true,
+            qrCode: true,
+            deeplink: true,
+            externalId: true,
+            expiredAt: true,
           },
           orderBy: {
-            paidAt: 'desc',
+            createdAt: 'desc',
           },
         },
       },
@@ -105,26 +113,48 @@ export async function GET(req: NextRequest) {
     })
 
     // Transform data in the shape expected by the student pages
-    const result = billings.map((billing) => ({
-      id: billing.id,
-      billNumber: billing.billNumber,
-      type: billing.type,
-      description: billing.description,
-      month: billing.month,
-      year: billing.year,
-      academicYear: billing.academicYear.year,
-      totalAmount: billing.totalAmount,
-      paidAmount: billing.paidAmount,
-      remainingAmount: billing.totalAmount - billing.paidAmount,
-      allowInstallments: billing.allowInstallments,
-      status: billing.status,
-      dueDate: billing.dueDate,
-      billDate: billing.billDate,
-      isOverdue: billing.status === 'OVERDUE',
-      isPaid: billing.status === 'PAID',
-      canPay: ['BILLED', 'OVERDUE', 'PARTIAL'].includes(billing.status),
-      payments: billing.payments,
-    }))
+    const result = billings.map((billing) => {
+      const completedPayments = billing.payments.filter((p) => p.status === 'COMPLETED')
+      const pendingPayment = billing.payments.find((p) => p.status === 'PENDING') || null
+
+      return {
+        id: billing.id,
+        billNumber: billing.billNumber,
+        type: billing.type,
+        description: billing.description,
+        month: billing.month,
+        year: billing.year,
+        academicYear: billing.academicYear.year,
+        totalAmount: billing.totalAmount,
+        paidAmount: billing.paidAmount,
+        remainingAmount: billing.totalAmount - billing.paidAmount,
+        allowInstallments: billing.allowInstallments,
+        status: billing.status,
+        dueDate: billing.dueDate,
+        billDate: billing.billDate,
+        isOverdue: billing.status === 'OVERDUE',
+        isPaid: billing.status === 'PAID',
+        canPay: ['BILLED', 'OVERDUE', 'PARTIAL'].includes(billing.status),
+        payments: completedPayments,
+        // Expose pending payment so frontend can resume instead of creating duplicate
+        pendingPayment: pendingPayment
+          ? {
+              id: pendingPayment.id,
+              paymentNumber: pendingPayment.paymentNumber,
+              externalId: pendingPayment.externalId,
+              amount: pendingPayment.amount,
+              adminFee: pendingPayment.adminFee ?? 0,
+              totalPaid: pendingPayment.totalPaid,
+              status: pendingPayment.status,
+              method: pendingPayment.method,
+              vaNumber: pendingPayment.vaNumber,
+              qrCode: pendingPayment.qrCode,
+              deeplink: pendingPayment.deeplink,
+              expiredAt: pendingPayment.expiredAt?.toISOString() ?? null,
+            }
+          : null,
+      }
+    })
 
     // Calculate summary
     const unpaidBillings = result.filter((b) => ['BILLED', 'OVERDUE', 'PARTIAL'].includes(b.status))

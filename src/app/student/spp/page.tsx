@@ -10,6 +10,21 @@ import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { CreditCard, Building, Smartphone, CheckCircle, Clock, Copy, ArrowLeft, AlertTriangle, Landmark, Sparkles } from 'lucide-react';
 
+interface PendingPaymentData {
+  id: string;
+  paymentNumber: string;
+  externalId?: string | null;
+  amount: number;
+  adminFee: number;
+  totalPaid: number;
+  status: string;
+  method: string;
+  vaNumber?: string | null;
+  qrCode?: string | null;
+  deeplink?: string | null;
+  expiredAt?: string | null;
+}
+
 interface Billing {
   id: string;
   billNumber: string;
@@ -24,6 +39,7 @@ interface Billing {
   year: number | null;
   dueDate: string | null;
   createdAt: string;
+  pendingPayment?: PendingPaymentData | null;
 }
 
 function SPPPaymentContent() {
@@ -75,7 +91,39 @@ function SPPPaymentContent() {
           (b: Billing) => ['BILLED', 'OVERDUE', 'PARTIAL'].includes(b.status)
         );
         setBillings(unpaidBillings);
-        
+
+        // Auto-resume if any billing already has a PENDING payment
+        // This handles the page-refresh scenario: no duplicate is created
+        const billingWithPending = unpaidBillings.find(
+          (b: Billing) => b.pendingPayment != null
+        );
+
+        if (billingWithPending?.pendingPayment) {
+          const pending = billingWithPending.pendingPayment;
+          setPayment({
+            id: pending.id,
+            paymentNumber: pending.paymentNumber,
+            externalId: pending.externalId ?? undefined,
+            bankCode: undefined,
+            amount: pending.amount,
+            adminFee: pending.adminFee,
+            totalPaid: pending.totalPaid,
+            status: pending.status,
+            method: pending.method,
+            vaNumber: pending.vaNumber ?? undefined,
+            qrCode: pending.qrCode ?? undefined,
+            deeplink: pending.deeplink ?? undefined,
+            expiredAt: pending.expiredAt ?? undefined,
+          });
+          // Go directly to the waiting-for-payment screen
+          if (pending.method === 'VIRTUAL_ACCOUNT' || pending.method === 'EWALLET') {
+            setStep('payment');
+          } else {
+            setStep('success');
+          }
+          return;
+        }
+
         // Auto-select billing from URL if provided
         const billingIdsParam = searchParams.get('billingIds');
         const billingId = searchParams.get('billingId');
@@ -247,6 +295,14 @@ function SPPPaymentContent() {
   const handleProceedToMethod = () => {
     if (selectedBillings.length === 0) {
       alert('Pilih minimal 1 tagihan');
+      return;
+    }
+    // Extra guard: prevent proceeding if any selected billing has a pending payment
+    const hasPending = selectedBillings.some((id) =>
+      billings.find((b) => b.id === id)?.pendingPayment != null
+    );
+    if (hasPending) {
+      alert('Tagihan ini sudah memiliki pembayaran yang menunggu konfirmasi. Silakan selesaikan pembayaran sebelumnya terlebih dahulu.');
       return;
     }
     setStep('method');
@@ -908,11 +964,79 @@ function SPPPaymentContent() {
             ) : (
               <>
                 <div className="space-y-3">
-                  {billings.map((billing) => (
+                {billings.map((billing) => {
+                  const hasPendingPayment = billing.pendingPayment != null;
+                  const isSelected = selectedBillings.includes(billing.id);
+
+                  if (hasPendingPayment) {
+                    // Show a special "resume payment" card – cannot be re-selected
+                    return (
+                      <Card
+                        key={billing.id}
+                        className="border-2 border-yellow-400 bg-yellow-50"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-start gap-4">
+                            <div className="mt-1">
+                              <Clock className="w-5 h-5 text-yellow-600" />
+                            </div>
+                            <div>
+                              <div className="flex items-center gap-2 mb-1">
+                                <p className="font-semibold text-neutral-900">{billing.type}</p>
+                                <Badge variant="warning">Menunggu Pembayaran</Badge>
+                              </div>
+                              <p className="text-sm text-neutral-600">
+                                {billing.month && billing.year ? `${getMonthName(billing.month)} ${billing.year}` : billing.billNumber}
+                              </p>
+                              <p className="text-xs text-yellow-700 mt-1">
+                                Pembayaran sebelumnya belum selesai. Klik &quot;Lanjutkan&quot; untuk melanjutkan.
+                              </p>
+                            </div>
+                          </div>
+                          <div className="text-right flex flex-col items-end gap-2">
+                            <p className="font-bold text-lg text-neutral-900">
+                              {formatCurrency(billing.remainingAmount)}
+                            </p>
+                            <Button
+                              size="sm"
+                              variant="primary"
+                              onClick={() => {
+                                const pending = billing.pendingPayment!;
+                                setPayment({
+                                  id: pending.id,
+                                  paymentNumber: pending.paymentNumber,
+                                  externalId: pending.externalId ?? undefined,
+                                  bankCode: undefined,
+                                  amount: pending.amount,
+                                  adminFee: pending.adminFee,
+                                  totalPaid: pending.totalPaid,
+                                  status: pending.status,
+                                  method: pending.method,
+                                  vaNumber: pending.vaNumber ?? undefined,
+                                  qrCode: pending.qrCode ?? undefined,
+                                  deeplink: pending.deeplink ?? undefined,
+                                  expiredAt: pending.expiredAt ?? undefined,
+                                });
+                                if (pending.method === 'VIRTUAL_ACCOUNT' || pending.method === 'EWALLET') {
+                                  setStep('payment');
+                                } else {
+                                  setStep('success');
+                                }
+                              }}
+                            >
+                              Lanjutkan
+                            </Button>
+                          </div>
+                        </div>
+                      </Card>
+                    );
+                  }
+
+                  return (
                     <Card
                       key={billing.id}
                       className={`cursor-pointer transition ${
-                        selectedBillings.includes(billing.id)
+                        isSelected
                           ? 'border-2 border-primary-600 bg-primary-50'
                           : 'border-2 border-transparent hover:border-primary-300'
                       }`}
@@ -922,7 +1046,7 @@ function SPPPaymentContent() {
                         <div className="flex items-start gap-4">
                           <input
                             type="checkbox"
-                            checked={selectedBillings.includes(billing.id)}
+                            checked={isSelected}
                             onChange={() => {}}
                             className="mt-1 w-5 h-5 text-primary-600"
                           />
@@ -958,7 +1082,8 @@ function SPPPaymentContent() {
                         </div>
                       </div>
                     </Card>
-                  ))}
+                  );
+                })}
                 </div>
 
                 {selectedBillings.length > 0 && (
