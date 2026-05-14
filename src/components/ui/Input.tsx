@@ -6,13 +6,15 @@ function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
+interface InputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'prefix' | 'suffix'> {
   label?: string;
   error?: string;
   icon?: React.ReactNode;
+  prefix?: React.ReactNode;
+  suffix?: React.ReactNode;
 }
 
-export function Input({ className, label, error, icon, ...props }: InputProps) {
+export function Input({ className, label, error, icon, prefix, suffix, ...props }: InputProps) {
   return (
     <div className="w-full">
       {label && (
@@ -28,13 +30,25 @@ export function Input({ className, label, error, icon, ...props }: InputProps) {
             "disabled:cursor-not-allowed disabled:bg-neutral-50 disabled:text-neutral-500",
             error && "border-red-500 focus:border-red-500 focus:ring-red-500",
             icon && "pl-10",
+            prefix && "pl-12",
+            suffix && "pr-12",
             className
           )}
           {...props}
         />
+        {prefix && (
+          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9ca3af] font-medium">
+            {prefix}
+          </div>
+        )}
         {icon && (
           <div className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9ca3af]">
             {icon}
+          </div>
+        )}
+        {suffix && (
+          <div className="absolute right-3 top-1/2 -translate-y-1/2 text-[#9ca3af] font-medium">
+            {suffix}
           </div>
         )}
       </div>

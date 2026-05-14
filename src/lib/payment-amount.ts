@@ -2,7 +2,9 @@ export const PAYMENT_DECIMAL_PLACES = 2;
 export const PAYMENT_SCALE = 10 ** PAYMENT_DECIMAL_PLACES;
 
 export function normalizePaymentAmount(value: string | number): number {
-  const numericValue = typeof value === 'string' ? Number(value) : value;
+  const numericValue = typeof value === 'string'
+    ? Number(value.replace(/[^\d.-]/g, ''))
+    : value;
 
   if (!Number.isFinite(numericValue)) {
     return Number.NaN;

@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { fetchWithAuth } from '@/lib/api-client';
 import { normalizePaymentAmount } from '@/lib/payment-amount';
+import { CurrencyInput } from '@/components/ui/CurrencyInput';
 import { StudentSidebar } from '@/components/layout/StudentSidebar';
 import { StudentHeader } from '@/components/layout/StudentHeader';
 import { Card } from '@/components/ui/Card';
@@ -633,28 +634,6 @@ function SPPPaymentContent() {
     );
   }
 
-  // Processing screen
-  if (step === 'process') {
-    return (
-      <div className="flex min-h-screen bg-neutral-50">
-        <div className="hidden lg:block">
-          <StudentSidebar />
-        </div>
-
-        <div className="flex-1 flex flex-col min-w-0 lg:ml-64">
-          <StudentHeader onMenuClick={() => setIsMobileMenuOpen(true)} />
-          <main className="flex-1 flex items-center justify-center p-4 md:p-6 lg:p-8 mt-16">
-            <div className="text-center">
-              <div className="inline-block animate-spin rounded-full h-16 w-16 border-b-4 border-primary-600 mb-4"></div>
-              <p className="text-lg font-semibold text-neutral-900">Memproses Pembayaran...</p>
-              <p className="text-neutral-600 mt-2">Mohon tunggu sebentar</p>
-            </div>
-          </main>
-        </div>
-      </div>
-    );
-  }
-
   // Method selection screen
   if (step === 'method') {
     const total = getTotalAmount();
@@ -730,26 +709,12 @@ function SPPPaymentContent() {
                     <label className="block text-sm font-medium text-neutral-700 mb-2">
                       Nominal Pembayaran (Opsional - untuk cicilan)
                     </label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      inputMode="decimal"
-                      min="0"
+                    <CurrencyInput
+                      value={paymentAmount || ''}
+                      onValueChange={(amount) => setPaymentAmount(amount ? Number(amount) : 0)}
                       max={total}
                       placeholder="Masukkan nominal atau kosongkan untuk bayar penuh"
-                      value={paymentAmount || ''}
-                      onChange={(e) => {
-                        const value = e.target.value;
-                        if (value === '') {
-                          setPaymentAmount(0);
-                          return;
-                        }
-
-                        if (/^\d*\.?\d{0,2}$/.test(value)) {
-                          setPaymentAmount(Number(value));
-                        }
-                      }}
-                      className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                      className="rounded-lg border border-neutral-300 px-4 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                     />
                     <p className="text-xs text-neutral-500 mt-1">
                       Sisa: {formatCurrency(total)}

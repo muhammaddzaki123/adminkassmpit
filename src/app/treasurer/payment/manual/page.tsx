@@ -9,6 +9,7 @@ import { TreasurerHeader } from '@/components/layout/TreasurerHeader';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
+import { CurrencyInput } from '@/components/ui/CurrencyInput';
 import { Plus, Search } from 'lucide-react';
 
 interface Billing {
@@ -332,20 +333,11 @@ export default function ManualPaymentPage() {
                 <label className="block text-sm font-medium text-neutral-700 mb-2">
                   Nominal Bayar <span className="text-red-500">*</span>
                 </label>
-                <input
-                  type="number"
-                  step="0.01"
-                  inputMode="decimal"
-                  min="0"
-                  max={selectedBilling.remainingAmount}
-                  className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                <CurrencyInput
                   value={formData.amount}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    if (value === '' || /^\d*\.?\d{0,2}$/.test(value)) {
-                      setFormData({ ...formData, amount: value });
-                    }
-                  }}
+                  onValueChange={(amount) => setFormData({ ...formData, amount })}
+                  max={selectedBilling.remainingAmount}
+                  className="rounded-lg border border-neutral-300 px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                   placeholder="Masukkan nominal"
                 />
               </div>

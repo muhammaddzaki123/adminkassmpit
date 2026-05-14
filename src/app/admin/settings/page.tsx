@@ -8,6 +8,7 @@ import { AdminHeader } from '@/components/layout/AdminHeader';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input, Select } from '@/components/ui/Input';
+import { formatCurrencyInput, parseCurrencyInput } from '@/lib/currency';
 import { Settings, DollarSign, Bell, Save, RefreshCw, AlertTriangle } from 'lucide-react';
 
 interface Setting {
@@ -286,12 +287,11 @@ export default function SettingsPage() {
   };
 
   const formatCurrency = (value: string) => {
-    const number = parseInt(value.replace(/\D/g, ''));
-    return isNaN(number) ? '' : number.toLocaleString('id-ID');
+    return formatCurrencyInput(value);
   };
 
   const parseCurrency = (formatted: string) => {
-    return formatted.replace(/\D/g, '');
+    return parseCurrencyInput(formatted);
   };
 
   const statusTone = waStatus?.state === 'ready'

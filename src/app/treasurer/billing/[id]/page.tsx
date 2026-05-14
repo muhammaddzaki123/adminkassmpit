@@ -10,6 +10,7 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Table } from '@/components/ui/Table';
+import { CurrencyInput } from '@/components/ui/CurrencyInput';
 import { fetchWithAuth } from '@/lib/api-client';
 
 interface BillingDetail {
@@ -658,12 +659,11 @@ export default function BillingDetailPage() {
                         <h3 className="font-semibold text-neutral-900">Diskon</h3>
                         <p className="text-xs text-neutral-600">Untuk beasiswa, yatim/piatu, saudara kandung, atau kondisi khusus yang sudah diverifikasi.</p>
                       </div>
-                      <input
-                        type="number"
-                        className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                        placeholder="Nominal diskon"
+                      <CurrencyInput
                         value={discountForm.amount}
-                        onChange={(e) => setDiscountForm({ ...discountForm, amount: e.target.value })}
+                        onValueChange={(amount) => setDiscountForm({ ...discountForm, amount })}
+                        placeholder="Nominal diskon"
+                        className="rounded-lg border border-neutral-300 px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                       />
                       <textarea
                         className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
@@ -690,12 +690,11 @@ export default function BillingDetailPage() {
                         value={installmentForm.count}
                         onChange={(e) => setInstallmentForm({ ...installmentForm, count: e.target.value })}
                       />
-                      <input
-                        type="number"
-                        className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                        placeholder="Nominal per cicilan"
+                      <CurrencyInput
                         value={installmentForm.amount}
-                        onChange={(e) => setInstallmentForm({ ...installmentForm, amount: e.target.value })}
+                        onValueChange={(amount) => setInstallmentForm({ ...installmentForm, amount })}
+                        placeholder="Nominal per cicilan"
+                        className="rounded-lg border border-neutral-300 px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                       />
                       <Button variant="secondary" onClick={handleApplyInstallment} isLoading={concessionLoading} fullWidth>
                         Simpan Cicilan
@@ -774,12 +773,11 @@ export default function BillingDetailPage() {
 
               <div>
                 <label className="block text-sm font-medium text-neutral-700 mb-2">Nominal Bayar</label>
-                <input
-                  type="number"
-                  className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                <CurrencyInput
                   value={paymentForm.amount}
-                  onChange={(e) => setPaymentForm({ ...paymentForm, amount: e.target.value })}
+                  onValueChange={(amount) => setPaymentForm({ ...paymentForm, amount })}
                   placeholder="Masukkan nominal"
+                  className="rounded-lg border border-neutral-300 px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 />
               </div>
 

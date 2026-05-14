@@ -7,6 +7,7 @@ import { TreasurerSidebar } from '@/components/layout/TreasurerSidebar';
 import { TreasurerHeader } from '@/components/layout/TreasurerHeader';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import { CurrencyInput } from '@/components/ui/CurrencyInput';
 import { FileText, PlusCircle, CheckCircle, Clock, AlertTriangle } from 'lucide-react';
 
 interface Class {
@@ -435,12 +436,9 @@ function BillingManagementContent() {
                     <label className="block text-sm font-medium text-neutral-700 mb-2">
                       Nominal Tagihan
                     </label>
-                    <input
-                      type="number"
-                      min="0"
-                      className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    <CurrencyInput
                       value={formData.amount}
-                      onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+                      onValueChange={(amount) => setFormData({ ...formData, amount })}
                       placeholder="Misal: 2000000"
                     />
                     <p className="text-xs text-neutral-500 mt-2">

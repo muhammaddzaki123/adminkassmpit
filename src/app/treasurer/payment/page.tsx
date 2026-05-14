@@ -8,6 +8,7 @@ import { TreasurerHeader } from '@/components/layout/TreasurerHeader';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input, Select } from '@/components/ui/Input';
+import { CurrencyInput } from '@/components/ui/CurrencyInput';
 import { Plus, Search, Calendar, Download, CheckCircle, AlertCircle, Wallet, FileClock } from 'lucide-react';
 
 interface Student {
@@ -383,11 +384,10 @@ export default function PaymentPage() {
                     <label className="block text-sm font-medium text-neutral-700 mb-2">
                       Jumlah <span className="text-red-500">*</span>
                     </label>
-                    <Input 
-                      type="number" 
-                      placeholder="500000"
+                    <CurrencyInput
                       value={formData.amount}
-                      onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+                      onValueChange={(amount) => setFormData({ ...formData, amount })}
+                      placeholder="500000"
                       required
                     />
                   </div>

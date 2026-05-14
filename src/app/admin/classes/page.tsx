@@ -8,6 +8,7 @@ import { AdminSidebar } from '@/components/layout/AdminSidebar';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { CurrencyInput } from '@/components/ui/CurrencyInput';
 import { Badge } from '@/components/ui/Badge';
 import { fetchWithAuth } from '@/lib/api-client';
 import { Plus, School, Trash2, Users, Edit } from 'lucide-react';
@@ -252,13 +253,11 @@ export default function AdminClassesPage() {
                   value={form.name}
                   onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
                 />
-                <Input
+                <CurrencyInput
                   label="SPP (Opsional)"
-                  type="number"
-                  min={0}
                   placeholder="500000"
                   value={form.sppAmount}
-                  onChange={(e) => setForm((prev) => ({ ...prev, sppAmount: e.target.value }))}
+                  onValueChange={(value) => setForm((prev) => ({ ...prev, sppAmount: value }))}
                 />
                 <Input
                   label="Kapasitas"
@@ -303,7 +302,7 @@ export default function AdminClassesPage() {
                           SPP: Rp {Math.round(item.sppAmount || 0).toLocaleString('id-ID')} • Kap: {item.maxCapacity ?? '-'} • Siswa: {item.currentStudents}
                         </p>
                       </div>
-                      <div className="flex items-center gap-2 flex-shrink-0">
+                      <div className="flex items-center gap-2 shrink-0">
                         <Badge variant={item.currentStudents > 0 ? 'warning' : 'success'}>
                           {item.currentStudents > 0 ? 'Aktif' : 'Kosong'}
                         </Badge>

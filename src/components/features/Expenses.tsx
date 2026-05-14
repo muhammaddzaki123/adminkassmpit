@@ -5,6 +5,7 @@ import { Plus, Calendar, TrendingDown, CheckCircle, AlertCircle, X, DollarSign, 
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input, Select, TextArea } from '@/components/ui/Input';
+import { CurrencyInput } from '@/components/ui/CurrencyInput';
 import { Table } from '@/components/ui/Table';
 import { Badge } from '@/components/ui/Badge';
 
@@ -746,17 +747,11 @@ export function Expenses() {
                   Nominal <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500 font-medium">
-                    Rp
-                  </span>
-                  <Input
-                    type="number"
-                    placeholder="0"
+                  <CurrencyInput
                     value={formData.amount}
-                    onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
-                    className="pl-12"
+                    onValueChange={(amount) => setFormData({ ...formData, amount })}
+                    placeholder="0"
                     required
-                    min="1"
                   />
                 </div>
                 {formData.amount && parseFloat(formData.amount) > 0 && (

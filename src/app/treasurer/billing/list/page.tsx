@@ -9,6 +9,7 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Table } from '@/components/ui/Table';
+import { CurrencyInput } from '@/components/ui/CurrencyInput';
 import { FileText, Search, Filter, Eye, Settings2, X, RotateCcw } from 'lucide-react';
 
 type BulkActionType = 'DISCOUNT' | 'INSTALLMENT';
@@ -799,12 +800,11 @@ export default function BillingListPage() {
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-neutral-700 mb-1">Nominal Diskon Default (Rp)</label>
-                    <input
-                      type="number"
-                      min={1}
-                      className="w-full px-3 py-2 border border-neutral-300 rounded-lg"
+                    <CurrencyInput
                       value={bulkDiscountForm.discountAmount}
-                      onChange={(e) => setBulkDiscountForm({ ...bulkDiscountForm, discountAmount: e.target.value })}
+                      onValueChange={(discountAmount) => setBulkDiscountForm({ ...bulkDiscountForm, discountAmount })}
+                      className="rounded-lg border border-neutral-300 px-3 py-2"
+                      min={1}
                     />
                   </div>
                   <div className="lg:col-span-2">
@@ -868,7 +868,7 @@ export default function BillingListPage() {
               <div className="rounded-xl border border-neutral-200 overflow-hidden">
                 {/* Search & class filter bar */}
                 <div className="flex flex-wrap items-center gap-2 px-3 py-2 bg-white border-b border-neutral-200">
-                  <div className="relative flex-1 min-w-[160px]">
+                  <div className="relative flex-1 min-w-40">
                     <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 pointer-events-none" />
                     <input
                       type="text"
@@ -947,14 +947,12 @@ export default function BillingListPage() {
                             <td className="px-3 py-2 text-right">{formatCurrency(billing.totalAmount)}</td>
                             {bulkActionType === 'DISCOUNT' && (
                               <td className="px-3 py-2">
-                                <input
-                                  type="number"
-                                  min={1}
-                                  disabled={!isChecked}
-                                  className="w-full px-2 py-1 border border-neutral-300 rounded-md"
-                                  placeholder="Kosong = default"
+                                <CurrencyInput
                                   value={discountOverrides[billing.id] || ''}
-                                  onChange={(e) => setDiscountOverrides((prev) => ({ ...prev, [billing.id]: e.target.value }))}
+                                  onValueChange={(discountAmount) => setDiscountOverrides((prev) => ({ ...prev, [billing.id]: discountAmount }))}
+                                  disabled={!isChecked}
+                                  placeholder="Kosong = default"
+                                  className="rounded-md border border-neutral-300 px-2 py-1"
                                 />
                               </td>
                             )}

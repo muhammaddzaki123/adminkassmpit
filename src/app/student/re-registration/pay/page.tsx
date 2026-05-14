@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { fetchWithAuth } from '@/lib/api-client';
 import { normalizePaymentAmount } from '@/lib/payment-amount';
+import { CurrencyInput } from '@/components/ui/CurrencyInput';
 import { StudentSidebar } from '@/components/layout/StudentSidebar';
 import { StudentHeader } from '@/components/layout/StudentHeader';
 import { Card } from '@/components/ui/Card';
@@ -378,26 +379,12 @@ function ReRegistrationPayContent() {
         {selectedBilling.allowInstallments && (
           <div className="mt-4 pt-4 border-t border-neutral-100">
             <label className="block text-sm font-medium text-neutral-700 mb-1">Nominal Pembayaran (opsional untuk cicilan)</label>
-            <input
-              type="number"
-              step="0.01"
-              inputMode="decimal"
-              min="0"
-              max={selectedBilling.remainingAmount}
+            <CurrencyInput
               value={paymentAmount || ''}
-              onChange={(e) => {
-                const value = e.target.value;
-                if (value === '') {
-                  setPaymentAmount(0);
-                  return;
-                }
-
-                if (/^\d*\.?\d{0,2}$/.test(value)) {
-                  setPaymentAmount(Number(value));
-                }
-              }}
+              onValueChange={(amount) => setPaymentAmount(amount ? Number(amount) : 0)}
+              max={selectedBilling.remainingAmount}
               placeholder={`Maks. ${formatCurrency(selectedBilling.remainingAmount)}`}
-              className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500"
+              className="rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500"
             />
           </div>
         )}

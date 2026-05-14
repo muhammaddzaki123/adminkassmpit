@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Input, Select, TextArea } from '@/components/ui/Input';
+import { CurrencyInput } from '@/components/ui/CurrencyInput';
 import {
   AlertCircle,
   Download,
@@ -849,14 +850,11 @@ export default function BukuBesarPage() {
                       </div>
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <Input
+                        <CurrencyInput
                           label="Nominal *"
-                          type="number"
-                          min="1"
-                          step="1"
                           placeholder="Masukkan nominal"
                           value={form.amount}
-                          onChange={(event) => handleFormChange('amount', event.target.value)}
+                          onValueChange={(value) => handleFormChange('amount', value)}
                         />
 
                         <Input
@@ -927,26 +925,12 @@ export default function BukuBesarPage() {
                         onChange={(event) => handleFormChange('description', event.target.value)}
                       />
 
-                      <div>
-                        <label className="block text-sm font-medium text-neutral-700 mb-2">
-                          Nominal <span className="text-red-500">*</span>
-                        </label>
-                        <div className="relative">
-                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500 font-medium">
-                            Rp
-                          </span>
-                          <Input
-                            type="number"
-                            min="1"
-                            step="1"
-                            placeholder="0"
-                            value={form.amount}
-                            onChange={(event) => handleFormChange('amount', event.target.value)}
-                            className="pl-12"
-                            required
-                          />
-                        </div>
-                      </div>
+                      <CurrencyInput
+                        label="Nominal *"
+                        placeholder="0"
+                        value={form.amount}
+                        onValueChange={(value) => handleFormChange('amount', value)}
+                      />
 
                       <div className="flex justify-end">
                         <Button

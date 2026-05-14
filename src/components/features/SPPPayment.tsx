@@ -5,6 +5,7 @@ import { Upload, CheckCircle, X, Filter, AlertCircle, Search, Eye, FileText } fr
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input, Select } from '@/components/ui/Input';
+import { CurrencyInput } from '@/components/ui/CurrencyInput';
 import { Table } from '@/components/ui/Table';
 import { Badge } from '@/components/ui/Badge';
 import { fetchWithAuth } from '@/lib/api-client';
@@ -640,12 +641,11 @@ export function SPPPayment() {
                 </div>
 
                 {/* Nominal */}
-                <Input
-                  type="number"
+                <CurrencyInput
                   label="Nominal (Rp)"
-                  placeholder="500000"
                   value={formData.amount}
-                  onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+                  onValueChange={(amount) => setFormData({ ...formData, amount })}
+                  placeholder="500000"
                   required
                 />
 
