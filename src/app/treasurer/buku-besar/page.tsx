@@ -172,13 +172,14 @@ function getDefaultFormState(): LedgerFormState {
 export default function BukuBesarPage() {
   const router = useRouter();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [period, setPeriod] = useState('monthly');
+  const [period, setPeriod] = useState('all');
   const [month, setMonth] = useState(String(new Date().getMonth() + 1));
   const [year, setYear] = useState(String(new Date().getFullYear()));
   const [searchQuery, setSearchQuery] = useState('');
   const [directionFilter, setDirectionFilter] = useState('all');
   const [incomeCategoryFilter, setIncomeCategoryFilter] = useState('all');
   const [entries, setEntries] = useState<LedgerEntry[]>([]);
+  const [expenseCategoryFilter, setExpenseCategoryFilter] = useState('all');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [categoryMessage, setCategoryMessage] = useState<string | null>(null);
@@ -215,11 +216,13 @@ export default function BukuBesarPage() {
       setLoading(true);
       setError(null);
 
-      const params = new URLSearchParams({
-        period,
-        month,
-        year,
-      });
+      const params = new URLSearchParams({ period });
+      if (period === 'monthly') {
+        params.set('month', month);
+        params.set('year', year);
+      } else if (period === 'yearly') {
+        params.set('year', year);
+      }
 
       const response = await fetchWithAuth(`/api/ledger?${params.toString()}`);
 
@@ -307,29 +310,52 @@ export default function BukuBesarPage() {
       const matchesIncomeCategory =
         incomeCategoryFilter === 'all' ||
         (entry.direction === 'INCOME' && entry.category === incomeCategoryFilter);
-      return matchesDirection && matchesIncomeCategory && matchesSearch;
+
+      const matchesExpenseCategory =
+        expenseCategoryFilter === 'all' ||
+        (entry.direction === 'EXPENSE' && entry.category === expenseCategoryFilter);
+
+      return matchesDirection && matchesIncomeCategory && matchesExpenseCategory && matchesSearch;
     });
-  }, [entries, directionFilter, incomeCategoryFilter, searchQuery]);
+  }, [entries, directionFilter, incomeCategoryFilter, expenseCategoryFilter, searchQuery]);
 
   const incomeCategoryFilterOptions = useMemo(() => {
-    const values = new Set<string>([
-      ...defaultIncomeCategoryOptions.map((item) => item.value),
-      ...incomeCategoryOptions.map((item) => item.name),
-    ]);
+    const values = new Set<string>();
     entries
       .filter((entry) => entry.direction === 'INCOME')
       .forEach((entry) => values.add(entry.category));
+    incomeCategoryOptions.forEach((item) => values.add(item.name));
 
     return [
       { value: 'all', label: 'Semua Kategori Pemasukan' },
-      ...Array.from(values).map((value) => ({ value, label: getIncomeCategoryLabel(value) })),
+      ...Array.from(values).sort().map((value) => ({ value, label: value })),
     ];
   }, [entries, incomeCategoryOptions]);
+
+  const expenseCategoryFilterOptions = useMemo(() => {
+    const values = new Set<string>();
+    entries
+      .filter((entry) => entry.direction === 'EXPENSE')
+      .forEach((entry) => values.add(entry.category));
+    expenseCategoryOptions.forEach((item) => {
+      if (item.isActive) {
+        values.add(item.name);
+      }
+    });
+
+    return [
+      { value: 'all', label: 'Semua Kategori Pengeluaran' },
+      ...Array.from(values).sort().map((value) => ({ value, label: value })),
+    ];
+  }, [entries, expenseCategoryOptions]);
 
   const handleDirectionFilterChange = (value: string) => {
     setDirectionFilter(value);
     if (value !== 'all' && value !== 'income') {
       setIncomeCategoryFilter('all');
+    }
+    if (value !== 'all' && value !== 'expense') {
+      setExpenseCategoryFilter('all');
     }
   };
 
@@ -1051,17 +1077,21 @@ export default function BukuBesarPage() {
                   <div />
                 )}
 
-                <Select
-                  label="Tahun"
-                  value={year}
-                  onChange={(event) => setYear(event.target.value)}
-                  options={[
-                    { value: '2024', label: '2024' },
-                    { value: '2025', label: '2025' },
-                    { value: '2026', label: '2026' },
-                    { value: '2027', label: '2027' },
-                  ]}
-                />
+                {period !== 'all' ? (
+                  <Select
+                    label="Tahun"
+                    value={year}
+                    onChange={(event) => setYear(event.target.value)}
+                    options={[
+                      { value: '2024', label: '2024' },
+                      { value: '2025', label: '2025' },
+                      { value: '2026', label: '2026' },
+                      { value: '2027', label: '2027' },
+                    ]}
+                  />
+                ) : (
+                  <div />
+                )}
 
                 <Select
                   label="Jenis"
@@ -1086,6 +1116,19 @@ export default function BukuBesarPage() {
                   }}
                   options={incomeCategoryFilterOptions}
                 />
+
+                <Select
+                  label="Kategori Pengeluaran"
+                  value={expenseCategoryFilter}
+                  onChange={(event) => {
+                    const value = event.target.value;
+                    setExpenseCategoryFilter(value);
+                    if (value !== 'all' && directionFilter !== 'expense') {
+                      setDirectionFilter('expense');
+                    }
+                  }}
+                  options={expenseCategoryFilterOptions}
+                />
               </div>
 
               <div className="mt-4">
@@ -1106,7 +1149,13 @@ export default function BukuBesarPage() {
                     Pemasukan, pengeluaran, dan kas manual tampil berurutan sesuai tanggal.
                   </p>
                 </div>
-                <Badge variant="info">{getMonthLabel(Number(month))} {year}</Badge>
+                <Badge variant="info">
+                  {period === 'all'
+                    ? 'Semua Periode'
+                    : period === 'monthly'
+                      ? `${getMonthLabel(Number(month))} ${year}`
+                      : year}
+                </Badge>
               </div>
 
               {visibleEntries.length === 0 ? (

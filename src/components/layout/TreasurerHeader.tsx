@@ -11,6 +11,7 @@ export function TreasurerHeader({ onMenuClick }: TreasurerHeaderProps) {
   const [userName, setUserName] = useState('Bendahara');
   const [todayIncome, setTodayIncome] = useState(0);
   const [todayExpense, setTodayExpense] = useState(0);
+  const [totalBalance, setTotalBalance] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -38,6 +39,8 @@ export function TreasurerHeader({ onMenuClick }: TreasurerHeaderProps) {
       
       let incomeToday = 0;
       let expenseToday = 0;
+      let totalIncome = 0;
+      let totalExpense = 0;
       
       if (paymentsData.success) {
         const payments = paymentsData.data || [];
@@ -48,6 +51,7 @@ export function TreasurerHeader({ onMenuClick }: TreasurerHeaderProps) {
             return paidDate >= startOfDay;
           })
           .reduce((sum: number, p: { amount: number }) => sum + p.amount, 0);
+        totalIncome = payments.reduce((sum: number, p: { amount: number }) => sum + p.amount, 0);
       }
       
       if (expensesData.success) {
@@ -59,10 +63,12 @@ export function TreasurerHeader({ onMenuClick }: TreasurerHeaderProps) {
             return expenseDate >= startOfDay;
           })
           .reduce((sum: number, e: { amount: number }) => sum + e.amount, 0);
+        totalExpense = expenses.reduce((sum: number, e: { amount: number }) => sum + e.amount, 0);
       }
       
       setTodayIncome(incomeToday);
       setTodayExpense(expenseToday);
+      setTotalBalance(totalIncome - totalExpense);
       setLoading(false);
     } catch (error) {
       console.error('Error fetching today stats:', error);
@@ -118,6 +124,22 @@ export function TreasurerHeader({ onMenuClick }: TreasurerHeaderProps) {
                 <div className="h-5 w-24 bg-neutral-200 animate-pulse rounded"></div>
               ) : (
                 <p className="text-sm font-bold text-neutral-900">{formatCurrency(todayExpense)}</p>
+              )}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 px-4 py-2 bg-blue-50 rounded-lg">
+            <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+              <DollarSign className="w-4 h-4 text-blue-600" />
+            </div>
+            <div>
+              <p className="text-xs text-neutral-600">Saldo Kas Tersedia</p>
+              {loading ? (
+                <div className="h-5 w-24 bg-neutral-200 animate-pulse rounded"></div>
+              ) : (
+                <p className={`text-sm font-bold ${totalBalance >= 0 ? 'text-green-700' : 'text-red-700'}`}>
+                  {formatCurrency(totalBalance)}
+                </p>
               )}
             </div>
           </div>
