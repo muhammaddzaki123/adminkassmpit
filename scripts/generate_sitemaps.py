@@ -6,10 +6,10 @@ def escape_xml(text):
         return text
     return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;").replace("'", "&apos;")
 
-NODE_WIDTH = 180
-NODE_HEIGHT = 60
-X_SPACING = 80
-Y_SPACING = 40
+NODE_WIDTH = 200
+NODE_HEIGHT = 70
+X_SPACING = 100
+Y_SPACING = 30
 
 class SitemapGenerator:
     def __init__(self, color, file_name):
@@ -65,11 +65,15 @@ class SitemapGenerator:
         node_id = str(self.node_id_counter)
         self.node_id_counter += 1
 
-        name = escape_xml(node['name'])
+        display_name = f"<b>{node['name']}</b>"
+        if 'route' in node and node['route']:
+            display_name += f"<br/>{node['route']}"
+
+        value = escape_xml(display_name)
         c = self.colors.get(self.color, {'fill': '#ffffff', 'stroke': '#000000', 'font': '#000000'})
         style = f"rounded=1;whiteSpace=wrap;html=1;fillColor={c['fill']};strokeColor={c['stroke']};fontColor={c['font']};"
 
-        cell = ET.SubElement(self.root, "mxCell", id=node_id, value=name, style=style, vertex="1", parent="1")
+        cell = ET.SubElement(self.root, "mxCell", id=node_id, value=value, style=style, vertex="1", parent="1")
         ET.SubElement(cell, "mxGeometry", x=str(node['x']), y=str(node['y']), width=str(NODE_WIDTH), height=str(NODE_HEIGHT), **{"as": "geometry"})
 
         if parent_node_id is not None:
@@ -84,77 +88,163 @@ class SitemapGenerator:
 
 if __name__ == "__main__":
     admin_tree = {
-        'name': '/admin',
+        'name': 'Login Sistem', 'route': '/auth/login',
         'children': [
-            {'name': '/admin/academic-years'},
-            {'name': '/admin/activity-log'},
-            {'name': '/admin/classes'},
-            {'name': '/admin/new-students'},
-            {'name': '/admin/permissions'},
-            {'name': '/admin/registrations'},
-            {'name': '/admin/roles'},
-            {'name': '/admin/settings'},
-            {'name': '/admin/students', 'children': [
-                {'name': '/admin/students/create'},
-                {'name': '/admin/students/import'},
-                {'name': '/admin/students/[id]/edit'},
-            ]},
-            {'name': '/admin/users'},
+            {
+                'name': 'Dashboard Admin', 'route': '/admin',
+                'children': [
+                    {
+                        'name': 'Data Pengguna', 'route': '',
+                        'children': [
+                            {'name': 'Kelola Pengguna', 'route': '/admin/users'},
+                            {'name': 'Kelola Role', 'route': '/admin/roles'},
+                            {'name': 'Kelola Izin', 'route': '/admin/permissions'},
+                        ]
+                    },
+                    {
+                        'name': 'Data Akademik', 'route': '',
+                        'children': [
+                            {'name': 'Tahun Ajaran', 'route': '/admin/academic-years'},
+                            {'name': 'Kelas', 'route': '/admin/classes'},
+                        ]
+                    },
+                    {
+                        'name': 'PPDB & Siswa', 'route': '',
+                        'children': [
+                            {'name': 'Calon Siswa Baru', 'route': '/admin/new-students'},
+                            {'name': 'Pendaftaran PPDB', 'route': '/admin/registrations'},
+                            {
+                                'name': 'Data Master Siswa', 'route': '/admin/students',
+                                'children': [
+                                    {'name': 'Tambah Siswa', 'route': '/admin/students/create'},
+                                    {'name': 'Import Siswa', 'route': '/admin/students/import'},
+                                    {'name': 'Edit Siswa', 'route': '/admin/students/[id]/edit'},
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        'name': 'Sistem', 'route': '',
+                        'children': [
+                            {'name': 'Log Aktivitas', 'route': '/admin/activity-log'},
+                            {'name': 'Pengaturan', 'route': '/admin/settings'},
+                        ]
+                    }
+                ]
+            }
         ]
     }
 
     calon_siswa_tree = {
-        'name': '/calon-siswa',
+        'name': 'Halaman Utama / Landing', 'route': '/',
         'children': [
-            {'name': '/calon-siswa/login'},
-            {'name': '/calon-siswa/register'},
-            {'name': '/calon-siswa/dashboard'},
+            {
+                'name': 'Pendaftaran Calon Siswa', 'route': '/calon-siswa/register',
+                'children': [
+                    {
+                        'name': 'Login Calon Siswa', 'route': '/calon-siswa/login',
+                        'children': [
+                            {
+                                'name': 'Dashboard Calon Siswa', 'route': '/calon-siswa/dashboard',
+                                'children': [
+                                    {'name': 'Cek Status Pendaftaran', 'route': '/registration/status'},
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            }
         ]
     }
 
     headmaster_tree = {
-        'name': '/headmaster',
+        'name': 'Login Sistem', 'route': '/auth/login',
         'children': [
-            {'name': '/headmaster/reports'},
-            {'name': '/headmaster/students'},
+            {
+                'name': 'Dashboard Kepala Sekolah', 'route': '/headmaster',
+                'children': [
+                    {'name': 'Laporan Terpusat', 'route': '/headmaster/reports'},
+                    {'name': 'Data Siswa & Akademik', 'route': '/headmaster/students'},
+                ]
+            }
         ]
     }
 
     student_tree = {
-        'name': '/student',
+        'name': 'Login Sistem', 'route': '/auth/login',
         'children': [
-            {'name': '/student/dashboard'},
-            {'name': '/student/history', 'children': [
-                {'name': '/student/history/[id]'},
-            ]},
-            {'name': '/student/profile'},
-            {'name': '/student/re-registration', 'children': [
-                {'name': '/student/re-registration/pay'},
-            ]},
-            {'name': '/student/spp'},
+            {
+                'name': 'Dashboard Siswa', 'route': '/student/dashboard',
+                'children': [
+                    {'name': 'Profil Siswa', 'route': '/student/profile'},
+                    {'name': 'Informasi SPP', 'route': '/student/spp'},
+                    {
+                        'name': 'Daftar Ulang', 'route': '/student/re-registration',
+                        'children': [
+                            {'name': 'Pembayaran Daftar Ulang', 'route': '/student/re-registration/pay'},
+                        ]
+                    },
+                    {
+                        'name': 'Riwayat Transaksi', 'route': '/student/history',
+                        'children': [
+                            {'name': 'Detail Transaksi', 'route': '/student/history/[id]'},
+                        ]
+                    }
+                ]
+            }
         ]
     }
 
     treasurer_tree = {
-        'name': '/treasurer',
+        'name': 'Login Sistem', 'route': '/auth/login',
         'children': [
-            {'name': '/treasurer/backup'},
-            {'name': '/treasurer/billing', 'children': [
-                {'name': '/treasurer/billing/list'},
-                {'name': '/treasurer/billing/[id]'},
-            ]},
-            {'name': '/treasurer/buku-besar'},
-            {'name': '/treasurer/dashboard'},
-            {'name': '/treasurer/expenses'},
-            {'name': '/treasurer/history'},
-            {'name': '/treasurer/payment', 'children': [
-                {'name': '/treasurer/payment/manual'},
-            ]},
-            {'name': '/treasurer/re-registration'},
-            {'name': '/treasurer/reports'},
-            {'name': '/treasurer/spp'},
-            {'name': '/treasurer/students'},
-            {'name': '/treasurer/wa-reminder'},
+            {
+                'name': 'Dashboard Bendahara', 'route': '/treasurer/dashboard',
+                'children': [
+                    {
+                        'name': 'Tagihan & Pembayaran', 'route': '',
+                        'children': [
+                            {
+                                'name': 'Kelola Tagihan', 'route': '/treasurer/billing',
+                                'children': [
+                                    {'name': 'Daftar Tagihan', 'route': '/treasurer/billing/list'},
+                                    {'name': 'Detail Tagihan', 'route': '/treasurer/billing/[id]'},
+                                ]
+                            },
+                            {
+                                'name': 'Penerimaan Pembayaran', 'route': '/treasurer/payment',
+                                'children': [
+                                    {'name': 'Input Pembayaran Manual', 'route': '/treasurer/payment/manual'},
+                                ]
+                            },
+                            {'name': 'Riwayat Pembayaran', 'route': '/treasurer/history'},
+                        ]
+                    },
+                    {
+                        'name': 'Modul Khusus', 'route': '',
+                        'children': [
+                            {'name': 'Manajemen SPP', 'route': '/treasurer/spp'},
+                            {'name': 'Manajemen Daftar Ulang', 'route': '/treasurer/re-registration'},
+                        ]
+                    },
+                    {
+                        'name': 'Keuangan Inti', 'route': '',
+                        'children': [
+                            {'name': 'Buku Besar (Ledger)', 'route': '/treasurer/buku-besar'},
+                            {'name': 'Catat Pengeluaran', 'route': '/treasurer/expenses'},
+                            {'name': 'Laporan Keuangan', 'route': '/treasurer/reports'},
+                        ]
+                    },
+                    {
+                        'name': 'Lainnya', 'route': '',
+                        'children': [
+                            {'name': 'Data Siswa', 'route': '/treasurer/students'},
+                            {'name': 'Reminder WhatsApp', 'route': '/treasurer/wa-reminder'},
+                            {'name': 'Backup Data', 'route': '/treasurer/backup'},
+                        ]
+                    }
+                ]
+            }
         ]
     }
 

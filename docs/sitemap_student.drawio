@@ -5,49 +5,49 @@
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
-        <mxCell id="2" value="/student" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="50" y="250.0" width="180" height="60" as="geometry" />
+        <mxCell id="2" value="&amp;lt;b&amp;gt;Login Sistem&amp;lt;/b&amp;gt;&amp;lt;br/&amp;gt;/auth/login" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="50" y="200.0" width="200" height="70" as="geometry" />
         </mxCell>
-        <mxCell id="3" value="/student/dashboard" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="310" y="50" width="180" height="60" as="geometry" />
+        <mxCell id="3" value="&amp;lt;b&amp;gt;Dashboard Siswa&amp;lt;/b&amp;gt;&amp;lt;br/&amp;gt;/student/dashboard" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="350" y="200.0" width="200" height="70" as="geometry" />
         </mxCell>
         <mxCell id="4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="2" target="3">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="5" value="/student/history" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="310" y="150.0" width="180" height="60" as="geometry" />
+        <mxCell id="5" value="&amp;lt;b&amp;gt;Profil Siswa&amp;lt;/b&amp;gt;&amp;lt;br/&amp;gt;/student/profile" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="650" y="50" width="200" height="70" as="geometry" />
         </mxCell>
-        <mxCell id="6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="2" target="5">
+        <mxCell id="6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="3" target="5">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="7" value="/student/history/[id]" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="570" y="150" width="180" height="60" as="geometry" />
+        <mxCell id="7" value="&amp;lt;b&amp;gt;Informasi SPP&amp;lt;/b&amp;gt;&amp;lt;br/&amp;gt;/student/spp" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="650" y="150" width="200" height="70" as="geometry" />
         </mxCell>
-        <mxCell id="8" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="5" target="7">
+        <mxCell id="8" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="3" target="7">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="9" value="/student/profile" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="310" y="250" width="180" height="60" as="geometry" />
+        <mxCell id="9" value="&amp;lt;b&amp;gt;Daftar Ulang&amp;lt;/b&amp;gt;&amp;lt;br/&amp;gt;/student/re-registration" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="650" y="250.0" width="200" height="70" as="geometry" />
         </mxCell>
-        <mxCell id="10" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="2" target="9">
+        <mxCell id="10" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="3" target="9">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="11" value="/student/re-registration" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="310" y="350.0" width="180" height="60" as="geometry" />
+        <mxCell id="11" value="&amp;lt;b&amp;gt;Pembayaran Daftar Ulang&amp;lt;/b&amp;gt;&amp;lt;br/&amp;gt;/student/re-registration/pay" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="950" y="250" width="200" height="70" as="geometry" />
         </mxCell>
-        <mxCell id="12" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="2" target="11">
+        <mxCell id="12" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="9" target="11">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="13" value="/student/re-registration/pay" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="570" y="350" width="180" height="60" as="geometry" />
+        <mxCell id="13" value="&amp;lt;b&amp;gt;Riwayat Transaksi&amp;lt;/b&amp;gt;&amp;lt;br/&amp;gt;/student/history" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="650" y="350.0" width="200" height="70" as="geometry" />
         </mxCell>
-        <mxCell id="14" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="11" target="13">
+        <mxCell id="14" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="3" target="13">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="15" value="/student/spp" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="310" y="450" width="180" height="60" as="geometry" />
+        <mxCell id="15" value="&amp;lt;b&amp;gt;Detail Transaksi&amp;lt;/b&amp;gt;&amp;lt;br/&amp;gt;/student/history/[id]" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="950" y="350" width="200" height="70" as="geometry" />
         </mxCell>
-        <mxCell id="16" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="2" target="15">
+        <mxCell id="16" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="13" target="15">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
       </root>
